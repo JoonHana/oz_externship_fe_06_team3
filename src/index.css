@@ -1,7 +1,21 @@
-* {
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+.dropdown-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #bdbdbd transparent;
 }
 
-body {
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+.dropdown-scrollbar::-webkit-scrollbar {
+  width: 2px;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: #bdbdbd;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-button {
+  display: none;
 }
