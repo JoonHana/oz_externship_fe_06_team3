@@ -3,7 +3,7 @@ name: Sync Fork with Public Upstream
 on:
   schedule:
     # 예: 매일 한국 시간 오전 9시 (UTC 00:00) 실행
-    - cron: '*/30 * * * *'
+    - cron: '0 * * * *'
   workflow_dispatch: # 테스트용 수동 실행 버튼
 
 jobs:
