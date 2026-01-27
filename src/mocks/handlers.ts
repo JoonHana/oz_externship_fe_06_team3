@@ -1,11 +1,14 @@
-
 import { http, HttpResponse } from 'msw'
-import { checkCodeHandler } from './handlers/checkCode'
-import { examDeploymentDetailHandler } from './handlers/examDeploymentDetail'
-import { examDeploymentsHandler } from './handlers/examDeployments'
+import { checkCodeHandler } from './handlers/quiz/checkCode'
+import { examDeploymentDetailHandler } from './handlers/quiz/examDeploymentDetail'
+import { examDeploymentStatusHandler } from './handlers/quiz/examDeploymentStatus'
+import { examDeploymentsHandler } from './handlers/quiz/examDeployments'
+import { examSubmissionHandler } from './handlers/quiz/examSubmission'
+import { examSubmissionResultHandler } from './handlers/quiz/examSubmissionResult'
+import { loginHandler } from './handlers/auth.mock'
 
 export const helloHandler = http.get('/api/hello', () => {
-    return HttpResponse.json({ message: 'Hello, world!', code: 200 })
+  return HttpResponse.json({ message: 'Hello, world!', code: 200 })
 })
 
 export const handlers = [
@@ -13,4 +16,8 @@ export const handlers = [
   examDeploymentsHandler,
   checkCodeHandler,
   examDeploymentDetailHandler,
+  examDeploymentStatusHandler,
+  examSubmissionHandler,
+  examSubmissionResultHandler,
+  loginHandler,
 ]
