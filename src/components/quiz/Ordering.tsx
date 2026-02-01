@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -128,9 +128,15 @@ export default function Ordering({ question, answer, onAnswerChange }: OrderingP
     initializeSlots(options, answer, optionLabels)
   )
 
+  // 부모에서 넘긴 answer와 동기화. answer/options/optionLabels는 매 렌더마다 새 참조가 될 수 있어
+  // 의존 배열에 넣으면 무한 루프 → questionId, options 길이, answer 값(직렬화)만으로 동기화 여부 판단.
+  const prevSyncKey = useRef<string | null>(null)
   useEffect(() => {
+    const syncKey = `${question.questionId}:${options.length}:${JSON.stringify(answer)}`
+    if (prevSyncKey.current === syncKey) return
+    prevSyncKey.current = syncKey
     setSlots(initializeSlots(options, answer, optionLabels))
-  }, [answer, options, optionLabels])
+  }, [question.questionId, answer, options, optionLabels])
 
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor))
 
@@ -148,9 +154,13 @@ export default function Ordering({ question, answer, onAnswerChange }: OrderingP
     const { active, over } = event
     if (!over) return
 
-    const draggedLabel = (active.id as string).replace('label-', '')
-    const slotIndex = parseInt((over.id as string).replace('slot-', ''), 10)
+    // 슬롯이 아닌 곳(예: 다른 라벨 위)에 드롭한 경우 무시
+    const overId = over.id as string
+    if (!overId.startsWith('slot-')) return
+    const slotIndex = parseInt(overId.replace('slot-', ''), 10)
+    if (Number.isNaN(slotIndex) || slotIndex < 0 || slotIndex >= slots.length) return
 
+    const draggedLabel = (active.id as string).replace('label-', '')
     const newSlots = [...slots]
     const existingSlotIndex = newSlots.findIndex((label) => label === draggedLabel)
 
