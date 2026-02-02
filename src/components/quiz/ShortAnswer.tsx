@@ -1,5 +1,6 @@
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 import QuizResultExplanation from './QuizResultExplanation'
+import QuestionHeader from './QuestionHeader'
 
 interface ShortAnswerProps {
   question: ExamDeploymentDetailResult['questions'][0]
@@ -28,13 +29,12 @@ export default function ShortAnswer({
   return (
     <div className={containerClass}>
       {/* 문제 헤더 */}
-      <div className="quiz-header">
-        <span className="quiz-header-title">
-          {question.number}. {question.question}
-        </span>
-        <span className="quiz-header-badge">{question.point}점</span>
-        <span className="quiz-header-badge">단답형</span>
-      </div>
+      <QuestionHeader
+        number={question.number}
+        title={question.question}
+        point={question.point}
+        typeLabel="단답형"
+      />
 
       <div className="ml-8">
         <input
