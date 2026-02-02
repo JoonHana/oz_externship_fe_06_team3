@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Loading, Modal, NotFound } from '@/components/common'
 import { CheatingWarningModal } from '@/components/common/Modal/variants/CheatingWarningModal'
+import { QuizEndModal } from '@/components/common/Modal/variants/QuizEndModal'
 import QuizHeader from '@/components/quiz/QuizHeader'
 import QuizWarningBox from '@/components/QuizWarningBox'
 import { useExamDeploymentDetailQuery, useExamDeploymentStatusQuery } from '@/hooks/useQuiz'
@@ -216,7 +217,11 @@ function QuizPage() {
 
   useEffect(() => {
     if (isEnded) return
-    if (statusData?.examStatus === 'closed' || statusData?.forceSubmit) {
+    if (
+      statusData?.examStatus === 'closed' ||
+      statusData?.examStatus === 'private' ||
+      statusData?.forceSubmit
+    ) {
       setIsEnded(true)
       setEndReason('status')
     }
@@ -226,11 +231,21 @@ function QuizPage() {
   const seconds = remainingSeconds % 60
   const paddedSeconds = seconds.toString().padStart(2, '0')
   const formattedRemaining = `${minutes} : ${paddedSeconds}`
-  const showEndModal = isEnded && endReason !== 'cheating'
+  const showTimeEndModal = isEnded && endReason === 'time'
+  const showQuizEndModal = isEnded && endReason === 'status'
 
   const handleEndConfirm = () => {
     navigate('/mypage/quiz')
   }
+
+  // 상태 종료 시 QuizEndModal 표시 후 5초 뒤 쪽지시험 리스트로 이동
+  useEffect(() => {
+    if (!showQuizEndModal) return
+    const timer = window.setTimeout(() => {
+      navigate('/mypage/quiz')
+    }, 5000)
+    return () => window.clearTimeout(timer)
+  }, [showQuizEndModal, navigate])
 
   const handleTimeEndTest = () => {
     setRemainingSeconds(0)
@@ -331,24 +346,35 @@ function QuizPage() {
         </Modal.Footer>
       </Modal>
 
-      <Modal isOpen={showEndModal} onClose={handleEndConfirm}>
+      {/* 시간 종료 모달 */}
+      <Modal isOpen={showTimeEndModal} onClose={handleEndConfirm}>
         <Modal.Body>
           <div className="flex flex-col items-center gap-6 py-4 min-w-[250px]">
-            <img src='/icons/cloud_404.svg' alt="not-found" className="h-[58px] w-[74px]" />
+            <img src="/icons/cloud_404.svg" alt="시험 종료" className="h-[58px] w-[74px]" />
             <p className="text-center text-[16px] text-[#222222]">
-              {endReason === 'time'
-                ? '시험 시간이 종료되었습니다.'
-                : '쪽지시험 상태가 변경되어 종료되었습니다.'}
+              시험 시간이 종료되었습니다.
             </p>
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" size="md" rounded="default" className="w-full" onClick={handleEndConfirm}>
+          <Button
+            variant="primary"
+            size="md"
+            rounded="default"
+            className="w-full"
+            onClick={handleEndConfirm}
+          >
             확인
           </Button>
         </Modal.Footer>
       </Modal>
 
+      {/* 관리자에 의한 종료 모달: 5초 후 쪽지시험 리스트로 자동 이동 */}
+      <QuizEndModal
+        isOpen={showQuizEndModal}
+        onClose={handleEndConfirm}
+        onConfirm={handleEndConfirm}
+      />
     </div>
   )
 }
