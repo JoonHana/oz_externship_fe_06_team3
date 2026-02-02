@@ -12,8 +12,8 @@ import { useAuthStore } from '@/store/authStore'
 const queryClient = new QueryClient()
 
 async function enableMocking() {
-  if (!import.meta.env.DEV || import.meta.env.VITE_USE_MSW !== 'true')
-    return
+  // VITE_USE_MSW=true → 목 데이터(MSW), false → 실백엔드
+  if (!import.meta.env.DEV || import.meta.env.VITE_USE_MSW !== 'true') return
 
   const { worker } = await import('./mocks/browser')
   await worker.start({
