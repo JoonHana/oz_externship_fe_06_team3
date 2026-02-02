@@ -1,5 +1,6 @@
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 import QuizResultExplanation from './QuizResultExplanation'
+import QuestionHeader from './QuestionHeader'
 
 interface MultipleChoiceProps {
   question: ExamDeploymentDetailResult['questions'][0]
@@ -39,13 +40,13 @@ export default function MultipleChoice({
 
   return (
     <div className={containerClass}>
-      <div className="quiz-header">
-        <span className="quiz-header-title">
-          {question.number}. {question.question}
-        </span>
-        <span className="quiz-header-badge">{question.point}점</span>
-        <span className="quiz-header-badge">다중선택</span>
-      </div>
+      {/* 문제 헤더 */}
+      <QuestionHeader
+        number={question.number}
+        title={question.question}
+        point={question.point}
+        typeLabel="다중선택"
+      />
 
       <div className="ml-8 space-y-4">
         {question.options?.map((option, index) => {

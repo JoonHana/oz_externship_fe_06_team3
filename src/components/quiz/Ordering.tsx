@@ -14,6 +14,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/common/Button'
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 import QuizResultExplanation from './QuizResultExplanation'
+import QuestionHeader from './QuestionHeader'
 
 interface OrderingProps {
   question: ExamDeploymentDetailResult['questions'][0]
@@ -241,13 +242,12 @@ export default function Ordering({
   return (
     <div className={containerClass}>
       {/* 문제 헤더 */}
-      <div className="quiz-header">
-        <span className="quiz-header-title">
-          {question.number}. {question.question}
-        </span>
-        <span className="quiz-header-badge">{question.point}점</span>
-        <span className="quiz-header-badge">순서배열</span>
-      </div>
+      <QuestionHeader
+        number={question.number}
+        title={question.question}
+        point={question.point}
+        typeLabel="순서배열"
+      />
 
       <DndContext
         sensors={sensors}
