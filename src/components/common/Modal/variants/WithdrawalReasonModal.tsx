@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@/store/authStore'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Modal } from '../Modal'
@@ -30,8 +32,9 @@ export function WithdrawalReasonModal({
   onClose,
   onSuccess,
 }: WithdrawalReasonModalProps) {
-  const [showToast, setShowToast] = useState(false)
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const navigate = useNavigate()
+  const logout = useAuthStore((state) => state.logout)
 
   useEffect(() => {
     return () => {
@@ -53,7 +56,7 @@ export function WithdrawalReasonModal({
   const methods = useForm<WithdrawalReasonFormData>({
     resolver: zodResolver(withdrawalReasonSchema),
     defaultValues: {
-      reason: '',
+      reason: undefined,
       otherReason: '',
       feedback: '',
     },
@@ -61,62 +64,38 @@ export function WithdrawalReasonModal({
 
   const reasonValue = methods.watch('reason')
   const isOtherSelected = reasonValue === 'other'
-  const isFormValid = reasonValue && (!isOtherSelected || methods.watch('otherReason'))
+  const isFormValid =
+    reasonValue && (!isOtherSelected || methods.watch('otherReason'))
   const isDropdownSelected = !!reasonValue
 
-  const onSubmit = (data: WithdrawalReasonFormData) => {
-    onSuccess?.(data)
-    setShowToast(true)
-    
-    // 기존 타이머가 있으면 정리
+  const onSubmit = async (data: WithdrawalReasonFormData) => {
+    if (onSuccess) {
+      await onSuccess(data)
+      logout()
+      navigate('/login', { replace: true })
+    }
     if (toastTimerRef.current) {
       clearTimeout(toastTimerRef.current)
     }
     toastTimerRef.current = setTimeout(() => {
-      setShowToast(false)
       onClose()
       toastTimerRef.current = null
-    }, 5000) // 5초 후 토스트 사라지고 모달 닫기
+    }, 1000)
   }
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="max-w-[646px] min-h-[537px]"
+      className="min-h-[537px] max-w-[646px]"
       toastPosition="top-far"
-      toast={
-        showToast ? (
-          <div className="bg-white border border-gray-200 text-black px-5 py-4 gap-3 rounded-lg shadow-lg flex-center min-w-[270px] min-h-[60px]">
-            {/* 초록색 원형 체크마크 아이콘 */}
-            <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M11.6667 3.5L5.25 9.91667L2.33334 7"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <p className="text-[14px] font-normal" style={{ color: '#4D4D4D' }}>
-              전송 완료! 이메일을 확인해주세요.
-            </p>
-          </div>
-        ) : undefined
-      }
     >
       <Modal.Header>
-        <div className="flex flex-col items-center gap-2 w-full">
-          <div className="flex flex-col items-start gap-2 w-full">
-            <h2 className="title-l">오즈코딩스쿨을 탈퇴하시는 이유는 무엇인가요?</h2>
+        <div className="flex w-full flex-col items-center gap-2">
+          <div className="flex w-full flex-col items-start gap-2">
+            <h2 className="title-l">
+              오즈코딩스쿨을 탈퇴하시는 이유는 무엇인가요?
+            </h2>
           </div>
         </div>
       </Modal.Header>
@@ -124,32 +103,37 @@ export function WithdrawalReasonModal({
       <Modal.Body>
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
-            <p 
+            <p
               className="mb-10"
               style={{
                 fontSize: '16px',
                 fontWeight: 'normal',
-                color: '#BDBDBD'
+                color: '#BDBDBD',
               }}
             >
-              계정을 삭제하시면 회원님의 모든 콘텐츠와 활동 기록, 수강 기간 / 포인트 / 쿠폰 내역이 사라지며 환불되지 않습니다. 삭제된 정보는 복구할 수 없습니다.
+              계정을 삭제하시면 회원님의 모든 콘텐츠와 활동 기록, 수강 기간 /
+              포인트 / 쿠폰 내역이 사라지며 환불되지 않습니다. 삭제된 정보는
+              복구할 수 없습니다.
             </p>
-              <Dropdown
-                options={withdrawalReasons}
-                value={reasonValue}
-                onChange={(value) => {
-                  methods.setValue('reason', value)
-                  if (value !== 'other') {
-                    methods.setValue('otherReason', '')
-                  }
-                }}
-                placeholder="탈퇴 사유를 선택해주세요"
-              />
-              {methods.formState.errors.reason && (
-                <p className="text-sm text-red-500 mt-1">
-                  {methods.formState.errors.reason.message}
-                </p>
-              )}
+            <Dropdown
+              options={withdrawalReasons}
+              value={reasonValue}
+              onChange={(value) => {
+                methods.setValue(
+                  'reason',
+                  value as WithdrawalReasonFormData['reason']
+                )
+                if (value !== 'other') {
+                  methods.setValue('otherReason', '')
+                }
+              }}
+              placeholder="탈퇴 사유를 선택해주세요"
+            />
+            {methods.formState.errors.reason && (
+              <p className="mt-1 text-sm text-red-500">
+                {methods.formState.errors.reason.message}
+              </p>
+            )}
 
             {isOtherSelected && (
               <Modal.InputRow label="기타 의견">
@@ -164,7 +148,7 @@ export function WithdrawalReasonModal({
 
             {isDropdownSelected && (
               <>
-                <p 
+                <p
                   className="mt-6 mb-4"
                   style={{
                     fontSize: '16px',
@@ -172,13 +156,15 @@ export function WithdrawalReasonModal({
                     color: '#121212',
                   }}
                 >
-                  서비스를 이용하시면서 불편했 점이나 보완할 수 있는 방안을 알려주시면, 서비스 개선에 적극적으로 반영하겠습니다. 감사합니다!
+                  서비스를 이용하시면서 불편했 점이나 보완할 수 있는 방안을
+                  알려주시면, 서비스 개선에 적극적으로 반영하겠습니다.
+                  감사합니다!
                 </p>
                 <div className="mb-4">
                   <textarea
                     {...methods.register('feedback')}
                     placeholder="소중한 의견을 반영해 더 좋은 서비스를 위해 노력하겠습니다."
-                    className="px-4 py-3 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-violet-600 focus:border-violet-600"
+                    className="resize-none rounded-lg px-4 py-3 focus:border-violet-600 focus:ring-1 focus:ring-violet-600 focus:outline-none"
                     style={{
                       minWidth: '598px',
                       minHeight: '134px',

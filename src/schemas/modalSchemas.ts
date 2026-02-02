@@ -1,3 +1,4 @@
+import { WITHDRAW_REASON_MAP } from '@/constants/withdrawReason'
 import { z } from 'zod'
 
 /**
@@ -52,7 +53,7 @@ export const resetPasswordSchema = z
           // 영문 대소문자 모두 포함하는지 확인
           const hasLower = /[a-z]/.test(password)
           const hasUpper = /[A-Z]/.test(password)
-          
+
           // 대소문자 모두 포함하는지 확인
           return hasLower && hasUpper
         },
@@ -106,13 +107,21 @@ export type RegisterStudentFormData = z.infer<typeof registerStudentSchema>
  * 회원 탈퇴 사유 스키마
  */
 export const withdrawalReasonSchema = z.object({
-  reason: z.string().min(1, '탈퇴 사유를 선택해주세요.'),
+  reason: z
+    .enum(
+      Object.keys(WITHDRAW_REASON_MAP) as [
+        keyof typeof WITHDRAW_REASON_MAP,
+        ...(keyof typeof WITHDRAW_REASON_MAP)[],
+      ]
+    )
+    .refine((val) => !!val, {
+      message: '탈퇴 사유를 선택해주세요.',
+    }),
   otherReason: z.string().optional(),
   feedback: z.string().optional(),
 })
 
 export type WithdrawalReasonFormData = z.infer<typeof withdrawalReasonSchema>
-
 /**
  * 쪽지시험 시작 스키마
  * 참가 코드는 Base62 인코딩된 값 (영문 대소문자, 숫자 포함)
