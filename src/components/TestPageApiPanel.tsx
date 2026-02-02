@@ -44,7 +44,7 @@ const TestPageApiPanel = () => {
   const detailQuery = useQuery({
     queryKey: ['examDeploymentDetail', deploymentId],
     queryFn: async () => {
-      const response = await apiClient.get(`/api/v1/exams/deplayments/${deploymentId}`)
+      const response = await apiClient.get(`/api/v1/exams/deployments/${deploymentId}`)
       return response.data
     },
     enabled: false,

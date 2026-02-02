@@ -48,7 +48,7 @@ export const fetchExamDeployments = async (params: FetchExamDeploymentsParams = 
  */
 export const fetchExamDeploymentDetail = async (deploymentId: number) => {
   const response = await apiClient.get<ExamDeploymentDetailResponse>(
-    `/api/v1/exams/deplayments/${deploymentId}`
+    `/api/v1/exams/deployments/${deploymentId}`
   )
   return mapExamDeploymentDetail(response.data)
 }
@@ -60,7 +60,7 @@ export const fetchExamDeploymentDetail = async (deploymentId: number) => {
  */
 export const fetchExamDeploymentStatus = async (deploymentId: number) => {
   const response = await apiClient.get<ExamDeploymentStatusResponse>(
-    `/api/v1/exams/deplayments/${deploymentId}/status`
+    `/api/v1/exams/deployments/${deploymentId}/status`
   )
   return mapExamDeploymentStatus(response.data)
 }
