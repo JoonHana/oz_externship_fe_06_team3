@@ -1,5 +1,6 @@
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 import QuizResultExplanation from './QuizResultExplanation'
+import QuestionHeader from './QuestionHeader'
 
 interface OXProps {
   question: ExamDeploymentDetailResult['questions'][0]
@@ -187,13 +188,12 @@ export default function OX({
   return (
     <div className={containerClass}>
       {/* 문제 헤더 */}
-      <div className="quiz-header">
-        <span className="quiz-header-title">
-          {question.number}. {question.question}
-        </span>
-        <span className="quiz-header-badge">{question.point}점</span>
-        <span className="quiz-header-badge">OX선택</span>
-      </div>
+      <QuestionHeader
+        number={question.number}
+        title={question.question}
+        point={question.point}
+        typeLabel="OX선택"
+      />
 
       {/* 옵션 */}
       <div className="flex flex-col gap-[18px] ml-8">

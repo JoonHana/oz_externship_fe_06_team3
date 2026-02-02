@@ -1,5 +1,6 @@
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 import QuizResultExplanation from './QuizResultExplanation'
+import QuestionHeader from './QuestionHeader'
 
 interface SingleChoiceProps {
   question: ExamDeploymentDetailResult['questions'][0]
@@ -108,13 +109,12 @@ export default function SingleChoice({
   return (
     <div className={containerClass}>
       {/* 문제 헤더 */}
-      <div className="quiz-header">
-        <span className="quiz-header-title">
-          {question.number}. {question.question}
-        </span>
-        <span className="quiz-header-badge">{question.point}점</span>
-        <span className="quiz-header-badge">단일선택</span>
-      </div>
+      <QuestionHeader
+        number={question.number}
+        title={question.question}
+        point={question.point}
+        typeLabel="단일선택"
+      />
 
       {/* 옵션 */}
       <div className="min-h-[96px] rounded-lg ml-8">        {renderOptions()}

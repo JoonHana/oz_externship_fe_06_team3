@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 import QuizResultExplanation from './QuizResultExplanation'
+import QuestionHeader from './QuestionHeader'
 
 interface FillBlankProps {
   question: ExamDeploymentDetailResult['questions'][0]
@@ -91,13 +92,12 @@ export default function FillBlank({
   return (
     <div className={containerClass}>
       {/* 문제 헤더 */}
-      <div className="quiz-header">
-        <span className="quiz-header-title">
-          {question.number}. {question.question}
-        </span>
-        <span className="quiz-header-badge">{question.point}점</span>
-        <span className="quiz-header-badge">빈칸식</span>
-      </div>
+      <QuestionHeader
+        number={question.number}
+        title={question.question}
+        point={question.point}
+        typeLabel="빈칸식"
+      />
 
       {/* 지문 박스 */}
       {question.prompt && (
