@@ -54,6 +54,14 @@ export default function FillBlank({
     return isBlankCorrect ? 'text-[#14C786]' : 'text-[#EC0037]'
   }
 
+  const getLabelColorClass = (index: number) => {
+    if (!isResult) return 'text-[#121212]'
+    const submitted = answers[index] ?? ''
+    const correct = correctAnswer?.[index] ?? ''
+    const isBlankCorrect = submitted === correct
+    return isBlankCorrect ? 'text-[#14C786]' : 'text-[#F85402]'
+  }
+
   const renderPromptWithBlanks = () => {
     if (!question.prompt) return null
 
@@ -105,8 +113,8 @@ export default function FillBlank({
             key={label}
             className="relative w-[308px] h-[48px] bg-[#F2F3F5] rounded-[4px] flex items-center px-4 py-2"
           >
-            <span className="text-[16px] font-bold text-[#121212] mr-2">
-              {label}.
+            <span className={`text-[16px] font-bold mr-2 ${getLabelColorClass(index)}`}>
+              {label}
             </span>
             <input
               type="text"
