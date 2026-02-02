@@ -83,7 +83,7 @@
 .infoText {
   @apply mr-[85px] w-[100px] text-[18px];
 }
-.infoborder {
+.info-border {
   @apply rounded-[7px] border border-[#D1D1D1] px-[44px] py-[52px];
 }
 /* 문제 헤더 공통 스타일 */

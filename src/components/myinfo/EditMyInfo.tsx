@@ -1,102 +1,110 @@
-import { useState } from 'react'
 import { Button, CommonInput } from '../common'
-import type { FieldState } from '../common/CommonInput'
+import type { User } from '@/types/auth'
+import { unmapGender } from '@/utils/gender'
 
-export function EditMyInfo() {
-  const [nickname, setNickname] = useState('오즈오즈')
-  const [nicknameState, setNicknameState] = useState<FieldState>('default')
+type GenderUI = 'male' | 'female'
+
+type Props = {
+  user: User
+  onChange: (v: User) => void
+}
+
+export function EditMyInfo({ user, onChange }: Props) {
+  const handleChange = <K extends keyof User>(key: K, value: User[K]) => {
+    onChange({ ...user, [key]: value })
+  }
+
+  const currentGender = unmapGender(user.gender)
 
   return (
-    <>
-      <div className="infoborder mt-[20px] h-[1194px] w-[747px]">
-        <p className="text-primary title-l">프로필 수정</p>
-        <hr className="border-mono-400 mt-[16px]" />
+    <div className="info-border mt-[20px] w-[747px]">
+      <Section title="프로필 수정">
         <div className="flex justify-center">
           <img
-            src="../public/프로필 사진.svg"
+            src={
+              user.profile_img_url ? user.profile_img_url : '/프로필 사진.svg'
+            }
             alt="프로필 사진"
-            className="m-[52px] h-[184px] rounded-full"
+            className="mb-[52px] h-[184px] rounded-full"
           />
         </div>
-        <p>닉네임</p>
-        <div className="mt-[15px] flex gap-[12px]">
+
+        <Label>닉네임</Label>
+        <div className="flex gap-[12px]">
           <CommonInput
-            value={nickname}
-            placeholder={nickname}
+            value={user.nickname}
+            onChange={(v) => handleChange('nickname', v)}
             width={532}
-            onChange={setNickname}
-            state={nicknameState}
-            helperText="*한글 8자, 영문 및 숫자 16자까지 혼용할 수 있어요."
-            helperVisibility="always"
           />
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              const isDuplicated = false
-              setNicknameState(isDuplicated ? 'error' : 'success')
-            }}
-          >
+          <Button size="sm" variant="secondary">
             중복확인
           </Button>
         </div>
-        <div className="mt-[40px] flex flex-col gap-[12px]">
-          <p>이메일(아이디)</p>
-          <CommonInput
-            value={''}
-            width={656}
-            disabled
-            placeholderVariant="b"
-            placeholder={'ozschool1234@gmail.com'}
-            onChange={() => {}}
-          />
-        </div>
-        <p className="text-primary title-l mt-[80px]">개인 정보 수정</p>
-        <hr className="border-mono-400 mt-[16px]" />
-        <div className="mt-[40px] flex flex-col gap-[12px]">
-          <p>이름</p>
-          <CommonInput
-            value={''}
-            width={656}
-            disabled
-            placeholderVariant="b"
-            placeholder={'김오즈'}
-            onChange={() => {}}
-          />
-        </div>
-        <p className="my-[15px]">휴대전화</p>
-        <div className="flex gap-[12px]">
-          <CommonInput
-            value={'010-1234-1234'}
-            placeholder={'010-1234-1234'}
-            width={532}
-            onChange={() => {}}
-          />
-          <Button variant="secondary" size="sm" onClick={() => {}}>
-            변경
-          </Button>
-        </div>
-        <p className="my-[15px]">성별</p>
+
+        <Label>이메일</Label>
+        <CommonInput
+          value={user.email}
+          locked
+          width={656}
+          onChange={() => {}}
+          disabled
+        />
+      </Section>
+
+      <Section title="개인 정보 수정">
+        <Label>휴대전화</Label>
+        <CommonInput
+          value={user.phone_number}
+          onChange={(v) => handleChange('phone_number', v)}
+          width={656}
+        />
+
+        <Label>성별</Label>
         <div className="flex gap-[20px]">
-          <Button variant={'secondary'} size={'xxs'} disabled rounded="full">
-            남
-          </Button>
-          <Button variant={'disabled'} size={'xxs'} disabled rounded="full">
-            여
-          </Button>
+          {(['male', 'female'] as GenderUI[]).map((g) => (
+            <Button
+              key={g}
+              size="xxs"
+              rounded="full"
+              variant={currentGender === g ? 'secondary' : 'disabled'}
+              onClick={() => {}}
+            >
+              {g === 'male' ? '남성' : '여성'}
+            </Button>
+          ))}
         </div>
-        <div className="mt-[15px] flex flex-col gap-[12px]">
-          <p>생년월일</p>
-          <CommonInput
-            value={''}
-            width={656}
-            disabled
-            placeholderVariant="b"
-            placeholder={'2000.12.25'}
-            onChange={() => {}}
-          />
-        </div>
-      </div>
-    </>
+
+        <Label>생년월일</Label>
+        <CommonInput
+          value={user.birthday}
+          locked
+          width={656}
+          onChange={() => {}}
+          disabled
+        />
+      </Section>
+    </div>
   )
+}
+
+/* ===== sub ===== */
+
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="mb-[80px]">
+      <p className="text-primary title-l">{title}</p>
+      <hr className="border-mono-400 mt-[16px] mb-[40px]" />
+      <div className="flex flex-col gap-[15px]">{children}</div>
+    </section>
+  )
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <p className="mt-[10px]">{children}</p>
 }

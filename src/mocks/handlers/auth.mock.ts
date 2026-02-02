@@ -121,27 +121,28 @@ export const logoutHandler = http.post(
   }
 )
 
+// 1. 기존의 meHandler (약 10줄 정도 되는 것)를 찾아서 지웁니다.
+// 2. 그 자리에 아래 코드를 복사해서 넣으세요.
+
 export const meHandler = http.get(
   api('/api/v1/accounts/me/'),
   async ({ request }) => {
     await delay(80)
 
     const auth = request.headers.get('authorization') ?? ''
-    const access = auth.startsWith('Bearer ')
-      ? auth.slice('Bearer '.length)
-      : ''
-    const email = accessTokens.get(access)
 
-    if (!email) {
-      return error(401, { error_detail: '인증 정보가 없습니다.' })
+    // [핵심] 새로고침 시 MSW 메모리가 초기화되어도
+    // 브라우저가 보낸 토큰(헤더)만 있으면 로그인된 것으로 간주합니다.
+    if (auth.startsWith('Bearer ') && auth.length > 10) {
+      const found = usersByEmail.get(SEED_EMAIL)
+
+      // 혹시 모르니 유저 데이터가 있는지 확인 후 반환
+      if (found) {
+        return HttpResponse.json(found.user, { status: 200 })
+      }
     }
 
-    const found = usersByEmail.get(email)
-    if (!found) {
-      return error(401, { error_detail: '사용자를 찾을 수 없습니다.' })
-    }
-
-    return HttpResponse.json(found.user, { status: 200 })
+    return error(401, { error_detail: '인증 정보가 올바르지 않습니다.' })
   }
 )
 
