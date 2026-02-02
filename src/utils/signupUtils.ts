@@ -1,9 +1,4 @@
 import axios from 'axios'
-import { z } from 'zod'
-
-export const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,15}$/
-
-export const emailZ = z.string().trim().email()
 
 export function formatBirthday(yyyymmdd: string) {
   const raw = yyyymmdd.replace(/\D/g, '')
@@ -18,6 +13,7 @@ export function mapGender(g: 'male' | 'female'): 'M' | 'F' {
 type ErrorResponseData =
   | {
       error_detail?: string | Record<string, string | string[]>
+      detail?: string
     }
   | undefined
 
@@ -36,9 +32,9 @@ export function pickMessageFromAxios(
     if (ed && typeof ed === 'object') {
       const first = Object.values(ed)[0]
       if (typeof first === 'string') return first
-      if (Array.isArray(first) && typeof first[0] === 'string')
-        return first[0]
+      if (Array.isArray(first) && typeof first[0] === 'string') return first[0]
     }
+    if (typeof data?.detail === 'string') return data.detail
   }
   return fallback
 }
