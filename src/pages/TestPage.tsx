@@ -10,6 +10,7 @@ import {
   WithdrawalReasonModal,
   StartQuizModal,
   CheatingWarningModal,
+  QuizEndModal,
   Button,
 } from '@/components/common'
 
@@ -28,6 +29,7 @@ function TestPage() {
   const [cheatingWarning1Open, setCheatingWarning1Open] = useState(false)
   const [cheatingWarning2Open, setCheatingWarning2Open] = useState(false)
   const [cheatingWarning3Open, setCheatingWarning3Open] = useState(false)
+  const [quizEndOpen, setQuizEndOpen] = useState(false)
 
   return (
     <div className="p-8 space-y-4">
@@ -140,6 +142,15 @@ function TestPage() {
           onClick={() => setCheatingWarning3Open(true)}
         >
           부정행위 3차 경고
+        </Button>
+
+        {/* 13. 시험 종료(관리자) */}
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={() => setQuizEndOpen(true)}
+        >
+          상태 관리 시험 종료
         </Button>
       </div>
 
@@ -257,6 +268,15 @@ function TestPage() {
         warningLevel={3}
         onConfirm={() => {
           console.log('3차 경고 확인')
+        }}
+      />
+
+      <QuizEndModal
+        isOpen={quizEndOpen}
+        onClose={() => setQuizEndOpen(false)}
+        onConfirm={() => {
+          console.log('시험 종료 확인')
+          setQuizEndOpen(false)
         }}
       />
     </div>
