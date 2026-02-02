@@ -70,18 +70,18 @@
       "answer": ["HTML 파싱", "DOM 생성", "CSSOM 생성", "렌더 트리 생성"],
       "point": 5,
       "explanation": "HTML, DOM, CSSOM, 브라우저의 동작 순서는 HTML 파싱, DOM 생성, CSSOM 생성, 렌더 트리 생성입니다.",
-      "is_correct": true,
+      "is_correct": false,
       "submitted_answer": [
         "HTML 파싱",
-        "DOM 생성",
         "CSSOM 생성",
+        "DOM 생성",
         "렌더 트리 생성"
       ]
     },
     {
       "id": 5006,
       "question": "다음 빈칸을 채우세요.",
-      "prompt": "변수나 함수의 매개변수, 반환값에 타입을 명시하는 것을 __ 이라고 한다. interface 또는 type 키워드를 사용하여 객체의 구조를 정의하는 것을 __ 이라고 부른다.",
+      "prompt": "1. 변수나 함수의 매개변수, 반환값에 타입을 명시하는 것을 __ 이라고 한다. \n2. interface 또는 type 키워드를 사용하여 객체의 구조를 정의하는 것을 __ 이라고 부른다.",
       "blank_count": 2,
       "options": [],
       "type": "fill_blank",
@@ -93,8 +93,8 @@
     }
   ],
   "cheating_count": 0,
-  "total_score": 30,
-  "correct_answer_count": 4,
+  "total_score": 25,
+  "correct_answer_count": 3,
   "elapsed_time": 15,
   "started_at": "2025-12-31T14:18:40.762Z",
   "submitted_at": "2025-12-31T14:33:40.762Z"
