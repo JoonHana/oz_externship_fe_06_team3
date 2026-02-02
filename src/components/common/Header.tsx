@@ -185,7 +185,7 @@ export default function Header() {
                       className={dropdownButtonClass}
                       onClick={() => {
                         setOpen(false)
-                        navigate('/mypage')
+                        navigate('/mypage/profile')
                       }}
                     >
                       마이페이지
