@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { SignupFormData } from '@/schemas/auth'
-import { PASSWORD_REGEX } from '@/utils/signupUtils'
 import type { FieldState } from '@/components/common/CommonInput'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import type {
@@ -8,6 +7,8 @@ import type {
   PasswordSectionUI,
   PasswordSectionValues,
 } from './types'
+
+const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,15}$/
 
 export type UsePasswordSectionArgs = {
   password: string

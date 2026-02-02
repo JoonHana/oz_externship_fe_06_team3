@@ -1,9 +1,12 @@
 import { apiClient } from '@/api/client'
-import type { LoginPayload, User } from '@/types/auth'
-
-export type LoginResult = { access_token: string }
-export type VerifyEmailResult = { detail?: string; email_token: string }
-export type VerifySmsResult = { detail?: string; sms_token: string }
+import type {
+  LoginPayload,
+  LoginResult,
+  User,
+  VerifyEmailResult,
+  VerifySmsResult,
+  SignupPayload,
+} from '@/types/auth'
 
 export async function login(payload: LoginPayload): Promise<LoginResult> {
   const { data } = await apiClient.post<LoginResult>(
@@ -67,15 +70,6 @@ export async function verifySms(payload: {
   return data
 }
 
-export async function signup(payload: {
-  password: string
-  password_confirm?: string
-  nickname: string
-  name: string
-  birthday: string
-  gender: 'M' | 'F'
-  email_token: string
-  sms_token: string
-}): Promise<void> {
+export async function signup(payload: SignupPayload): Promise<void> {
   await apiClient.post('/api/v1/accounts/signup/', payload)
 }
