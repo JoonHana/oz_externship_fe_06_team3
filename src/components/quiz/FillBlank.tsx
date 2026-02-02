@@ -1,15 +1,28 @@
 import { useState, useEffect } from 'react'
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
+import QuizResultExplanation from './QuizResultExplanation'
 
 interface FillBlankProps {
   question: ExamDeploymentDetailResult['questions'][0]
   answer: string[] | null
   onAnswerChange: (questionId: number, answer: string[]) => void
+  isResult?: boolean
+  correctAnswer?: string[] | null
+  isCorrect?: boolean
+  explanation?: string | null
 }
 
 const BLANK_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const
 
-export default function FillBlank({ question, answer, onAnswerChange }: FillBlankProps) {
+export default function FillBlank({
+  question,
+  answer,
+  onAnswerChange,
+  isResult = false,
+  correctAnswer = null,
+  isCorrect = false,
+  explanation = null,
+}: FillBlankProps) {
   const blankCount = question.blankCount || 0
   const blankLabels = BLANK_LABELS.slice(0, blankCount)
 
@@ -26,10 +39,19 @@ export default function FillBlank({ question, answer, onAnswerChange }: FillBlan
   }, [answer, blankCount])
 
   const handleInputChange = (index: number, value: string) => {
+    if (isResult) return
     const newAnswers = [...answers]
     newAnswers[index] = value
     setAnswers(newAnswers)
     onAnswerChange(question.questionId, newAnswers)
+  }
+
+  const getBlankColorClass = (index: number) => {
+    if (!isResult) return 'text-[#222222]'
+    const submitted = answers[index] ?? ''
+    const correct = correctAnswer?.[index] ?? ''
+    const isBlankCorrect = submitted === correct
+    return isBlankCorrect ? 'text-[#14C786]' : 'text-[#EC0037]'
   }
 
   const renderPromptWithBlanks = () => {
@@ -52,8 +74,10 @@ export default function FillBlank({ question, answer, onAnswerChange }: FillBlan
     return <div className="text-[16px] font-normal text-[#222222]">{result}</div>
   }
 
+  const containerClass = isResult ? 'mb-[100px]' : 'mb-20'
+
   return (
-    <div className="mb-20">
+    <div className={containerClass}>
       {/* 문제 헤더 */}
       <div className="quiz-header">
         <span className="quiz-header-title">
@@ -84,12 +108,19 @@ export default function FillBlank({ question, answer, onAnswerChange }: FillBlan
               type="text"
               value={answers[index] || ''}
               onChange={(e) => handleInputChange(index, e.target.value)}
-              placeholder="정답을 입력해 주세요."
-              className="flex-1 h-full bg-transparent border-none outline-none text-[16px] font-bold text-[#222222] placeholder:text-[16px] placeholder:text-[#BDBDBD] placeholder:font-normal"
+              placeholder={isResult ? '' : '정답을 입력해 주세요.'}
+              readOnly={isResult}
+              className={`flex-1 h-full bg-transparent border-none outline-none text-[16px] font-bold placeholder:text-[16px] placeholder:text-[#BDBDBD] placeholder:font-normal ${getBlankColorClass(index)}`}
             />
           </div>
         ))}
       </div>
+
+      {isResult && explanation && (
+        <div className="mt-5 ml-6">
+          <QuizResultExplanation explanation={explanation} isCorrect={isCorrect} />
+        </div>
+      )}
     </div>
   )
 }
