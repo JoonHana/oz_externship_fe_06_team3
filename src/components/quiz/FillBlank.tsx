@@ -71,7 +71,11 @@ export default function FillBlank({
       }
     })
 
-    return <div className="text-[16px] font-normal text-[#222222]">{result}</div>
+    return (
+      <div className="whitespace-pre-wrap text-[16px] font-normal text-[#222222]">
+        {result}
+      </div>
+    )
   }
 
   const containerClass = isResult ? 'mb-[100px]' : 'mb-20'
