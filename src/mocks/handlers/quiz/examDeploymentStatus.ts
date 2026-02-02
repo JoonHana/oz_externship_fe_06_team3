@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw'
 import examDeployments from '@/mocks/data/examDeployments.json'
 
 export const examDeploymentStatusHandler = http.get(
-  '/api/v1/exams/deplayments/:deploymentId/status',
+  '/api/v1/exams/deployments/:deploymentId/status',
   ({ params }) => {
     const deploymentId = Number(params.deploymentId)
     const deployment = examDeployments.find((item) => item.id === deploymentId)
