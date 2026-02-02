@@ -3,6 +3,8 @@ import QuizCard from './QuizCard'
 import { Loading } from '@/components/common'
 import type { ExamDeploymentsResult } from '@/mappers/examDeployments'
 
+const SKELETON_COUNT = 10
+
 type TabKey = 'all' | 'done' | 'todo'
 
 const EMPTY_MESSAGES: Record<TabKey, string> = {
@@ -55,11 +57,13 @@ export default function QuizContent({
     return () => observer.disconnect()
   }, [onLoadMore, isFetchingNextPage])
 
-  // 상태별 UI: 로딩 / 에러 / 빈 목록
+  // 상태별 UI: 로딩(스켈레톤) / 에러 / 빈 목록
   if (isLoading) {
     return (
-      <div className={CENTER_MESSAGE_CLASS}>
-        <Loading />
+      <div className="space-y-4">
+        {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+          <QuizCard key={i} skeleton />
+        ))}
       </div>
     )
   }
