@@ -70,11 +70,11 @@
       "answer": ["HTML 파싱", "DOM 생성", "CSSOM 생성", "렌더 트리 생성"],
       "point": 5,
       "explanation": "HTML, DOM, CSSOM, 브라우저의 동작 순서는 HTML 파싱, DOM 생성, CSSOM 생성, 렌더 트리 생성입니다.",
-      "is_correct": true,
+      "is_correct": false,
       "submitted_answer": [
         "HTML 파싱",
-        "DOM 생성",
         "CSSOM 생성",
+        "DOM 생성",
         "렌더 트리 생성"
       ]
     },
@@ -93,8 +93,8 @@
     }
   ],
   "cheating_count": 0,
-  "total_score": 30,
-  "correct_answer_count": 4,
+  "total_score": 25,
+  "correct_answer_count": 3,
   "elapsed_time": 15,
   "started_at": "2025-12-31T14:18:40.762Z",
   "submitted_at": "2025-12-31T14:33:40.762Z"

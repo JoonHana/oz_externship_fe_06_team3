@@ -64,7 +64,7 @@ function DraggableLabel({ id, label, item, isUsed, isResult }: DraggableLabelPro
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.5 : isUsed ? 0.4 : 1,
+    opacity: isDragging ? 0.5 : isUsed ? 0.4 : 1, 
     padding: '3px',
   }
 
@@ -96,13 +96,16 @@ function DroppableSlot({ id, index, label, onRemove, isResult, isSlotCorrect }: 
   const { setNodeRef, isOver } = useDroppable({ id, disabled: isResult })
 
   const slotBorderClass =
-    isResult && isSlotCorrect !== undefined
-      ? isSlotCorrect
-        ? 'ring-2 ring-[#14C786] ring-offset-1'
-        : 'ring-2 ring-[#EC0037] ring-offset-1'
-      : !isResult && isOver
-        ? 'ring-2 ring-primary ring-offset-2'
-        : ''
+    !isResult && isOver ? 'ring-2 ring-primary ring-offset-2' : ''
+
+  const getLabelInnerClass = () => {
+    if (!isResult || isSlotCorrect === undefined) {
+      return 'text-[18px] font-normal text-[#6201E0] bg-[#EFE6FC] w-8 h-8 flex items-center justify-center rounded-[4px]'
+    }
+    return isSlotCorrect
+      ? 'text-[20px] font-bold text-[#14C786] bg-[#F2F3F5] w-10 h-10 flex items-center justify-center rounded-[4px]'
+      : 'text-[20px] font-bold text-[#F85402] bg-[#F2F3F5] w-10 h-10 flex items-center justify-center rounded-[4px]'
+  }
 
   return (
     <div
@@ -126,7 +129,7 @@ function DroppableSlot({ id, index, label, onRemove, isResult, isSlotCorrect }: 
               ×
             </Button>
           )}
-          <span className="text-[18px] font-normal text-[#6201E0] bg-[#EFE6FC] w-8 h-8 flex items-center justify-center rounded-[4px]">
+          <span className={getLabelInnerClass()}>
             {label}
           </span>
         </div>
