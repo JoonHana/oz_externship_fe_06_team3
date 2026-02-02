@@ -3,7 +3,7 @@ import examDeploymentDetail from '@/mocks/data/examDeploymentDetail.json'
 import examDeployments from '@/mocks/data/examDeployments.json'
 
 export const examDeploymentDetailHandler = http.get(
-  '/api/v1/exams/deplayments/:deploymentId',
+  '/api/v1/exams/deployments/:deploymentId',
   ({ params }) => {
     const deploymentId = Number(params.deploymentId)
     const deployment = examDeployments.find((item) => item.id === deploymentId)
