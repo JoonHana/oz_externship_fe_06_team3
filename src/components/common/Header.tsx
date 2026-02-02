@@ -17,7 +17,8 @@ const dropdownButtonClass =
 
 export default function Header() {
   const [open, setOpen] = useState(false)
-  const [registerStudentModalOpen, setRegisterStudentModalOpen] = useState(false)
+  const [registerStudentModalOpen, setRegisterStudentModalOpen] =
+    useState(false)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
 
   const navigate = useNavigate()

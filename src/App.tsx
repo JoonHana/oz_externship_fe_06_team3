@@ -43,7 +43,10 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/quiz/:deploymentId" element={<QuizPage />} />
-          <Route path="/quiz/result/:submissionId" element={<QuizResultPage />} />
+          <Route
+            path="/quiz/result/:submissionId"
+            element={<QuizResultPage />}
+          />
         </Route>
       </Routes>
       <ReactQueryDevtools initialIsOpen={false} />

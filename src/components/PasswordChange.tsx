@@ -36,7 +36,7 @@ export default function PasswordChange() {
   return (
     <>
       <p className="title-xl mb-[20px]">비밀번호 변경</p>
-      <div className="infoborder mt-[20px] w-[74fpx] px-[44px] py-[52px]">
+      <div className="info-border mt-[20px] px-[44px] py-[52px]">
         <div className="flex flex-col gap-[20px]">
           {/* 기존 비밀번호 */}
           <div className="flex items-center justify-between">
