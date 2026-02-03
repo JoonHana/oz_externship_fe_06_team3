@@ -354,7 +354,7 @@ export function RegisterStudentModal({
                 className="w-full"
                 style={{ minWidth: '348px' }}
               >
-                등록하기
+                등록 신청 하기
               </Button>
             </div>
           </form>
