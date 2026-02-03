@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,15}$/
+export const PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,15}$/
 const NICKNAME_REGEX = /^[A-Za-z0-9가-힣]{2,10}$/
 
 function isValidYYYYMMDD(v: string) {
