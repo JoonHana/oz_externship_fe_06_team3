@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Button, Loading, Modal, NotFound } from '@/components/common'
-import { CheatingWarningModal } from '@/components/common/Modal/variants/CheatingWarningModal'
-import { QuizEndModal } from '@/components/common/Modal/variants/QuizEndModal'
+import {
+  Button,
+  CheatingWarningModal,
+  Loading,
+  Modal,
+  NotFound,
+  QuizEndModal,
+  QuizSubmitCompleteModal,
+} from '@/components/common'
 import QuizHeader from '@/components/quiz/QuizHeader'
 import QuizWarningBox from '@/components/QuizWarningBox'
-import { useExamDeploymentDetailQuery, useExamDeploymentStatusQuery } from '@/hooks/useQuiz'
+import {
+  useExamDeploymentDetailQuery,
+  useExamDeploymentStatusQuery,
+  useExamSubmissionMutation,
+} from '@/hooks/useQuiz'
 import {
   SingleChoice,
   MultipleChoice,
@@ -28,7 +38,11 @@ function QuizPage() {
   const [cheatingCount, setCheatingCount] = useState(0)
   const [isCheatingModalOpen, setIsCheatingModalOpen] = useState(false)
   const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false)
+  const [isSubmitCompleteModalOpen, setIsSubmitCompleteModalOpen] = useState(false)
+  const [submittedSubmissionId, setSubmittedSubmissionId] = useState<number | null>(null)
   const lastCheatingAtRef = useRef(0)
+
+  const submissionMutation = useExamSubmissionMutation()
 
   const { data, isLoading } = useExamDeploymentDetailQuery(
     deploymentIdNumber,
@@ -119,6 +133,7 @@ function QuizPage() {
     console.log('부정행위 자동 제출:', { deploymentId: deploymentIdNumber, answers })
   }
 
+  
   const handleCheatingDetected = useCallback(() => {
     if (isEnded) return
     const now = Date.now()
@@ -142,10 +157,41 @@ function QuizPage() {
     handleAutoSubmit();
   }
 
+  // 제출 데이터 생성
+  const buildSubmitPayload = () => {
+    if (!data?.questions) return null
+    const answerList = data.questions.map((q) => ({
+      question_id: q.questionId,
+      type: q.type,
+      submitted_answer: answers[q.questionId] ?? null,
+    }))
+    return {
+      deployment_id: deploymentIdNumber,
+      started_at: new Date().toISOString(),
+      cheating_count: cheatingCount,
+      answers: answerList,
+    }
+  }
+
   const handleSubmit = () => {
-    // 제출 로직은 추후 구현 예정
-    console.log('제출된 답변:', answers)
-    alert('시험이 제출되었습니다.')
+    const payload = buildSubmitPayload()
+    if (!payload) return
+    submissionMutation.mutate(payload, {
+      onSuccess: (result) => {
+        setSubmittedSubmissionId(result.submissionId)
+        setIsSubmitCompleteModalOpen(true)
+      },
+    })
+  }
+
+  const handleSubmitCompleteConfirm = () => {
+    setIsSubmitCompleteModalOpen(false)
+    if (submittedSubmissionId !== null) {
+      navigate(`/quiz/result/${submittedSubmissionId}`)
+      setSubmittedSubmissionId(null)
+    } else {
+      navigate('/mypage/quiz')
+    }
   }
 
   useEffect(() => {
@@ -310,8 +356,14 @@ function QuizPage() {
 
       <footer>
         <div className="flex justify-center mb-10">
-          <Button variant="primary" size="md" rounded="default" onClick={handleSubmit}>
-            제출하기
+          <Button
+            variant="primary"
+            size="md"
+            rounded="default"
+            onClick={handleSubmit}
+            disabled={submissionMutation.isPending}
+          >
+            {submissionMutation.isPending ? '제출 중...' : '제출하기'}
           </Button>
         </div>
       </footer>
@@ -374,6 +426,13 @@ function QuizPage() {
         isOpen={showQuizEndModal}
         onClose={handleEndConfirm}
         onConfirm={handleEndConfirm}
+      />
+
+      {/* 제출하기 완료 모달 */}
+      <QuizSubmitCompleteModal
+        isOpen={isSubmitCompleteModalOpen}
+        onClose={() => setIsSubmitCompleteModalOpen(false)}
+        onConfirm={handleSubmitCompleteConfirm}
       />
     </div>
   )
