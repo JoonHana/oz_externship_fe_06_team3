@@ -242,23 +242,37 @@ export function useVerificationFlow<TVerifyRes>({
   getVerifyErrorMessage,
   text,
 }: UseVerificationFlowArgs<TVerifyRes>) {
-  const timer = useCountdown(ttlSec)
-  const timerRef = useRef(timer)
-  timerRef.current = timer
-
+  const ttlMinutes = Math.ceil(ttlSec / 60)
+  const {
+    timeLeft: remain,
+    formatTime: mmss,
+    isActive: isRunning,
+    startTimer,
+    resetTimer,
+  } = useCountdown(ttlMinutes)
   const [state, dispatch] = useReducer(verificationReducer, INITIAL_STATE)
 
   const { token, verified, codeSent, sendStatus, flowMessage, verifyStatus } =
     state
+  const prevIdentityRef = useRef(identity)
+  const justSentRef = useRef(false)
 
   const resetAll = useCallback(() => {
     dispatch({ type: 'IDENTITY_CHANGED' })
-    timerRef.current.reset()
-  }, [])
+    resetTimer()
+  }, [resetTimer])
 
   useEffect(() => {
+    if (sendStatus === 'pending') return // 전송 중에는 리셋하지 않음
+    if (justSentRef.current) {
+      justSentRef.current = false
+      prevIdentityRef.current = identity
+      return // 방금 전송 성공 직후 identity 미세 변경(trim 등)으로 인한 리셋 방지
+    }
+    if (prevIdentityRef.current === identity) return
+    prevIdentityRef.current = identity
     resetAll()
-  }, [identity, resetAll])
+  }, [identity, resetAll, sendStatus])
 
   useEffect(() => {
     if (!code?.trim()) {
@@ -319,7 +333,7 @@ export function useVerificationFlow<TVerifyRes>({
     const v = validateIdentity(identity)
     if (!v.ok) {
       applyIdentityValidationError(v)
-      timerRef.current.reset()
+      resetTimer()
       return
     }
 
@@ -332,6 +346,7 @@ export function useVerificationFlow<TVerifyRes>({
     await withBusy(async () => {
       try {
         await send(identity)
+        justSentRef.current = true
         dispatch({
           type: 'SEND_SUCCESS',
           payload: {
@@ -340,11 +355,11 @@ export function useVerificationFlow<TVerifyRes>({
             resent: text.resent,
           },
         })
-        timerRef.current.start()
+        startTimer()
       } catch (err) {
         const message = getSendErrorMessage(err)
         dispatch({ type: 'SEND_FAILURE', payload: { message } })
-        timerRef.current.reset()
+        resetTimer()
       }
     })
   }
@@ -357,7 +372,7 @@ export function useVerificationFlow<TVerifyRes>({
       return
     }
 
-    if (!timerRef.current.isRunning) {
+    if (!isRunning) {
       resetVerifyState()
       dispatch({ type: 'EXPIRED', payload: { message: text.expired } })
       return
@@ -377,12 +392,20 @@ export function useVerificationFlow<TVerifyRes>({
             message: text.verifySuccess,
           },
         })
-        timerRef.current.reset()
+        resetTimer()
       } catch (err) {
         const message = getVerifyErrorMessage(err)
         dispatch({ type: 'VERIFY_FAILURE', payload: { message } })
       }
     })
+  }
+
+  const timer = {
+    remain,
+    mmss,
+    isRunning,
+    start: startTimer,
+    reset: resetTimer,
   }
 
   return {
@@ -397,8 +420,6 @@ export function useVerificationFlow<TVerifyRes>({
     timer,
 
     ui,
-
-    toFieldState,
 
     actions: {
       onSendCode,

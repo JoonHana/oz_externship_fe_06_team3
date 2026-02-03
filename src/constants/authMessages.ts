@@ -1,14 +1,18 @@
 // AUTH_MESSAGES 상수로 로그인/회원가입 문구 중앙화
 export const AUTH_MESSAGES = {
   common: {
-    /** 생년월일 8자리 안내 */
+    // 네트워크 오류
+    networkError: '* 네트워크 연결을 확인해주세요.',
+    // 500대 서버 오류
+    serverError: '* 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    // 생년월일 8자리 안내
     birthdateFormat: '* 8자리로 입력해주세요. (예: 20000101)',
-    /** 제출 버튼 처리 중 */
+    // 제출 버튼 처리 중
     submitBusy: '처리 중...',
-    /** 가입하기 버튼 */
+    // 가입하기 버튼
     submitLabel: '가입하기',
   },
-  /** 폼 검증 실패 안내 */
+  // 폼 검증 실패 안내
   form: {
     requireNicknameCheck: '* 닉네임 중복확인을 진행해주세요.',
     requireEmailVerify: '* 이메일 인증을 완료해주세요.',
@@ -63,11 +67,56 @@ export const AUTH_MESSAGES = {
     resend: '재전송',
     emailSend: '인증코드 전송',
     smsSend: '인증번호 받기',
+    // 아이디 찾기
+    findId: {
+      sendCode: '인증번호전송',
+      verifyCode: '인증번호확인',
+      submit: '아이디 찾기',
+    },
+    /** 비밀번호 찾기 */
+    findPassword: {
+      sendCode: '인증코드전송',
+      verifyCode: '인증코드확인',
+      submit: '비밀번호 찾기',
+    },
   },
   /** 로그인 페이지 */
   login: {
-    formError: '아이디 또는 비밀번호가 올바르지 않습니다.',
+    formError: '* 아이디 또는 비밀번호가 올바르지 않습니다.',
     submitLabel: '일반회원 로그인',
     submitBusy: '로그인 중...',
+  },
+  // 비밀번호 찾기
+  findPassword: {
+    defaultGuide: '이메일로 비밀번호 재설정 링크를 보내드려요.',
+    defaultGuideAfterSend:
+      '입력하신 이메일로 인증코드를 전송했어요. 인증코드를 입력해 인증을 완료해 주세요.',
+    sendSuccess: '* 인증코드를 전송했습니다.',
+    verifySuccess: '* 인증이 완료되었습니다.',
+    expired: '* 인증 시간이 만료되었습니다. 인증코드를 다시 요청해주세요.',
+    verifyRequired: '* 이메일 인증을 완료해주세요.',
+  },
+  // 비밀번호 재설정
+  resetPassword: {
+    success: '* 비밀번호 변경 완료!',
+    redirectMessage: '* 잠시 후 로그인 페이지로 이동합니다.',
+    // 토스트 전용 (별표 없음)
+    toastSuccess: '비밀번호 변경 완료!',
+    toastRedirectMessage: '잠시 후 로그인 페이지로 이동합니다.',
+    failed: '* 비밀번호 재설정에 실패했습니다. 다시 시도해주세요.',
+    tokenInvalid: '* 이메일 인증을 다시 진행해주세요.',
+  },
+  // 아이디 찾기
+  findId: {
+    defaultGuide: '이름과 휴대전화를 입력하고 인증번호를 요청해주세요.',
+    defaultGuideAfterSend:
+      '입력하신 휴대전화로 인증번호를 전송했어요. 인증번호를 입력해 인증을 완료해 주세요.',
+    sendSuccess: '인증번호를 전송했습니다.',
+    verifySuccess: '* 인증이 완료되었습니다.',
+    notFound:
+      '* 입력한 이름과 휴대폰 번호로 등록된\n이메일이 존재하지 않습니다.',
+    findFailed: '* 아이디 찾기 중 오류가 발생했습니다. 다시 시도해주세요.',
+    verifyRequired: '* 인증번호를 먼저 확인해주세요.',
+    expired: '* 인증 시간이 만료되었습니다. 다시 전송해주세요.',
   },
 } as const

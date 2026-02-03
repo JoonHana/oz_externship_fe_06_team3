@@ -7,13 +7,7 @@ import type { FieldState } from '@/components/common/CommonInput'
 import type { SignupFormData } from '@/schemas/auth'
 import type { FlowMessage } from '@/utils/formMessage'
 import cn from '@/lib/cn'
-
-function getButtonProps(canAct: boolean) {
-  return {
-    variant: canAct ? 'secondary' : 'disabled',
-    disabled: !canAct,
-  } as const
-}
+import { getVerificationButtonProps } from './utils'
 
 export type NicknameSectionProps = {
   nicknameFieldState: FieldState
@@ -32,14 +26,14 @@ export function NicknameSection({
   canCheckNickname,
   onCheckNickname,
 }: NicknameSectionProps) {
-  const btn = getButtonProps(canCheckNickname)
+  const btn = getVerificationButtonProps(canCheckNickname)
   const flowMessageNode =
     flowMessage.type !== 'idle' && flowMessage.message ? (
       <p
         className={cn(
           'text-xs font-medium',
-          flowMessage.type === 'success' && 'text-green-600',
-          flowMessage.type === 'error' && 'text-red-500'
+          flowMessage.type === 'success' && 'text-success',
+          flowMessage.type === 'error' && 'text-error'
         )}
       >
         {flowMessage.message}
@@ -50,7 +44,7 @@ export function NicknameSection({
     <div className="flex flex-col gap-5">
       <label className="inline-flex items-start text-left text-[16px] leading-[22.24px] font-normal tracking-[-0.48px] text-[#121212]">
         닉네임
-        <span className="ml-0 text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
+        <span className="text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
           *
         </span>
       </label>
@@ -67,7 +61,7 @@ export function NicknameSection({
             helperVisibility="always"
             rightSlot={
               nicknameChecked ? (
-                <Check className="h-5 w-5 text-green-600" />
+                <Check className="text-success h-5 w-5" />
               ) : undefined
             }
           />

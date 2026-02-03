@@ -2,10 +2,13 @@ import type { Path } from 'react-hook-form'
 import type { SignupFormData } from '@/schemas/auth'
 import { useVerificationFlow } from '@/hooks/useVerificationFlow'
 import * as authApi from '@/api/auth'
-import { pickMessageFromAxios } from '@/utils/signupUtils'
+import {
+  mapSendSmsError,
+  mapVerifySmsError,
+} from '@/utils/error/authEndpointErrorMapper'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 
-/** SMS 인증코드 유효시간 10분  */
+// SMS 인증코드 유효시간 10분
 const TTL_SEC = 10 * 60
 
 type UseSmsVerificationArgs = {
@@ -63,29 +66,13 @@ export function useSmsVerification({
       return { ok: true }
     },
 
-    send: (identity) => authApi.sendSmsVerification({ phone_number: identity }),
-    verify: (identity, code) =>
-      authApi.verifySms({ phone_number: identity, code }),
-    getToken: (res) => res.sms_token,
+    send: (identity) => authApi.sendSmsVerification({ phoneNumber: identity }),
+    verify: (identity, verificationCode) =>
+      authApi.verifySmsCode({ phoneNumber: identity, verificationCode }),
+    getToken: (res) => res.smsToken,
 
-    getSendErrorMessage: (err) =>
-      pickMessageFromAxios(
-        err,
-        {
-          409: AUTH_MESSAGES.sms.sendErrorAlreadyRegistered,
-          400: AUTH_MESSAGES.sms.sendErrorBadRequest,
-        },
-        AUTH_MESSAGES.sms.sendErrorFallback
-      ),
-    getVerifyErrorMessage: (err) =>
-      pickMessageFromAxios(
-        err,
-        {
-          400: AUTH_MESSAGES.sms.verifyErrorMismatch,
-          409: AUTH_MESSAGES.sms.verifyErrorAlreadyRegistered,
-        },
-        AUTH_MESSAGES.sms.verifyErrorFallback
-      ),
+    getSendErrorMessage: (err) => mapSendSmsError(err).message,
+    getVerifyErrorMessage: (err) => mapVerifySmsError(err).message,
 
     text: {
       sent: AUTH_MESSAGES.sms.sendSuccess,

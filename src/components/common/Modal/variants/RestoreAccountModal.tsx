@@ -9,7 +9,7 @@ import {
   restoreAccountSchema,
   type RestoreAccountFormData,
 } from '@/schemas/modalSchemas'
-import { useModalTimer } from '@/hooks/useModalTimer'
+import { useCountdown } from '@/hooks/useCountdown'
 import cn from '@/lib/cn'
 
 interface RestoreAccountModalProps {
@@ -32,7 +32,7 @@ export function RestoreAccountModal({
   const [sentCode, setSentCode] = useState<string>('')
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const navigate = useNavigate()
-  const { isExpired, isActive, startTimer, formatTime } = useModalTimer(5)
+  const { isExpired, isActive, startTimer, formatTime } = useCountdown(5)
 
   // 계정 복구 스키마 검증
   const methods = useForm<RestoreAccountFormData>({
@@ -51,7 +51,7 @@ export function RestoreAccountModal({
     }
   }, [])
 
-// 모달 닫힐 때 상태 초기화
+  // 모달 닫힐 때 상태 초기화
   useEffect(() => {
     if (!isOpen) {
       setIsVerified(false)
@@ -73,14 +73,9 @@ export function RestoreAccountModal({
     const isValid = await methods.trigger('email')
     if (!isValid) return
 
-    const email = methods.getValues('email')
-
     // 인증번호 생성 , 여기서는 성공으로 가정, 실제로는 API 호출,목데이터는 123456 반환
     const mockCode = '123456'
     setSentCode(mockCode)
-
-    // 개발 환경에서 콘솔에 인증번호 출력
-    console.log('📱 인증번호 전송:', { 이메일: email, 인증번호: mockCode })
 
     // 인증번호 전송 로직
     startTimer()
@@ -141,7 +136,7 @@ export function RestoreAccountModal({
       })
       return
     }
-    
+
     setVerificationMessage('')
     onSuccess?.(data)
     setShowSuccessToast(true)
@@ -156,201 +151,203 @@ export function RestoreAccountModal({
   }
 
   return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        useBackdropV2={showSuccessToast}
-        toastPosition={showSuccessToast ? "center" : "top-far"}
-        toast={
-          showSuccessToast ? (
-            <div 
-              className="reset-password-toast bg-white border border-gray-200 text-black px-5 py-4 shadow-lg flex flex-col items-center gap-3 rounded-[12px] overflow-hidden"
-              style={{ 
-                minWidth: '396px', 
-                minHeight: '128px'
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      useBackdropV2={showSuccessToast}
+      toastPosition={showSuccessToast ? 'center' : 'top-far'}
+      toast={
+        showSuccessToast ? (
+          <div
+            className="reset-password-toast flex flex-col items-center gap-3 overflow-hidden rounded-[12px] border border-gray-200 bg-white px-5 py-4 text-black shadow-lg"
+            style={{
+              minWidth: '396px',
+              minHeight: '128px',
+            }}
+          >
+            <div className="bg-success-500 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M11.6667 3.5L5.25 9.91667L2.33334 7"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <p className="title-l-b text-center" style={{ color: '#121212' }}>
+                계정 복구 완료!
+              </p>
+              <p className="subTitle-l text-center">지금 바로 로그인해보세요</p>
+            </div>
+          </div>
+        ) : showToast ? (
+          <div className="flex-center min-h-[60px] min-w-[270px] gap-3 rounded-lg border border-gray-200 bg-white px-5 py-4 text-black shadow-lg">
+            <div className="bg-success-500 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 14 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M11.6667 3.5L5.25 9.91667L2.33334 7"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <p className="text-[14px] font-normal" style={{ color: '#4D4D4D' }}>
+              전송 완료! 이메일을 확인해주세요.
+            </p>
+          </div>
+        ) : undefined
+      }
+    >
+      <Modal.Header>
+        <div className="flex flex-col items-center gap-2">
+          <img
+            src="/icons/RestoreAccount.svg"
+            alt="계정 다시 사용하기"
+            style={{ width: '35px', height: '35px' }}
+          />
+          <h2 className="title-l-b">계정 다시 사용하기</h2>
+          {!isCodeSent && (
+            <p
+              className="text-center font-normal"
+              style={{
+                fontSize: '14px',
+                fontWeight: 'normal',
+                color: '#4D4D4D',
               }}
             >
-              <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M11.6667 3.5L5.25 9.91667L2.33334 7"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <p className="title-l-b text-center" style={{ color: '#121212' }}>
-                  계정 복구 완료!
-                </p>
-                <p className="subTitle-l text-center">
-                  지금 바로 로그인해보세요
-                </p>
-              </div>
-            </div>
-          ) : showToast ? (
-            <div className="bg-white border border-gray-200 text-black px-5 py-4 gap-3 rounded-lg shadow-lg flex-center min-w-[270px] min-h-[60px]">
-              <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M11.6667 3.5L5.25 9.91667L2.33334 7"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <p className="text-[14px] font-normal" style={{ color: '#4D4D4D' }}>
-                전송 완료! 이메일을 확인해주세요.
-              </p>
-            </div>
-          ) : undefined
-        }
-      >
-        <Modal.Header>
-          <div className="flex flex-col items-center gap-2">
-            <img 
-              src="/icons/RestoreAccount.svg" 
-              alt="계정 다시 사용하기" 
-              style={{ width: '35px', height: '35px' }}
-            />
-            <h2 className="title-l-b">계정 다시 사용하기</h2>
-            {!isCodeSent && (
-              <p 
-                className="text-center font-normal"
-                style={{ 
-                  fontSize: '14px',
-                  fontWeight: 'normal',
-                  color: '#4D4D4D'
-                }}
-              >
-                입력하신 이메일로 인증번호를 보내드릴게요.
-              </p>
-            )}
-          </div>
-        </Modal.Header>
+              입력하신 이메일로 인증번호를 보내드릴게요.
+            </p>
+          )}
+        </div>
+      </Modal.Header>
 
-        <Modal.Body>
-          <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
-              <Modal.InputRow label="이메일" required>
-                <div className="flex flex-col gap-2">
-                  {/* 첫 번째 줄: 이메일 입력창 + 인증코드전송 버튼 */}
-                  <div className="flex gap-2">
-                    <div className="find-password-input" style={{ minWidth: '250px' }}>
-                      <CommonInputField<RestoreAccountFormData>
-                        name="email"
-                        placeholder="이메일을 입력해주세요"
-                        helperVisibility="always"
-                        width={250}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSendCode}
-                      disabled={isActive && !isExpired}
-                      className={cn(
-                        'w-[112px] h-[48px] rounded-[4px] border text-black text-base',
-                        'hover:bg-gray-200 transition-colors',
-                        'disabled:opacity-50 disabled:cursor-not-allowed'
-                      )}
-                      style={{
-                        backgroundColor: '#ececec',
-                        borderColor: '#bdbdbd',
-                        borderWidth: '1px',
-                      }}
-                    >
-                      인증코드전송
-                    </button>
+      <Modal.Body>
+        <FormProvider {...methods}>
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
+            <Modal.InputRow label="이메일" required>
+              <div className="flex flex-col gap-2">
+                {/* 첫 번째 줄: 이메일 입력창 + 인증코드전송 버튼 */}
+                <div className="flex gap-2">
+                  <div
+                    className="find-password-input"
+                    style={{ minWidth: '250px' }}
+                  >
+                    <CommonInputField<RestoreAccountFormData>
+                      name="email"
+                      placeholder="이메일을 입력해주세요"
+                      helperVisibility="always"
+                      width={250}
+                    />
                   </div>
-
-                  {/* 두 번째 줄: 인증번호 입력창 + 인증코드확인 버튼 */}
-                  <div className="flex gap-2">
-                    <div className="find-password-input" style={{ minWidth: '250px' }}>
-                      <CommonInputField<RestoreAccountFormData>
-                        name="verificationCode"
-                        placeholder="인증번호 6자리를 입력해주세요"
-                        helperVisibility="always"
-                        width={250}
-                        rightSlot={
-                          isActive && !isExpired ? (
-                            <span className="text-red-500 text-sm font-medium">
-                              {formatTime}
-                            </span>
-                          ) : undefined
-                        }
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleVerifyCode}
-                      disabled={isExpired || isVerified}
-                      className={cn(
-                        'w-[112px] h-[48px] rounded-[4px] border text-black text-base',
-                        'hover:bg-gray-200 transition-colors',
-                        'disabled:opacity-50 disabled:cursor-not-allowed'
-                      )}
-                      style={{
-                        backgroundColor: '#ececec',
-                        borderColor: '#bdbdbd',
-                        borderWidth: '1px',
-                      }}
-                    >
-                      인증코드확인
-                    </button>
-                  </div>
-
-                  {/* 인증번호 확인 메시지 */}
-                  {verificationMessage && (
-                    <p className="text-sm text-green-600 font-medium mt-2">
-                      {verificationMessage}
-                    </p>
-                  )}
-
-                  {/* 인증코드 에러 메시지 */}
-                  {verificationError && (
-                    <p
-                      className="text-[12px] font-normal mt-2 text-left"
-                      style={{ color: '#EC0037' }}
-                    >
-                      {verificationError}
-                    </p>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleSendCode}
+                    disabled={isActive && !isExpired}
+                    className={cn(
+                      'h-[48px] w-[112px] rounded-[4px] border text-base text-black',
+                      'transition-colors hover:bg-gray-200',
+                      'disabled:cursor-not-allowed disabled:opacity-50'
+                    )}
+                    style={{
+                      backgroundColor: '#ececec',
+                      borderColor: '#bdbdbd',
+                      borderWidth: '1px',
+                    }}
+                  >
+                    인증코드전송
+                  </button>
                 </div>
-              </Modal.InputRow>
 
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="xl"
-                  className="w-full"
-                  style={{ minWidth: '348px' }}
-                  disabled={!isVerified}
-                >
-                  확인
-                </Button>
+                {/* 두 번째 줄: 인증번호 입력창 + 인증코드확인 버튼 */}
+                <div className="flex gap-2">
+                  <div
+                    className="find-password-input"
+                    style={{ minWidth: '250px' }}
+                  >
+                    <CommonInputField<RestoreAccountFormData>
+                      name="verificationCode"
+                      placeholder="인증번호 6자리를 입력해주세요"
+                      helperVisibility="always"
+                      width={250}
+                      rightSlot={
+                        isActive && !isExpired ? (
+                          <span className="text-error text-sm font-medium">
+                            {formatTime}
+                          </span>
+                        ) : undefined
+                      }
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleVerifyCode}
+                    disabled={isExpired || isVerified}
+                    className={cn(
+                      'h-[48px] w-[112px] rounded-[4px] border text-base text-black',
+                      'transition-colors hover:bg-gray-200',
+                      'disabled:cursor-not-allowed disabled:opacity-50'
+                    )}
+                    style={{
+                      backgroundColor: '#ececec',
+                      borderColor: '#bdbdbd',
+                      borderWidth: '1px',
+                    }}
+                  >
+                    인증코드확인
+                  </button>
+                </div>
+
+                {/* 인증번호 확인 메시지 */}
+                {verificationMessage && (
+                  <p className="text-success mt-2 text-sm font-medium">
+                    {verificationMessage}
+                  </p>
+                )}
+
+                {/* 인증코드 에러 메시지 */}
+                {verificationError && (
+                  <p
+                    className="mt-2 text-left text-[12px] font-normal"
+                    style={{ color: '#EC0037' }}
+                  >
+                    {verificationError}
+                  </p>
+                )}
               </div>
-            </form>
-          </FormProvider>
-        </Modal.Body>
-      </Modal>
-    </>
+            </Modal.InputRow>
+
+            <div className="pt-4">
+              <Button
+                type="submit"
+                variant="primary"
+                size="xl"
+                className="w-full"
+                style={{ minWidth: '348px' }}
+                disabled={!isVerified}
+              >
+                확인
+              </Button>
+            </div>
+          </form>
+        </FormProvider>
+      </Modal.Body>
+    </Modal>
   )
 }

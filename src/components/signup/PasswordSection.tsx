@@ -24,7 +24,7 @@ export function PasswordSection({
       <div className="inline-flex items-center gap-4">
         <label className="inline-flex items-start text-left text-[16px] leading-[22.24px] font-normal tracking-[-0.48px] text-[#121212]">
           비밀번호
-          <span className="ml-0 text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
+          <span className="text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
             *
           </span>
         </label>
@@ -56,7 +56,7 @@ export function PasswordSection({
         helperVisibility="always"
         helperText={passwordConfirmMsg ?? undefined}
         rightSlot={
-          isConfirmSuccess ? <Check className="h-5 w-5 text-green-600" /> : null
+          isConfirmSuccess ? <Check className="text-success h-5 w-5" /> : null
         }
       />
     </div>

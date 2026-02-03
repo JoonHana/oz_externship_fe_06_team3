@@ -212,8 +212,7 @@ export default function Header() {
       <RegisterStudentModal
         isOpen={registerStudentModalOpen}
         onClose={() => setRegisterStudentModalOpen(false)}
-        onSuccess={(data) => {
-          console.log('수강생 등록 성공:', data)
+        onSuccess={() => {
           setRegisterStudentModalOpen(false)
         }}
       />

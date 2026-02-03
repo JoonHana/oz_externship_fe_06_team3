@@ -5,7 +5,7 @@ export function SectionLabel({ label }: { label: string }) {
   return (
     <label className="inline-flex items-start text-left text-[16px] leading-[22.24px] font-normal tracking-[-0.48px] text-[#121212]">
       {label}
-      <span className="ml-0 text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
+      <span className="text-error text-[16px] leading-normal font-normal tracking-[-0.32px]">
         *
       </span>
     </label>

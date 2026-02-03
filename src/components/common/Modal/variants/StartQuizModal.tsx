@@ -76,7 +76,7 @@ export function StartQuizModal({
       onClose()
       await requestFullscreen()
       navigate(`/quiz/${deploymentId}`)
-    } catch (error) {
+    } catch {
       methods.setError('code', {
         type: 'manual',
         message: '*코드번호가 일치하지 않습니다.',
@@ -94,7 +94,7 @@ export function StartQuizModal({
             <img
               src={imageUrl}
               alt={subjectName}
-              className="w-16 h-16"
+              className="h-16 w-16"
               onError={() => setImageError(true)}
             />
           )}
@@ -105,8 +105,8 @@ export function StartQuizModal({
             <p className="text-center">
               <span className="text-[14px] font-normal text-[#303030]">
                 총 {questionCount}문항
-              </span>
-              {' '}ㆍ{' '}
+              </span>{' '}
+              ㆍ{' '}
               <span className="text-[14px] font-normal text-[#6201E0]">
                 제한시간 {timeLimit}분
               </span>
@@ -124,7 +124,7 @@ export function StartQuizModal({
                   name="code"
                   placeholder="참가 코드를 입력해주세요"
                   helperVisibility="always"
-                  state={methods.formState.errors.code ? "error" : "default"}
+                  state={methods.formState.errors.code ? 'error' : 'default'}
                   helperTextByState={{
                     error: (
                       <span className="text-[12px] font-normal text-[#EC0037]">
@@ -137,10 +137,10 @@ export function StartQuizModal({
             </Modal.InputRow>
 
             <div className="pt-4">
-              <Button 
-                type="submit" 
-                variant="primary" 
-                size="xl" 
+              <Button
+                type="submit"
+                variant="primary"
+                size="xl"
                 className="w-full"
                 style={{ minWidth: '348px' }}
                 disabled={isSubmitting}

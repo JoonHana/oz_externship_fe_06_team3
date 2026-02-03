@@ -1,4 +1,6 @@
-import axios from 'axios'
+import type { FieldState } from '@/components/common/CommonInput'
+import { AUTH_MESSAGES } from '@/constants/authMessages'
+import { PASSWORD_REGEX } from '@/schemas/auth'
 
 export function formatBirthday(yyyymmdd: string) {
   const raw = yyyymmdd.replace(/\D/g, '')
@@ -10,31 +12,37 @@ export function mapGender(g: 'male' | 'female'): 'M' | 'F' {
   return g === 'male' ? 'M' : 'F'
 }
 
-type ErrorResponseData =
-  | {
-      error_detail?: string | Record<string, string | string[]>
-      detail?: string
-    }
-  | undefined
+// 비밀번호 필드 상태 (형식 검증)
+export function derivePasswordFieldState(password: string): FieldState {
+  const value = password.trim()
+  if (!value) return 'default'
+  return PASSWORD_REGEX.test(value) ? 'success' : 'error'
+}
 
-export function pickMessageFromAxios(
-  err: unknown,
-  byStatus: Record<number, string>,
-  fallback: string
-) {
-  if (axios.isAxiosError(err)) {
-    const status = err.response?.status
-    if (status && byStatus[status]) return byStatus[status]
+// 비밀번호 확인 필드 상태
+export function derivePasswordConfirmState(
+  password: string,
+  passwordConfirm: string
+): FieldState {
+  const pw = password.trim()
+  const confirm = passwordConfirm.trim()
+  if (!confirm) return 'default'
+  if (!pw) return 'error'
+  if (!PASSWORD_REGEX.test(pw)) return 'error'
+  return confirm === pw ? 'success' : 'error'
+}
 
-    const data = err.response?.data as ErrorResponseData
-    const ed = data?.error_detail
-    if (typeof ed === 'string') return ed
-    if (ed && typeof ed === 'object') {
-      const first = Object.values(ed)[0]
-      if (typeof first === 'string') return first
-      if (Array.isArray(first) && typeof first[0] === 'string') return first[0]
-    }
-    if (typeof data?.detail === 'string') return data.detail
-  }
-  return fallback
+// 비밀번호 확인 메시지
+export function derivePasswordConfirmMessage(
+  password: string,
+  passwordConfirm: string
+): string | null {
+  const pw = password.trim()
+  const confirm = passwordConfirm.trim()
+  if (!confirm) return null
+  if (!pw) return AUTH_MESSAGES.password.required
+  if (!PASSWORD_REGEX.test(pw)) return AUTH_MESSAGES.password.invalidFormat
+  return confirm === pw
+    ? AUTH_MESSAGES.password.match
+    : AUTH_MESSAGES.password.mismatch
 }

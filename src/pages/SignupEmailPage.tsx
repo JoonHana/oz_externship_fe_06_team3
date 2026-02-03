@@ -1,11 +1,11 @@
+// 회원가입 폼. 전역 에러는 FormErrorDisplay(errors.root)
 import { FormProvider } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 
 import { Button } from '@/components/common/Button'
 import { CommonInputField } from '@/components/common/CommonInputField'
+import { FormErrorDisplay } from '@/components/common/FormErrorDisplay'
 import type { SignupFormData } from '@/schemas/auth'
-
-import { useSignupEmailForm } from '@/hooks/useSignupEmailForm'
 
 import { NicknameSection } from '@/components/signup/NicknameSection'
 import { EmailSection } from '@/components/signup/EmailSection'
@@ -13,17 +13,18 @@ import { PhoneSection } from '@/components/signup/PhoneSection'
 import { PasswordSection } from '@/components/signup/PasswordSection'
 import { GenderField } from '@/components/signup/GenderField'
 import { SectionBlock } from '@/components/signup/SectionBlock'
-import cn from '@/lib/cn'
+
+import { useSignupForm } from '@/hooks/useSignupForm'
 
 export default function SignupEmailPage() {
-  const { methods, sections } = useSignupEmailForm()
+  const { methods, sections } = useSignupForm()
+  const rootError = methods.formState.errors.root?.message ?? null
 
   return (
     <FormProvider {...methods}>
       <div className="flex min-h-[calc(100vh-96px)] items-center justify-center bg-gray-100 pt-[min(8vh)] pb-[min(10vh)]">
         <div className="bg-white px-6 py-10">
           <div className="flex w-[480px] flex-col gap-9">
-            {/* 상단 */}
             <div className="flex flex-col items-center gap-4">
               <p className="text-center text-[18px] leading-normal font-bold tracking-[-0.36px] text-[#000a30]">
                 마법같이 빠르게 성장시켜줄
@@ -43,7 +44,6 @@ export default function SignupEmailPage() {
               onSubmit={sections.submit.onSubmit}
               className="flex flex-col gap-11"
             >
-              {/* 이름 */}
               <SectionBlock label="이름">
                 <CommonInputField<SignupFormData>
                   name="name"
@@ -55,10 +55,8 @@ export default function SignupEmailPage() {
                 />
               </SectionBlock>
 
-              {/* 닉네임 */}
               <NicknameSection {...sections.nickname} />
 
-              {/* 생년월일 */}
               <SectionBlock label="생년월일">
                 <CommonInputField<SignupFormData>
                   name="birthdate"
@@ -70,33 +68,16 @@ export default function SignupEmailPage() {
                 />
               </SectionBlock>
 
-              {/* 성별 */}
               <SectionBlock label="성별">
                 <GenderField />
               </SectionBlock>
 
-              {/* 이메일 */}
               <EmailSection {...sections.email} />
-
-              {/* 휴대전화 */}
               <PhoneSection {...sections.sms} />
-
-              {/* 비밀번호 */}
               <PasswordSection {...sections.password} />
-              
-              {/* 전역 폼 에러 */}
-              <div className="flex flex-col gap-2">
-                <div className="min-h-[16px] px-1 text-xs text-red-500">
-                  <span
-                    className={cn(
-                      sections.submit.formError ? 'visible' : 'invisible'
-                    )}
-                  >
-                    {sections.submit.formError ?? '\u00A0'}
-                  </span>
-                </div>
 
-                {/* 제출 */}
+              <div className="flex flex-col gap-2">
+                <FormErrorDisplay message={rootError} />
                 <Button
                   type="submit"
                   size="xxl"

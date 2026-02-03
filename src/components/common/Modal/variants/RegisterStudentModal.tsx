@@ -20,7 +20,7 @@ interface RegisterStudentModalProps {
 type CourseData = {
   id: string
   name: string
-  batches: number[] 
+  batches: number[]
 }
 // 과정 목록
 const mockCourses: CourseData[] = [
@@ -198,7 +198,10 @@ function ModalDropdown({
             style={dropdownListStyle}
           >
             {options.map((option) => {
-              const isSelected = String(option.value) === String(value) && value !== undefined && value !== ''
+              const isSelected =
+                String(option.value) === String(value) &&
+                value !== undefined &&
+                value !== ''
               return (
                 <button
                   key={option.value}
@@ -206,10 +209,8 @@ function ModalDropdown({
                   onClick={(e) => handleSelect(option.value, e)}
                   className={clsx(
                     'mx-auto flex h-[48px] w-[calc(100%-10px)] items-center justify-between px-[11px] py-[10px]',
-                    'gap-[16px] text-left font-normal rounded-[4px]',
-                    isSelected
-                      ? 'bg-white'
-                      : 'bg-white hover:bg-[#EFE6FC]'
+                    'gap-[16px] rounded-[4px] text-left font-normal',
+                    isSelected ? 'bg-white' : 'bg-white hover:bg-[#EFE6FC]'
                   )}
                   style={{
                     color: isSelected ? '#6201E0' : '#4D4D4D',
@@ -294,18 +295,18 @@ export function RegisterStudentModal({
     <Modal isOpen={isOpen} onClose={onClose}>
       <Modal.Header>
         <div className="flex flex-col items-center gap-2">
-          <img 
-            src="/icons/RegisterStudent.svg" 
-            alt="내 과정 선택하기" 
+          <img
+            src="/icons/RegisterStudent.svg"
+            alt="내 과정 선택하기"
             style={{ width: '35px', height: '25px' }}
           />
           <h2 className="title-l-b">내 과정 선택하기</h2>
-          <p 
+          <p
             className="text-center"
-            style={{ 
+            style={{
               fontSize: '14px',
               fontWeight: 'normal',
-              color: '#4D4D4D'
+              color: '#4D4D4D',
             }}
           >
             해당하는 과정과 기수를 선택해 주세요.
@@ -324,7 +325,7 @@ export function RegisterStudentModal({
                 placeholder="과정을 선택해주세요"
               />
               {methods.formState.errors.course && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-error mt-1 text-sm">
                   {methods.formState.errors.course.message}
                 </p>
               )}
@@ -339,17 +340,17 @@ export function RegisterStudentModal({
                 disabled={!courseValue}
               />
               {methods.formState.errors.batch && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-error mt-1 text-sm">
                   {methods.formState.errors.batch.message}
                 </p>
               )}
             </Modal.InputRow>
 
             <div className="pt-4">
-              <Button 
-                type="submit" 
-                variant="primary" 
-                size="xl" 
+              <Button
+                type="submit"
+                variant="primary"
+                size="xl"
                 className="w-full"
                 style={{ minWidth: '348px' }}
               >

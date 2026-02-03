@@ -1,35 +1,59 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
-export function useCountdown(durationSec: number) {
-  const [remain, setRemain] = useState(0)
-
-  const start = useCallback(() => {
-    setRemain(durationSec)
-  }, [durationSec])
-
-  const reset = useCallback(() => {
-    setRemain(0)
-  }, [])
+/**
+ * 인증 코드 유효 시간용 카운트다운 타이머 훅
+ * (회원가입, 아이디/비밀번호 찾기, 계정 복구 등)
+ * @param initialMinutes 초기 분 단위 시간 (기본값: 5분)
+ * @returns { timeLeft, isExpired, isActive, startTimer, resetTimer, formatTime }
+ */
+export function useCountdown(initialMinutes: number = 5) {
+  const [timeLeft, setTimeLeft] = useState<number>(initialMinutes * 60) 
+  const [isActive, setIsActive] = useState<boolean>(false)
 
   useEffect(() => {
-    if (remain <= 0) return
-    const id = window.setInterval(() => {
-      setRemain((s) => (s <= 1 ? 0 : s - 1))
-    }, 1000)
-    return () => window.clearInterval(id)
-  }, [remain])
+    let interval: NodeJS.Timeout | null = null
 
-  const mmss = useMemo(() => {
-    const m = Math.floor(remain / 60)
-    const s = remain % 60
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  }, [remain])
+    if (isActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setIsActive(false)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [isActive, timeLeft])
+
+  const startTimer = useCallback(() => {
+    setTimeLeft(initialMinutes * 60)
+    setIsActive(true)
+  }, [initialMinutes])
+
+  const resetTimer = useCallback(() => {
+    setTimeLeft(initialMinutes * 60)
+    setIsActive(false)
+  }, [initialMinutes])
+
+  const formatTime = useCallback((seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }, [])
+
+  const isExpired = timeLeft === 0
 
   return {
-    remain,
-    mmss,
-    isRunning: remain > 0,
-    start,
-    reset,
+    timeLeft,
+    isExpired,
+    isActive,
+    startTimer,
+    resetTimer,
+    formatTime: formatTime(timeLeft),
   }
 }

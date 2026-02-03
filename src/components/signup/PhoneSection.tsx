@@ -1,40 +1,23 @@
-import { Check } from 'lucide-react'
-
 import { ActionRow } from '@/components/signup/ActionRow'
 import { Button } from '@/components/common/Button'
 import cn from '@/lib/cn'
 import { CommonInputField } from '@/components/common/CommonInputField'
 import type { FieldState } from '@/components/common/CommonInput'
 import type { SignupFormData } from '@/schemas/auth'
+import { createDigitsOnlyTransform } from '@/utils/normalize'
 import type { FlowMessage } from '@/utils/formMessage'
+import {
+  getVerificationButtonProps,
+  getVerificationCodeRightSlot,
+} from './utils'
+
+// 휴대전화 중간/끝 자리수 (4자리)
+const PHONE_DIGIT_LENGTH = 4
+const PHONE_DIGIT_TRANSFORM = createDigitsOnlyTransform(PHONE_DIGIT_LENGTH)
 
 type TimerLike = {
   isRunning: boolean
   mmss: string
-}
-
-function getButtonProps(canAct: boolean) {
-  return {
-    variant: canAct ? 'secondary' : 'disabled',
-    disabled: !canAct,
-  } as const
-}
-
-function getSmsCodeRightSlot(params: {
-  verified: boolean
-  showTimer: boolean
-  mmss: string
-}) {
-  const { verified, showTimer, mmss } = params
-  return (
-    <div className="flex items-center gap-2">
-      {verified ? (
-        <Check className="h-5 w-5 text-green-600" />
-      ) : showTimer ? (
-        <span className="text-sm font-semibold text-red-500">{mmss}</span>
-      ) : null}
-    </div>
-  )
 }
 
 function renderFlowMessage(msg: FlowMessage) {
@@ -43,8 +26,8 @@ function renderFlowMessage(msg: FlowMessage) {
     <p
       className={cn(
         'text-xs font-medium',
-        msg.type === 'success' && 'text-green-600',
-        msg.type === 'error' && 'text-red-500'
+        msg.type === 'success' && 'text-success',
+        msg.type === 'error' && 'text-error'
       )}
     >
       {msg.message}
@@ -89,12 +72,12 @@ export function PhoneSection({
   const canTypeSmsCode = smsCodeSent && !smsVerified
   const showTimerInCodeInput = smsCodeSent && smsTimer.isRunning && !smsVerified
 
-  const sendBtn = getButtonProps(canSendSms)
-  const verifyBtn = getButtonProps(canVerifySms)
+  const sendBtn = getVerificationButtonProps(canSendSms)
+  const verifyBtn = getVerificationButtonProps(canVerifySms)
 
-  const smsCodeRightSlot = getSmsCodeRightSlot({
+  const smsCodeRightSlot = getVerificationCodeRightSlot({
     verified: smsVerified,
-    showTimer: showTimerInCodeInput,
+    timerVisible: showTimerInCodeInput,
     mmss: smsTimer.mmss,
   })
 
@@ -110,8 +93,20 @@ export function PhoneSection({
   const firstRowBelow = renderFlowMessage(sendFlowMessage)
   const secondRowBelow = renderFlowMessage(verifyFlowMessage)
 
+  const phoneDigitInputProps = {
+    type: 'text' as const,
+    inputMode: 'numeric' as const,
+    maxLength: PHONE_DIGIT_LENGTH,
+    placeholder: '0000',
+    placeholderVariant: 'a' as const,
+    locked: smsVerified,
+    state: phoneDigitsState,
+    width: '100%' as const,
+    transformOnChange: PHONE_DIGIT_TRANSFORM,
+  }
+
   const phoneDigitsLeft = (
-    <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr_auto_1fr] items-start gap-1">
+    <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-1">
       <div className="min-w-0">
         <CommonInputField<SignupFormData>
           name="phone1"
@@ -122,32 +117,18 @@ export function PhoneSection({
           width="100%"
         />
       </div>
-      <span className="shrink-0 text-[14px] leading-normal tracking-[-0.42px] text-[#9D9D9D]">
-        -
-      </span>
+      <span className="text-mono-600 shrink-0 text-[14px]">-</span>
       <div className="min-w-0">
         <CommonInputField<SignupFormData>
           name="phone2"
-          type="text"
-          placeholder="0000"
-          placeholderVariant="a"
-          locked={smsVerified}
-          state={phoneDigitsState}
-          width="100%"
+          {...phoneDigitInputProps}
         />
       </div>
-      <span className="shrink-0 text-[14px] leading-normal tracking-[-0.42px] text-[#9D9D9D]">
-        -
-      </span>
+      <span className="text-mono-600 shrink-0 text-[14px]">-</span>
       <div className="min-w-0">
         <CommonInputField<SignupFormData>
           name="phone3"
-          type="text"
-          placeholder="0000"
-          placeholderVariant="a"
-          locked={smsVerified}
-          state={phoneDigitsState}
-          width="100%"
+          {...phoneDigitInputProps}
         />
       </div>
     </div>
@@ -157,7 +138,7 @@ export function PhoneSection({
     <div className="flex min-w-0 flex-col gap-5">
       <label className="inline-flex items-start text-left text-[16px] leading-[22.24px] font-normal tracking-[-0.48px] text-[#121212]">
         휴대전화
-        <span className="ml-0 text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
+        <span className="text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
           *
         </span>
       </label>
