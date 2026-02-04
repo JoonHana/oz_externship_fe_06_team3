@@ -1,3 +1,4 @@
+// 인증 전역 상태 - login/logout/restore, persist로 localStorage에 저장
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { LoginPayload, User } from '@/types/auth'

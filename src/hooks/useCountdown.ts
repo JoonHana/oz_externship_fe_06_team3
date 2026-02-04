@@ -1,11 +1,6 @@
+// 인증 코드 유효시간 카운트다운 (회원가입, 아이디/비밀번호 찾기 등 공통)
 import { useEffect, useState, useCallback } from 'react'
 
-/**
- * 인증 코드 유효 시간용 카운트다운 타이머 훅
- * (회원가입, 아이디/비밀번호 찾기, 계정 복구 등)
- * @param initialMinutes 초기 분 단위 시간 (기본값: 5분)
- * @returns { timeLeft, isExpired, isActive, startTimer, resetTimer, formatTime }
- */
 export function useCountdown(initialMinutes: number = 5) {
   const [timeLeft, setTimeLeft] = useState<number>(initialMinutes * 60) 
   const [isActive, setIsActive] = useState<boolean>(false)
