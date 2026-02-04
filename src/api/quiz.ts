@@ -1,4 +1,5 @@
 import { apiClient } from '@/api/client'
+import { useAuthStore } from '@/store/authStore'
 import {
   mapExamDeploymentsResult,
   type ExamDeploymentsResponse,
@@ -99,9 +100,17 @@ export interface ExamSubmissionPayload {
  * const data = await submitExam(payload)
  */
 export const submitExam = async (payload: ExamSubmissionPayload) => {
+  // 로그인 상태의 액세스 토큰을 Authorization 헤더로 포함
+  const accessToken = useAuthStore.getState().accessToken
+  const config =
+    accessToken && accessToken !== ''
+      ? { headers: { Authorization: `Bearer ${accessToken}` } }
+      : undefined
+
   const response = await apiClient.post<ExamSubmissionResponse>(
     '/api/v1/exams/submissions',
-    payload
+    payload,
+    config
   )
   return mapExamSubmissionResult(response.data)
 }

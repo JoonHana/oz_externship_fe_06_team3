@@ -37,6 +37,23 @@ function QuizResultPage() {
     )
   }
 
+  const questionCount = data?.questions.length ?? 0
+  const cheatingCount = data?.cheatingCount ?? 0
+
+  // startedAt / submittedAt 기준 실제 응시 시간 (분 단위, 초는 버림)
+  let elapsedMinutes = data?.elapsedTime ?? 0
+  if (data?.startedAt && data?.submittedAt) {
+    const started = new Date(data.startedAt)
+    const submitted = new Date(data.submittedAt)
+    const diffMs = submitted.getTime() - started.getTime()
+    elapsedMinutes = Math.max(0, Math.floor(diffMs / 60000))
+  }
+
+  const maxScore =
+    data?.questions.reduce((sum, question) => sum + (question.point ?? 0), 0) ??
+    0
+  const totalScore = data?.totalScore ?? 0
+
   const renderQuestion = (
     question: NonNullable<typeof data>['questions'][0],
     index: number
@@ -136,13 +153,14 @@ function QuizResultPage() {
     <div>
       <QuizHeader
         subjectName={data?.exam.title}
-        message={`총 문항 수: ${data?.questions.length ?? 0} ㆍ 부정행위: ${data?.cheatingCount ?? 0} ㆍ 응시시간: ${data?.elapsedTime ?? 0}분 ㆍ 응시 결과 점수: ${data?.totalScore ?? 0}점/100점`}
+        message={`총 문항 수: ${questionCount} ㆍ 부정행위: ${cheatingCount}회 ㆍ 응시시간: ${elapsedMinutes}분 ㆍ 응시 결과 점수: ${totalScore}점/${maxScore}점`}
+        showExamStatus={false}
       />
 
       <main>
         <QuizResultTop />
         <div className="flex justify-center">
-          <div className="w-[1290px] space-y-6 py-10">
+          <div className="w-[1290px] space-y-6 py-10 pt-16">
             {data?.questions?.map((question, index) => (
               <div key={question.id} className="space-y-4">
                 {renderQuestion(question, index)}
