@@ -1,18 +1,100 @@
-import type { User } from '@/types/auth'
 import { unmapGender } from '@/utils/gender'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { refreshToken } from '@/api/refresh'
+import { useAuthStore } from '@/store/authStore'
 import { WithdrawalReasonModal } from '../common'
-import { withdraw } from '@/api/info'
-import type { CourseEnrollment } from '@/types/info'
+import { withdraw, getMyCourses } from '@/api/info'
+import { useCoursesStore } from '@/store/coursesStore'
 import { WITHDRAW_REASON_MAP } from '@/constants/withdrawReason'
 import type { WithdrawalReasonFormData } from '@/schemas/modalSchemas'
-type Props = {
-  user: User
-  courses: CourseEnrollment[]
-}
 
-export function ViewMyInfo({ user, courses }: Props) {
-  const gender = unmapGender(user.gender)
+export function ViewMyInfo() {
+  const {
+    accessToken,
+    user: currentUser,
+    setAuth,
+    refreshToken: zRefreshToken,
+  } = useAuthStore()
+  // 프로필 상태
+  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const {
+    courses,
+    loading: coursesLoading,
+    error: coursesError,
+    setCourses,
+    setLoading: setCoursesLoading,
+    setError: setCoursesError,
+  } = useCoursesStore()
+  useEffect(() => {
+    const fetchAndUpdateUser = async () => {
+      setProfileLoading(true)
+      setProfileError(null)
+      try {
+        const res = await import('@/api/auth')
+        try {
+          if (!accessToken) throw new Error('토큰 없음')
+          const info = await res.me(accessToken)
+          setAuth({ accessToken: accessToken as string, user: info })
+        } catch (err: any) {
+          if (err?.response?.status === 401) {
+            try {
+              if (!zRefreshToken) throw new Error('리프레시 토큰 없음')
+              const newToken = await refreshToken(zRefreshToken)
+              const info = await res.me(newToken)
+              setAuth({ accessToken: newToken, user: info })
+            } catch (refreshErr) {
+              setProfileError('세션이 만료되었습니다. 다시 로그인 해주세요.')
+            }
+          } else {
+            setProfileError('내 정보 조회에 실패했습니다.')
+          }
+        }
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+    if (!currentUser) {
+      fetchAndUpdateUser()
+    }
+  }, [accessToken, currentUser, setAuth])
+
+  // 수강 과정 별도 로딩/에러 관리 (zustand)
+  useEffect(() => {
+    const fetchCoursesData = async () => {
+      setCoursesLoading(true)
+      setCoursesError(null)
+      try {
+        const data = await getMyCourses()
+        setCourses(data)
+      } catch (err) {
+        setCoursesError('')
+      } finally {
+        setCoursesLoading(false)
+      }
+    }
+    fetchCoursesData()
+  }, [setCourses, setCoursesLoading, setCoursesError])
+
+  // 5분마다 토큰 자동 갱신
+  useEffect(() => {
+    const interval = setInterval(
+      async () => {
+        try {
+          if (!zRefreshToken) return
+          const newToken = await refreshToken(zRefreshToken)
+          if (currentUser && newToken) {
+            setAuth({ accessToken: newToken, user: currentUser })
+          }
+        } catch (e) {
+          console.error('토큰 갱신 실패', e)
+        }
+      },
+      5 * 60 * 1000
+    ) // 5분
+    return () => clearInterval(interval)
+  }, [setAuth, currentUser, zRefreshToken])
+  // (불필요한 gender 변수 제거)
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
 
   /* ================= 회원 탈퇴 ================= */
@@ -42,38 +124,56 @@ export function ViewMyInfo({ user, courses }: Props) {
     <>
       {/* ================= 프로필 / 개인 정보 ================= */}
       <div className="info-border mt-[20px] w-[747px]">
-        <InfoSection title="프로필">
-          <div className="flex justify-center">
-            <img
-              src={
-                user.profile_img_url ? user.profile_img_url : '/프로필 사진.svg'
-              }
-              alt="프로필 사진"
-              className="mb-[52px] h-[184px] rounded-full"
-            />
-          </div>
+        {profileLoading ? (
+          <p className="text-mono-400">내 정보 불러오는 중...</p>
+        ) : profileError ? (
+          <p className="text-red-500">{profileError}</p>
+        ) : currentUser ? (
+          <>
+            <InfoSection title="프로필">
+              <div className="flex justify-center">
+                <img
+                  src={
+                    currentUser.profile_img_url
+                      ? currentUser.profile_img_url
+                      : '/프로필 사진.svg'
+                  }
+                  alt="프로필 사진"
+                  className="mb-[52px] h-[184px] rounded-full"
+                />
+              </div>
 
-          <div className="mb-[90px] flex flex-col gap-[20px]">
-            <InfoRow label="닉네임" value={user.nickname} />
-            <InfoRow label="이메일" value={user.email} />
-          </div>
-        </InfoSection>
+              <div className="mb-[90px] flex flex-col gap-[20px]">
+                <InfoRow label="닉네임" value={currentUser.nickname} />
+                <InfoRow label="이메일" value={currentUser.email} />
+              </div>
+            </InfoSection>
 
-        <InfoSection title="개인 정보">
-          <div className="flex flex-col gap-[20px]">
-            <InfoRow label="이름" value={user.name} />
-            <InfoRow label="휴대전화" value={user.phone_number} />
-            <InfoRow label="성별" value={gender === 'male' ? '남자' : '여자'} />
-            <InfoRow label="생년월일" value={user.birthday} />
-          </div>
-        </InfoSection>
+            <InfoSection title="개인 정보">
+              <div className="flex flex-col gap-[20px]">
+                <InfoRow label="이름" value={currentUser.name} />
+                <InfoRow label="휴대전화" value={currentUser.phone_number} />
+                <InfoRow
+                  label="성별"
+                  value={
+                    unmapGender(currentUser.gender) === 'male' ? '남자' : '여자'
+                  }
+                />
+                <InfoRow label="생년월일" value={currentUser.birthday} />
+              </div>
+            </InfoSection>
+          </>
+        ) : null}
       </div>
       {/* ================= 수강중 / 수강완료 과정 ================= */}
       <div className="info-border mt-[20px] w-[747px]">
         <p className="text-primary title-l-b">수강중인 과정</p>
         <hr className="border-mono-400 mt-[16px] mb-[40px]" />
-
-        {courses.length === 0 ? (
+        {coursesLoading ? (
+          <p className="text-mono-400">수강 과정 불러오는 중...</p>
+        ) : coursesError ? (
+          <p className="text-red-500">{coursesError}</p>
+        ) : courses.length === 0 ? (
           <p className="text-mono-400">현재 수강 중인 과정이 없습니다.</p>
         ) : (
           <div className="flex flex-col gap-[24px]">
