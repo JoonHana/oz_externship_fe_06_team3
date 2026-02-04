@@ -82,7 +82,7 @@ function DraggableLabel({
       style={style}
       {...listeners}
       {...attributes}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-[4px] bg-[#EFE6FC] text-[18px] font-normal text-[#6201E0] ${
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-[4px] bg-primary-100 text-primary text-[18px] font-normal ${
         isUsed || isResult
           ? 'cursor-not-allowed'
           : 'cursor-grab active:cursor-grabbing'
@@ -117,17 +117,17 @@ function DroppableSlot({
 
   const getLabelInnerClass = () => {
     if (!isResult || isSlotCorrect === undefined) {
-      return 'text-[18px] font-normal text-[#6201E0] bg-[#EFE6FC] w-8 h-8 flex items-center justify-center rounded-[4px]'
+      return 'text-primary bg-primary-100 text-[18px] font-normal w-8 h-8 flex items-center justify-center rounded-[4px]'
     }
     return isSlotCorrect
-      ? 'text-[20px] font-bold text-[#14C786] bg-[#F2F3F5] w-10 h-10 flex items-center justify-center rounded-[4px]'
-      : 'text-[20px] font-bold text-[#F85402] bg-[#F2F3F5] w-10 h-10 flex items-center justify-center rounded-[4px]'
+      ? 'text-success text-[20px] font-bold bg-surface w-10 h-10 flex items-center justify-center rounded-[4px]'
+      : 'text-warning text-[20px] font-bold bg-surface w-10 h-10 flex items-center justify-center rounded-[4px]'
   }
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex h-[62px] w-[62px] items-center justify-center rounded-[4px] bg-[#F2F3F5] p-[3px] transition-colors ${slotBorderClass}`}
+      className={`flex h-[62px] w-[62px] items-center justify-center rounded-[4px] bg-surface p-[3px] transition-colors ${slotBorderClass}`}
     >
       {label ? (
         <div className="relative flex h-full w-full items-center justify-center">
@@ -140,7 +140,7 @@ function DroppableSlot({
                 e.stopPropagation()
                 onRemove()
               }}
-              className="absolute -top-1 -right-1 flex h-4 h-auto w-4 min-w-0 items-center justify-center rounded-full border border-gray-300 bg-white p-0 text-xs text-gray-400 hover:text-gray-600 hover:no-underline"
+              className="absolute -top-1 -right-1 flex h-4 w-4 min-w-0 items-center justify-center rounded-full border border-gray-300 bg-white p-0 text-xs text-gray-400 hover:text-gray-600 hover:no-underline"
               aria-label="제거"
             >
               ×
@@ -149,7 +149,7 @@ function DroppableSlot({
           <span className={getLabelInnerClass()}>{label}</span>
         </div>
       ) : (
-        <span className="text-sm font-medium text-[#F2F3F5]">{index + 1}</span>
+        <span className="text-mono-600 text-sm font-medium">{index + 1}</span>
       )}
     </div>
   )
@@ -253,7 +253,7 @@ export default function Ordering({
             isUsed={isLabelUsed(optionLabels[index])}
             isResult={isResult}
           />
-          <span className="text-[16px] font-normal text-[#222222]">{item}</span>
+          <span className="text-foreground-secondary text-[16px] font-normal">{item}</span>
         </div>
       ))}
     </div>
@@ -278,7 +278,7 @@ export default function Ordering({
       >
         {/* 옵션 박스 */}
         {options.length > 0 && (
-          <div className="mb-4 ml-6 min-h-[228px] w-[648px] rounded-lg bg-[#F2F3F5]/50 p-[20px]">
+          <div className="mb-4 ml-6 min-h-[228px] w-[648px] rounded-lg bg-surface/50 p-[20px]">
             {renderOptions()}
           </div>
         )}

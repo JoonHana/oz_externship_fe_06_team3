@@ -52,7 +52,7 @@ export default function QuizResultExplanation({
             />
           </svg>
         )}
-        <p className="text-[16px] font-normal leading-[140%] tracking-[-0.48px] text-[#303030]">
+        <p className="text-muted-dark text-[16px] font-normal leading-[140%] tracking-[-0.48px]">
           {explanation}
         </p>
       </div>

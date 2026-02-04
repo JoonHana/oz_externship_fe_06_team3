@@ -1,3 +1,4 @@
+// 소셜 로그인 버튼 (카카오, 네이버) - createSocialRedirect 호출
 import { Button } from '@/components/common/Button'
 
 export type SocialProviderId = 'kakao' | 'naver'
@@ -9,7 +10,7 @@ const SOCIAL_PROVIDERS_LOGIN = [
     logo: '/LoginPage_img/kakao_logo.svg',
     alt: 'Kakao',
     label: '카카오 간편 로그인 / 가입',
-    textClass: 'text-[#391C1A]',
+    textClass: 'text-kakao-text',
     logoClass: 'h-3 w-[13px]',
   },
   {
@@ -47,22 +48,26 @@ export default function SocialLoginSection({
     mode === 'signup' ? SOCIAL_PROVIDERS_SIGNUP : SOCIAL_PROVIDERS_LOGIN
   return (
     <div className="flex w-full flex-col items-start gap-3">
-      {providers.map((p) => (
+      {providers.map((provider) => (
         <Button
-          key={p.id}
+          key={provider.id}
           type="button"
-          variant={p.variant}
-          onClick={() => onLogin(p.id)}
+          variant={provider.variant}
+          onClick={() => onLogin(provider.id)}
           className="h-[52px] w-full gap-2.5 rounded px-2 py-2"
         >
           <div className="inline-flex items-center gap-1">
             <div className="flex w-5 flex-col items-center justify-center gap-2.5 px-[3px] py-1">
-              <img className={p.logoClass} alt={p.alt} src={p.logo} />
+              <img
+                className={provider.logoClass}
+                alt={provider.alt}
+                src={provider.logo}
+              />
             </div>
             <p
-              className={`text-[16px] font-normal tracking-[-0.32px] whitespace-nowrap ${p.textClass}`}
+              className={`text-[16px] font-normal tracking-[-0.32px] whitespace-nowrap ${provider.textClass}`}
             >
-              {p.label}
+              {provider.label}
             </p>
           </div>
         </Button>

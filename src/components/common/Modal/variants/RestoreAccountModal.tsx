@@ -183,7 +183,7 @@ export function RestoreAccountModal({
               </svg>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <p className="title-l-b text-center" style={{ color: '#121212' }}>
+              <p className="title-l-b text-center text-foreground">
                 계정 복구 완료!
               </p>
               <p className="subTitle-l text-center">지금 바로 로그인해보세요</p>
@@ -208,7 +208,7 @@ export function RestoreAccountModal({
                 />
               </svg>
             </div>
-            <p className="text-[14px] font-normal" style={{ color: '#4D4D4D' }}>
+            <p className="text-muted text-[14px] font-normal">
               전송 완료! 이메일을 확인해주세요.
             </p>
           </div>
@@ -224,14 +224,7 @@ export function RestoreAccountModal({
           />
           <h2 className="title-l-b">계정 다시 사용하기</h2>
           {!isCodeSent && (
-            <p
-              className="text-center font-normal"
-              style={{
-                fontSize: '14px',
-                fontWeight: 'normal',
-                color: '#4D4D4D',
-              }}
-            >
+            <p className="text-muted text-center text-[14px] font-normal">
               입력하신 이메일로 인증번호를 보내드릴게요.
             </p>
           )}
@@ -261,15 +254,10 @@ export function RestoreAccountModal({
                     onClick={handleSendCode}
                     disabled={isActive && !isExpired}
                     className={cn(
-                      'h-[48px] w-[112px] rounded-[4px] border text-base text-black',
+                      'h-[48px] w-[112px] rounded-[4px] border border-mono-400 bg-mono-200 text-base text-black',
                       'transition-colors hover:bg-gray-200',
                       'disabled:cursor-not-allowed disabled:opacity-50'
                     )}
-                    style={{
-                      backgroundColor: '#ececec',
-                      borderColor: '#bdbdbd',
-                      borderWidth: '1px',
-                    }}
                   >
                     인증코드전송
                   </button>
@@ -300,15 +288,10 @@ export function RestoreAccountModal({
                     onClick={handleVerifyCode}
                     disabled={isExpired || isVerified}
                     className={cn(
-                      'h-[48px] w-[112px] rounded-[4px] border text-base text-black',
+                      'h-[48px] w-[112px] rounded-[4px] border border-mono-400 bg-mono-200 text-base text-black',
                       'transition-colors hover:bg-gray-200',
                       'disabled:cursor-not-allowed disabled:opacity-50'
                     )}
-                    style={{
-                      backgroundColor: '#ececec',
-                      borderColor: '#bdbdbd',
-                      borderWidth: '1px',
-                    }}
                   >
                     인증코드확인
                   </button>
@@ -323,10 +306,7 @@ export function RestoreAccountModal({
 
                 {/* 인증코드 에러 메시지 */}
                 {verificationError && (
-                  <p
-                    className="mt-2 text-left text-[12px] font-normal"
-                    style={{ color: '#EC0037' }}
-                  >
+                  <p className="text-error mt-2 text-left text-[12px] font-normal">
                     {verificationError}
                   </p>
                 )}

@@ -99,15 +99,15 @@ export function StartQuizModal({
             />
           )}
           <div className="flex flex-col items-center gap-2">
-            <h2 className="text-center text-[18px] font-semibold text-[#121212]">
+            <h2 className="text-center text-[18px] font-semibold text-foreground">
               {quizName}
             </h2>
             <p className="text-center">
-              <span className="text-[14px] font-normal text-[#303030]">
+              <span className="text-muted-dark text-[14px] font-normal">
                 총 {questionCount}문항
               </span>{' '}
               ㆍ{' '}
-              <span className="text-[14px] font-normal text-[#6201E0]">
+              <span className="text-primary text-[14px] font-normal">
                 제한시간 {timeLimit}분
               </span>
             </p>
@@ -127,7 +127,7 @@ export function StartQuizModal({
                   state={methods.formState.errors.code ? 'error' : 'default'}
                   helperTextByState={{
                     error: (
-                      <span className="text-[12px] font-normal text-[#EC0037]">
+                      <span className="text-error text-[12px] font-normal">
                         {methods.formState.errors.code?.message}
                       </span>
                     ),

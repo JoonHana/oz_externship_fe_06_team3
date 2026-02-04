@@ -48,7 +48,7 @@
 }
 
 .subTitle-l {
-  @apply text-[14px] text-[#4D4D4D];
+  @apply text-muted text-[14px];
 }
 
 /* Placeholder Font Styles */
@@ -78,7 +78,7 @@
 
 /* 라벨 공통 스타일 */
 .label-common {
-  @apply text-[16px] font-normal text-[#121212];
+  @apply text-foreground text-[16px] font-normal;
 }
 .infoText {
   @apply mr-[85px] w-[100px] text-[18px];
@@ -92,9 +92,9 @@
 }
 
 .quiz-header-title {
-  @apply text-[20px] font-bold text-[#121212];
+  @apply text-foreground text-[20px] font-bold;
 }
 
 .quiz-header-badge {
-  @apply rounded-[2px] bg-[#ECECEC] px-2 py-[2px] text-[12px] font-normal text-[#121212];
+  @apply rounded-[2px] bg-mono-200 px-2 py-[2px] text-foreground text-[12px] font-normal;
 }

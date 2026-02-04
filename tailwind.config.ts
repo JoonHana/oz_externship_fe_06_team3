@@ -45,8 +45,16 @@ const config: Config = {
         },
         /** 본문 텍스트 */
         foreground: '#121212',
+        /** 본문 보조 (조금 더 연한) */
+        'foreground-secondary': '#222222',
         /** 보조 텍스트 */
         muted: '#4D4D4D',
+        /** 보조 텍스트 (더 진한) */
+        'muted-dark': '#303030',
+        /** 연한 배경 */
+        surface: '#F2F3F5',
+        /** 경고/주의 */
+        warning: '#F85402',
         kakao: {
           text: '#391C1A', // 카카오 버튼 텍스트 색상
         },
