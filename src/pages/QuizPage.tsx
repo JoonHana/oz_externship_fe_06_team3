@@ -408,15 +408,13 @@ function QuizPage() {
       {/* 시간 종료 모달 */}
       <Modal isOpen={showTimeEndModal} onClose={handleEndConfirm}>
         <Modal.Body>
-          <div className="flex flex-col items-center gap-6 py-4 min-w-[250px]">
-            <img src="/icons/cloud_404.svg" alt="시험 종료" className="h-[58px] w-[74px]" />
           <div className="flex min-w-[250px] flex-col items-center gap-6 py-4">
             <img
               src="/icons/cloud_404.svg"
-              alt="not-found"
+              alt="시험 종료"
               className="h-[58px] w-[74px]"
             />
-            <p className="text-center text-[16px] text-[#222222]">
+            <p className="text-center text-[16px] text-foreground-secondary">
               시험 시간이 종료되었습니다.
             </p>
           </div>

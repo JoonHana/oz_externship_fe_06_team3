@@ -108,7 +108,3 @@ function Section({
 function Label({ children }: { children: React.ReactNode }) {
   return <p className="mt-[10px]">{children}</p>
 }
-
-function Label({ children }: { children: React.ReactNode }) {
-  return <p className="mt-[10px]">{children}</p>
-}
