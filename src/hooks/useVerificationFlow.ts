@@ -1,39 +1,37 @@
+// 회원가입용 인증 플로우 - 이메일/SMS send→verify→token (useEmailVerification, useSmsVerification에서 사용)
 import { useEffect, useMemo, useReducer, useCallback, useRef } from 'react'
 import type { Path } from 'react-hook-form'
-import type { FieldState } from '@/components/common/CommonInput'
 import type { SignupFormData } from '@/schemas/auth'
 import { useCountdown } from '@/hooks/useCountdown'
-import { type FlowMessage, IDLE_FLOW_MESSAGE } from '@/utils/formMessage'
+import {
+  verificationReducer,
+  computeVerificationUI,
+  applyIdentityValidationError,
+  withBusy,
+  INITIAL_VERIFICATION_STATE,
+  SEND_MODE,
+  type VerificationState,
+  type ValidationResult,
+} from '@/hooks/signupVerification'
 
 export type Status = 'idle' | 'pending' | 'error' | 'success'
-
-type ValidationResult = {
-  ok: boolean
-  message?: string
-  fieldErrors?: Partial<Record<Path<SignupFormData>, string>>
-}
 
 type UseVerificationFlowArgs<TVerifyRes> = {
   identity: string
   code: string
   ttlSec: number
   busy: boolean
-  setBusy: (v: boolean) => void
+  setBusy: (value: boolean) => void
   clearErrors: (names: Path<SignupFormData> | Path<SignupFormData>[]) => void
   setFieldError: (name: Path<SignupFormData>, message: string) => void
-
   identityFields: Path<SignupFormData>[]
   codeField: Path<SignupFormData>
-
   validateIdentity: (identity: string) => ValidationResult
-
   send: (identity: string) => Promise<void>
   verify: (identity: string, code: string) => Promise<TVerifyRes>
-  getToken: (res: TVerifyRes) => string
-
-  getSendErrorMessage: (err: unknown) => string
-  getVerifyErrorMessage: (err: unknown) => string
-
+  getToken: (response: TVerifyRes) => string
+  getSendErrorMessage: (error: unknown) => string
+  getVerifyErrorMessage: (error: unknown) => string
   text: {
     sent: string
     resent: string
@@ -44,185 +42,7 @@ type UseVerificationFlowArgs<TVerifyRes> = {
   }
 }
 
-type ComputeUIParams = {
-  verified: boolean
-  sendStatus: Status
-  verifyStatus: Status
-  codeSent: boolean
-  code: string
-  busy: boolean
-  identityValid: boolean
-}
-
-type ComputeUIResult = {
-  canSend: boolean
-  canVerify: boolean
-  fieldState: FieldState
-  codeFieldState: FieldState
-}
-
-function toFieldState(s: Status): FieldState {
-  switch (s) {
-    case 'success':
-      return 'success'
-    case 'error':
-      return 'error'
-    case 'idle':
-    case 'pending':
-    default:
-      return 'default'
-  }
-}
-
-function computeUI(params: ComputeUIParams): ComputeUIResult {
-  const {
-    verified,
-    sendStatus,
-    verifyStatus,
-    codeSent,
-    code,
-    busy,
-    identityValid,
-  } = params
-  const canSend =
-    identityValid && !busy && !verified && sendStatus !== 'pending'
-  const canVerify =
-    !!codeSent &&
-    !!code?.trim() &&
-    !busy &&
-    !verified &&
-    verifyStatus !== 'pending'
-
-  const fieldState: FieldState = verified ? 'success' : toFieldState(sendStatus)
-  const codeFieldState: FieldState = verified
-    ? 'success'
-    : toFieldState(verifyStatus)
-  return { canSend, canVerify, fieldState, codeFieldState }
-}
-
-type VerificationState = {
-  token: string | null
-  verified: boolean
-  codeSent: boolean
-  sendStatus: Status
-  flowMessage: FlowMessage
-  verifyStatus: Status
-}
-
-const INITIAL_STATE: VerificationState = {
-  token: null,
-  verified: false,
-  codeSent: false,
-  sendStatus: 'idle',
-  flowMessage: IDLE_FLOW_MESSAGE,
-  verifyStatus: 'idle',
-}
-
-type VerificationAction =
-  | { type: 'IDENTITY_CHANGED' }
-  | { type: 'RESET_VERIFY_STATE' }
-  | { type: 'SEND_REQUEST' }
-  | {
-      type: 'SEND_SUCCESS'
-      payload: { mode: 'first' | 'resend'; sent: string; resent: string }
-    }
-  | { type: 'SEND_FAILURE'; payload: { message: string } }
-  | { type: 'VERIFY_REQUEST' }
-  | { type: 'VERIFY_SUCCESS'; payload: { token: string; message: string } }
-  | { type: 'VERIFY_FAILURE'; payload: { message: string } }
-  | { type: 'EXPIRED'; payload: { message: string } }
-
-function verificationReducer(
-  state: VerificationState,
-  action: VerificationAction
-): VerificationState {
-  switch (action.type) {
-    case 'IDENTITY_CHANGED':
-      return INITIAL_STATE
-
-    case 'RESET_VERIFY_STATE':
-      return {
-        ...state,
-        verified: false,
-        token: null,
-        verifyStatus: 'idle',
-        flowMessage: IDLE_FLOW_MESSAGE,
-      }
-    case 'SEND_REQUEST':
-      return {
-        ...state,
-        sendStatus: 'pending',
-        flowMessage: IDLE_FLOW_MESSAGE,
-      }
-    case 'SEND_SUCCESS': {
-      const message =
-        action.payload.mode === 'resend'
-          ? action.payload.resent
-          : action.payload.sent
-      return {
-        ...state,
-        sendStatus: 'success',
-        flowMessage: { type: 'success', message, scope: 'send' },
-        codeSent: true,
-      }
-    }
-    case 'SEND_FAILURE':
-      return {
-        ...state,
-        sendStatus: 'error',
-        flowMessage: {
-          type: 'error',
-          message: action.payload.message,
-          scope: 'send',
-        },
-      }
-
-    case 'VERIFY_REQUEST':
-      return {
-        ...state,
-        verifyStatus: 'pending',
-        flowMessage: IDLE_FLOW_MESSAGE,
-      }
-    case 'VERIFY_SUCCESS':
-      return {
-        ...state,
-        token: action.payload.token,
-        verified: true,
-        verifyStatus: 'success',
-        flowMessage: {
-          type: 'success',
-          message: action.payload.message,
-          scope: 'verify',
-        },
-      }
-    case 'VERIFY_FAILURE':
-      return {
-        ...state,
-        verified: false,
-        token: null,
-        verifyStatus: 'error',
-        flowMessage: {
-          type: 'error',
-          message: action.payload.message,
-          scope: 'verify',
-        },
-      }
-    case 'EXPIRED':
-      return {
-        ...state,
-        verified: false,
-        token: null,
-        verifyStatus: 'error',
-        flowMessage: {
-          type: 'error',
-          message: action.payload.message,
-          scope: 'expired',
-        },
-      }
-    default:
-      return state
-  }
-}
+const SECONDS_PER_MINUTE = 60
 
 export function useVerificationFlow<TVerifyRes>({
   identity,
@@ -242,7 +62,7 @@ export function useVerificationFlow<TVerifyRes>({
   getVerifyErrorMessage,
   text,
 }: UseVerificationFlowArgs<TVerifyRes>) {
-  const ttlMinutes = Math.ceil(ttlSec / 60)
+  const ttlMinutes = Math.ceil(ttlSec / SECONDS_PER_MINUTE)
   const {
     timeLeft: remain,
     formatTime: mmss,
@@ -250,11 +70,22 @@ export function useVerificationFlow<TVerifyRes>({
     startTimer,
     resetTimer,
   } = useCountdown(ttlMinutes)
-  const [state, dispatch] = useReducer(verificationReducer, INITIAL_STATE)
 
-  const { token, verified, codeSent, sendStatus, flowMessage, verifyStatus } =
-    state
-  const prevIdentityRef = useRef(identity)
+  const [state, dispatch] = useReducer(
+    verificationReducer,
+    INITIAL_VERIFICATION_STATE as VerificationState
+  )
+
+  const {
+    token,
+    verified,
+    codeSent,
+    sendStatus,
+    flowMessage,
+    verifyStatus,
+  } = state
+
+  const previousIdentityRef = useRef(identity)
   const justSentRef = useRef(false)
 
   const resetAll = useCallback(() => {
@@ -263,14 +94,14 @@ export function useVerificationFlow<TVerifyRes>({
   }, [resetTimer])
 
   useEffect(() => {
-    if (sendStatus === 'pending') return // 전송 중에는 리셋하지 않음
+    if (sendStatus === 'pending') return
     if (justSentRef.current) {
       justSentRef.current = false
-      prevIdentityRef.current = identity
-      return // 방금 전송 성공 직후 identity 미세 변경(trim 등)으로 인한 리셋 방지
+      previousIdentityRef.current = identity
+      return
     }
-    if (prevIdentityRef.current === identity) return
-    prevIdentityRef.current = identity
+    if (previousIdentityRef.current === identity) return
+    previousIdentityRef.current = identity
     resetAll()
   }, [identity, resetAll, sendStatus])
 
@@ -280,33 +111,24 @@ export function useVerificationFlow<TVerifyRes>({
         dispatch({ type: 'RESET_VERIFY_STATE' })
       }
       clearErrors(codeField)
-      return
     }
   }, [code, verifyStatus, clearErrors, codeField])
 
-  function resetVerifyState() {
+  const resetVerifyState = useCallback(() => {
     dispatch({ type: 'RESET_VERIFY_STATE' })
-  }
+  }, [])
 
-  function applyIdentityValidationError(v: ValidationResult) {
-    const msg = v.message ?? text.identityInvalid
-    if (v.fieldErrors) {
-      ;(
-        Object.entries(v.fieldErrors) as [Path<SignupFormData>, string][]
-      ).forEach(([k, m]) => setFieldError(k, m))
-    } else {
-      identityFields.forEach((f) => setFieldError(f, msg))
-    }
-  }
-
-  async function withBusy<T>(fn: () => Promise<T>): Promise<T> {
-    setBusy(true)
-    try {
-      return await fn()
-    } finally {
-      setBusy(false)
-    }
-  }
+  const applyValidationError = useCallback(
+    (validationResult: ValidationResult) => {
+      applyIdentityValidationError({
+        validationResult,
+        defaultMessage: text.identityInvalid,
+        identityFields,
+        setFieldError,
+      })
+    },
+    [text.identityInvalid, identityFields, setFieldError]
+  )
 
   const identityValid = useMemo(
     () => validateIdentity(identity).ok,
@@ -315,7 +137,7 @@ export function useVerificationFlow<TVerifyRes>({
 
   const ui = useMemo(
     () =>
-      computeUI({
+      computeVerificationUI({
         verified,
         sendStatus,
         verifyStatus,
@@ -327,12 +149,12 @@ export function useVerificationFlow<TVerifyRes>({
     [verified, sendStatus, verifyStatus, codeSent, code, busy, identityValid]
   )
 
-  const onSendCode = async () => {
+  const handleSendCode = useCallback(async () => {
     clearErrors([...identityFields, codeField])
 
-    const v = validateIdentity(identity)
-    if (!v.ok) {
-      applyIdentityValidationError(v)
+    const validationResult = validateIdentity(identity)
+    if (!validationResult.ok) {
+      applyValidationError(validationResult)
       resetTimer()
       return
     }
@@ -343,28 +165,46 @@ export function useVerificationFlow<TVerifyRes>({
     dispatch({ type: 'SEND_REQUEST' })
 
     const isResend = codeSent
-    await withBusy(async () => {
+    await withBusy({ setBusy }, async () => {
       try {
         await send(identity)
         justSentRef.current = true
         dispatch({
           type: 'SEND_SUCCESS',
           payload: {
-            mode: isResend ? 'resend' : 'first',
+            mode: isResend ? SEND_MODE.RESEND : SEND_MODE.FIRST,
             sent: text.sent,
             resent: text.resent,
           },
         })
         startTimer()
-      } catch (err) {
-        const message = getSendErrorMessage(err)
-        dispatch({ type: 'SEND_FAILURE', payload: { message } })
+      } catch (sendError) {
+        const errorMessage = getSendErrorMessage(sendError)
+        dispatch({ type: 'SEND_FAILURE', payload: { message: errorMessage } })
         resetTimer()
       }
     })
-  }
+  }, [
+    identity,
+    codeSent,
+    busy,
+    sendStatus,
+    clearErrors,
+    identityFields,
+    codeField,
+    validateIdentity,
+    applyValidationError,
+    resetTimer,
+    resetVerifyState,
+    setBusy,
+    send,
+    startTimer,
+    getSendErrorMessage,
+    text.sent,
+    text.resent,
+  ])
 
-  const onVerifyCode = async () => {
+  const handleVerifyCode = useCallback(async () => {
     clearErrors(codeField)
 
     if (!code?.trim()) {
@@ -380,11 +220,11 @@ export function useVerificationFlow<TVerifyRes>({
 
     if (busy || verifyStatus === 'pending') return
 
-    await withBusy(async () => {
+    await withBusy({ setBusy }, async () => {
       dispatch({ type: 'VERIFY_REQUEST' })
       try {
-        const res = await verify(identity, code.trim())
-        const tokenValue = getToken(res)
+        const verifyResponse = await verify(identity, code.trim())
+        const tokenValue = getToken(verifyResponse)
         dispatch({
           type: 'VERIFY_SUCCESS',
           payload: {
@@ -393,37 +233,54 @@ export function useVerificationFlow<TVerifyRes>({
           },
         })
         resetTimer()
-      } catch (err) {
-        const message = getVerifyErrorMessage(err)
-        dispatch({ type: 'VERIFY_FAILURE', payload: { message } })
+      } catch (verifyError) {
+        const errorMessage = getVerifyErrorMessage(verifyError)
+        dispatch({ type: 'VERIFY_FAILURE', payload: { message: errorMessage } })
       }
     })
-  }
-
-  const timer = {
-    remain,
-    mmss,
+  }, [
+    identity,
+    code,
+    busy,
+    verifyStatus,
     isRunning,
-    start: startTimer,
-    reset: resetTimer,
-  }
+    clearErrors,
+    codeField,
+    setFieldError,
+    resetVerifyState,
+    setBusy,
+    verify,
+    getToken,
+    getVerifyErrorMessage,
+    text.codeRequired,
+    text.expired,
+    text.verifySuccess,
+    resetTimer,
+  ])
+
+  const timer = useMemo(
+    () => ({
+      remain,
+      mmss,
+      isRunning,
+      start: startTimer,
+      reset: resetTimer,
+    }),
+    [remain, mmss, isRunning, startTimer, resetTimer]
+  )
 
   return {
     token,
     verified,
     codeSent,
-
     sendStatus,
     flowMessage,
     verifyStatus,
-
     timer,
-
     ui,
-
     actions: {
-      onSendCode,
-      onVerifyCode,
+      onSendCode: handleSendCode,
+      onVerifyCode: handleVerifyCode,
     },
   }
 }
