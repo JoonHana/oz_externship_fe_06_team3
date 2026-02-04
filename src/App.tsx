@@ -7,6 +7,7 @@ import TestPage from '@/pages/TestPage'
 import LoginPage from '@/pages/LoginPage'
 import SignupPage from '@/pages/SignupPage'
 import SignupEmailPage from '@/pages/SignupEmailPage'
+import SocialLoginCallbackPage from '@/pages/SocialLoginCallbackPage'
 import MyPage from '@/pages/MyPage'
 import MyPageQuiz from '@/components/MyPageQuiz'
 import QuizPage from '@/pages/QuizPage'
@@ -26,6 +27,11 @@ function App() {
           <Route path="/qna" element={<div>질의응답 페이지</div>} />
           <Route path="/test" element={<TestPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<SocialLoginCallbackPage />} />
+          <Route
+            path="/auth/callback/:provider"
+            element={<SocialLoginCallbackPage />}
+          />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/signup/email" element={<SignupEmailPage />} />
 
