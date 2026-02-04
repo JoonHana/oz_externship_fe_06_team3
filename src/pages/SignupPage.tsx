@@ -1,18 +1,17 @@
+// 회원가입 진입 페이지 - 소셜 가입 or 일반회원 가입 선택
 import { Link } from 'react-router-dom'
-
 import SocialLoginSection from '@/components/auth/SocialLoginSection'
 import type { SocialProviderId } from '@/types/social'
+import { createSocialRedirect } from '@/api/socialAuth'
 
 export default function SignupPage() {
   const handleSocialSignup = (provider: SocialProviderId) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
-    window.location.href = `${baseUrl}/api/v1/accounts/login/${provider}/`
+    createSocialRedirect(provider)
   }
 
   return (
     <div className="flex h-[calc(100vh-96px)] items-center justify-center bg-white px-4 py-12">
       <div className="relative mb-[min(40vh)] flex w-[348px] flex-col items-center gap-16">
-        {/* 로고, 로그인 */}
         <div className="flex w-full flex-col items-center gap-[27px]">
           <div className="flex w-[191px] flex-col items-center gap-4">
             <img
@@ -21,7 +20,6 @@ export default function SignupPage() {
               src="/LoginPage_img/ozcoding_logo.png"
             />
           </div>
-
           <div className="flex w-full items-start justify-center gap-3">
             <div className="inline-flex items-center justify-center gap-2.5">
               <span className="text-mono-600 truncate whitespace-nowrap">
@@ -37,11 +35,9 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* 소셜회원 가입, 일반회원 가입 */}
         <div className="flex w-full flex-col items-center gap-9">
           <div className="flex w-full flex-col items-start gap-10">
             <SocialLoginSection onLogin={handleSocialSignup} mode="signup" />
-
             <div className="flex w-full justify-center">
               <Link
                 to="/signup/email"

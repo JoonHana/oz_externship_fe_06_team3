@@ -109,11 +109,11 @@ export const CommonInput = forwardRef<HTMLInputElement, CommonInputProps>(
             'flex h-12 min-w-0 items-center gap-2.5 rounded-lg border px-4 transition-colors duration-200',
             'focus-within:ring-1 focus-within:ring-inset',
             state === 'default' &&
-              'border-gray-300 bg-white focus-within:border-violet-600 focus-within:ring-violet-600',
+              'focus-within:border-primary focus-within:ring-primary border-gray-300 bg-white',
             state === 'error' &&
-              'border-red-500 bg-white focus-within:border-red-600 focus-within:ring-red-600',
+              'border-error focus-within:border-error focus-within:ring-error bg-white',
             state === 'success' &&
-              'border-green-500 bg-white focus-within:border-green-600 focus-within:ring-green-600',
+              'border-success focus-within:border-success focus-within:ring-success bg-white',
             locked && 'border-gray-200 bg-gray-100',
             isDisabled && 'cursor-not-allowed opacity-60'
           )}
@@ -158,9 +158,9 @@ export const CommonInput = forwardRef<HTMLInputElement, CommonInputProps>(
             className={clsx(
               'px-1 text-xs font-medium',
               state === 'error'
-                ? 'text-red-500'
+                ? 'text-error'
                 : state === 'success'
-                  ? 'text-green-600'
+                  ? 'text-success'
                   : 'text-gray-400'
             )}
           >

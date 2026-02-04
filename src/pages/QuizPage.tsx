@@ -33,7 +33,9 @@ function QuizPage() {
   const { deploymentId } = useParams<{ deploymentId: string }>()
   const deploymentIdNumber = deploymentId ? Number(deploymentId) : 0
   const [isEnded, setIsEnded] = useState(false)
-  const [endReason, setEndReason] = useState<'time' | 'status' | 'cheating' | null>(null)
+  const [endReason, setEndReason] = useState<
+    'time' | 'status' | 'cheating' | null
+  >(null)
   const [remainingSeconds, setRemainingSeconds] = useState(30 * 60)
   const [cheatingCount, setCheatingCount] = useState(0)
   const [isCheatingModalOpen, setIsCheatingModalOpen] = useState(false)
@@ -107,7 +109,7 @@ function QuizPage() {
             onAnswerChange={handleAnswerChange}
           />
         )
-      case 'fill_blank':  // 빈칸 채우기
+      case 'fill_blank': // 빈칸 채우기
         return (
           <FillBlank
             question={question}
@@ -115,7 +117,7 @@ function QuizPage() {
             onAnswerChange={handleAnswerChange}
           />
         )
-      case 'ordering':  // 순서 맞추기
+      case 'ordering': // 순서 맞추기
         return (
           <Ordering
             question={question}
@@ -130,7 +132,6 @@ function QuizPage() {
 
   const handleAutoSubmit = () => {
     // 부정행위로 종료될 때 자동 제출 처리(나중에 API 연결 예정)
-    console.log('부정행위 자동 제출:', { deploymentId: deploymentIdNumber, answers })
   }
 
   
@@ -145,7 +146,7 @@ function QuizPage() {
       setIsCheatingModalOpen(true)
       return next
     })
-  }, [answers, deploymentIdNumber, isEnded])
+  }, [isEnded])
 
   const handleCheatingClose = () => {
     setIsCheatingModalOpen(false)
@@ -231,7 +232,6 @@ function QuizPage() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' || event.key === 'F11') {
         event.preventDefault()
-        console.log('전체화면 해제 감지')
         handleCheatingDetected()
       }
     }
@@ -243,7 +243,6 @@ function QuizPage() {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [handleCheatingDetected, cheatingCount])
-
 
   useEffect(() => {
     if (isEnded) return
@@ -329,10 +328,20 @@ function QuizPage() {
       <main className="flex flex-col items-center px-10 py-6">
         <QuizWarningBox />
         <div className="mb-6 flex items-center gap-3">
-          <Button variant="secondary" size="sm" rounded="default" onClick={handleTimeEndTest}>
+          <Button
+            variant="secondary"
+            size="sm"
+            rounded="default"
+            onClick={handleTimeEndTest}
+          >
             타이머 종료 테스트
           </Button>
-          <Button variant="secondary" size="sm" rounded="default" onClick={handleStatusEndTest}>
+          <Button
+            variant="secondary"
+            size="sm"
+            rounded="default"
+            onClick={handleStatusEndTest}
+          >
             상태 종료 테스트
           </Button>
         </div>
@@ -341,13 +350,11 @@ function QuizPage() {
           {data?.questions && data.questions.length > 0 ? (
             <div className="space-y-8">
               {data.questions.map((question) => (
-                <div key={question.questionId}>
-                  {renderQuestion(question)}
-                </div>
+                <div key={question.questionId}>{renderQuestion(question)}</div>
               ))}
             </div>
           ) : (
-            <div className="flex justify-center items-center py-20">
+            <div className="flex items-center justify-center py-20">
               <NotFound detail="표시할 문제가 없습니다.." />
             </div>
           )}
@@ -376,10 +383,10 @@ function QuizPage() {
         onTerminate={handleCheatingTerminate}
       />
 
-      <Modal isOpen={isFullscreenModalOpen} onClose={() => { }}>
+      <Modal isOpen={isFullscreenModalOpen} onClose={() => {}}>
         <Modal.Body>
-          <div className="flex flex-col items-center gap-4 py-4 min-w-[250px]">
-            <p className="text-center text-[16px] text-[#222222]">
+          <div className="flex min-w-[250px] flex-col items-center gap-4 py-4">
+            <p className="text-center text-[16px] text-foreground-secondary">
               전체화면이 해제되었습니다. <br />
               시험 진행을 위해 전체화면으로 돌아가 주세요.
             </p>
@@ -401,9 +408,13 @@ function QuizPage() {
       {/* 시간 종료 모달 */}
       <Modal isOpen={showTimeEndModal} onClose={handleEndConfirm}>
         <Modal.Body>
-          <div className="flex flex-col items-center gap-6 py-4 min-w-[250px]">
-            <img src="/icons/cloud_404.svg" alt="시험 종료" className="h-[58px] w-[74px]" />
-            <p className="text-center text-[16px] text-[#222222]">
+          <div className="flex min-w-[250px] flex-col items-center gap-6 py-4">
+            <img
+              src="/icons/cloud_404.svg"
+              alt="시험 종료"
+              className="h-[58px] w-[74px]"
+            />
+            <p className="text-center text-[16px] text-foreground-secondary">
               시험 시간이 종료되었습니다.
             </p>
           </div>

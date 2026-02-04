@@ -1,32 +1,16 @@
-import { type ReactNode } from 'react'
-import { Check } from 'lucide-react'
-
+// 회원가입 이메일 섹션 - 이메일 입력 + 인증코드 전송/확인
 import { ActionRow } from '@/components/signup/ActionRow'
+import { SectionBlock } from '@/components/signup/SectionBlock'
 import { Button } from '@/components/common/Button'
 import { CommonInputField } from '@/components/common/CommonInputField'
 import type { FieldState } from '@/components/common/CommonInput'
 import type { SignupFormData } from '@/schemas/auth'
-import { type FlowMessage } from '@/utils/formMessage'
-import cn from '@/lib/cn'
-
-function getButtonProps(canAct: boolean) {
-  return {
-    variant: canAct ? 'secondary' : 'disabled',
-    disabled: !canAct,
-  } as const
-}
-
-function getCodeRightSlot(params: {
-  verified: boolean
-  timerVisible: boolean
-  mmss: string
-}): ReactNode {
-  const { verified, timerVisible, mmss } = params
-  if (verified) return <Check className="h-5 w-5 text-green-600" />
-  if (timerVisible)
-    return <span className="text-sm font-semibold text-red-500">{mmss}</span>
-  return null
-}
+import type { FlowMessage } from '@/utils/formMessage'
+import {
+  getVerificationButtonProps,
+  getVerificationCodeRightSlot,
+  renderFlowMessage,
+} from './utils'
 
 export type EmailSectionProps = {
   emailFieldState: FieldState
@@ -61,51 +45,18 @@ export function EmailSection({
   onVerifyEmailCode,
 }: EmailSectionProps) {
   const isCodePhase = emailCodeSent && !emailVerified
-  const emailBtn = getButtonProps(canSendEmail)
-  const codeBtn = getButtonProps(canVerifyEmail)
+  const sendCodeButtonProps = getVerificationButtonProps(canSendEmail)
+  const verifyCodeButtonProps = getVerificationButtonProps(canVerifyEmail)
 
-  const showSendMessage =
-    flowMessage.scope === 'send' &&
-    flowMessage.type !== 'idle' &&
-    flowMessage.message
-  const showVerifyMessage =
-    (flowMessage.scope === 'verify' || flowMessage.scope === 'expired') &&
-    flowMessage.type !== 'idle' &&
-    flowMessage.message
-
-  const firstRowBelow = showSendMessage ? (
-    <p
-      className={cn(
-        'text-xs font-medium',
-        flowMessage.type === 'success' && 'text-green-600',
-        flowMessage.type === 'error' && 'text-red-500'
-      )}
-    >
-      {flowMessage.message}
-    </p>
-  ) : null
-
-  const secondRowBelow = showVerifyMessage ? (
-    <p
-      className={cn(
-        'text-xs font-medium',
-        flowMessage.type === 'success' && 'text-green-600',
-        flowMessage.type === 'error' && 'text-red-500'
-      )}
-    >
-      {flowMessage.message}
-    </p>
-  ) : null
+  const sendMessageRow =
+    flowMessage.scope === 'send' ? renderFlowMessage(flowMessage) : null
+  const verifyMessageRow =
+    flowMessage.scope === 'verify' || flowMessage.scope === 'expired'
+      ? renderFlowMessage(flowMessage)
+      : null
 
   return (
-    <div className="flex flex-col gap-5">
-      <label className="inline-flex items-start text-left text-[16px] leading-[22.24px] font-normal tracking-[-0.48px] text-[#121212]">
-        이메일
-        <span className="ml-0 text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
-          *
-        </span>
-      </label>
-
+    <SectionBlock label="이메일">
       <ActionRow
         left={
           <CommonInputField<SignupFormData>
@@ -119,9 +70,13 @@ export function EmailSection({
             locked={emailVerified}
             disabled={emailVerified}
             rightSlot={
-              emailVerified ? (
-                <Check className="h-5 w-5 text-green-600" />
-              ) : undefined
+              emailVerified
+                ? getVerificationCodeRightSlot({
+                    verified: true,
+                    timerVisible: false,
+                    mmss: '',
+                  })
+                : undefined
             }
           />
         }
@@ -129,15 +84,15 @@ export function EmailSection({
           <Button
             type="button"
             size="sm"
-            variant={emailBtn.variant}
-            disabled={emailBtn.disabled}
+            variant={sendCodeButtonProps.variant}
+            disabled={sendCodeButtonProps.disabled}
             className="whitespace-nowrap"
             onClick={onSendEmailCode}
           >
             {emailSendLabel}
           </Button>
         }
-        below={firstRowBelow}
+        below={sendMessageRow}
       />
 
       <ActionRow
@@ -152,7 +107,7 @@ export function EmailSection({
             helperVisibility="always"
             locked={!isCodePhase}
             disabled={!isCodePhase}
-            rightSlot={getCodeRightSlot({
+            rightSlot={getVerificationCodeRightSlot({
               verified: emailVerified,
               timerVisible: isCodePhase,
               mmss: emailTimer.mmss,
@@ -163,16 +118,16 @@ export function EmailSection({
           <Button
             type="button"
             size="sm"
-            variant={codeBtn.variant}
-            disabled={codeBtn.disabled}
+            variant={verifyCodeButtonProps.variant}
+            disabled={verifyCodeButtonProps.disabled}
             className="whitespace-nowrap"
             onClick={onVerifyEmailCode}
           >
             인증번호 확인
           </Button>
         }
-        below={secondRowBelow}
+        below={verifyMessageRow}
       />
-    </div>
+    </SectionBlock>
   )
 }

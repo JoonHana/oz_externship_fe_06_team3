@@ -1,3 +1,4 @@
+// 로그인/회원가입 등 인증 관련 타입 정의
 export type LoginPayload = {
   email: string
   password: string
@@ -5,27 +6,6 @@ export type LoginPayload = {
 
 export type LoginResult = {
   access_token: string
-}
-
-export type VerifyEmailResult = {
-  detail?: string
-  email_token: string
-}
-
-export type VerifySmsResult = {
-  detail?: string
-  sms_token: string
-}
-
-export type SignupPayload = {
-  password: string
-  password_confirm: string
-  nickname: string
-  name: string
-  birthday: string
-  gender: 'M' | 'F'
-  email_token: string
-  sms_token: string
 }
 
 export type User = {

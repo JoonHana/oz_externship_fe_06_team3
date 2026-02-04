@@ -1,3 +1,4 @@
+// 회원가입 성별 선택 - 남/여 버튼
 import { useFormContext } from 'react-hook-form'
 import cn from '@/lib/cn'
 import type { SignupFormData } from '@/schemas/auth'

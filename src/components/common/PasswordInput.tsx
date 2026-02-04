@@ -83,7 +83,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                 onClick={() => setShow((p) => !p)}
                 disabled={!canToggle}
                 aria-label={show ? '비밀번호 숨기기' : '비밀번호 보기'}
-                className="-mr-1 p-1 text-gray-400 transition-colors hover:text-gray-600 focus:text-violet-600 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                className="focus:text-primary -mr-1 p-1 text-gray-400 transition-colors hover:text-gray-600 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <img
                   src={show ? '/icons/eyeOpen.svg' : '/icons/eyeClose.svg'}

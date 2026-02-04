@@ -1,217 +1,116 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router'
-import { useForm, FormProvider } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Modal } from '../Modal'
-import { Button } from '../../Button'
-import { PasswordField } from '../../PasswordField'
-import {
-  resetPasswordSchema,
-  type ResetPasswordFormData,
-} from '@/schemas/modalSchemas'
+// 비밀번호 재설정 모달 - 새 비밀번호 입력, emailToken 1회 사용 후 토스트
+import { FormProvider } from 'react-hook-form'
+import cn from '@/lib/cn'
+import type { ResetPasswordFormData } from '@/schemas/modalSchemas'
+import { Button } from '@/components/common/Button'
+import { Modal } from '@/components/common/Modal'
+import { PasswordField } from '@/components/common/PasswordField'
+import { ResetPasswordToast } from '@/components/common/Toast'
+import { useResetPasswordModalVM } from '@/hooks/vm/useResetPasswordModalVM'
 
 interface ResetPasswordModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess?: (data: ResetPasswordFormData) => void
+  // Flow가 수신 후 state에 저장. 1회 사용 후 폐기
+  initialToken: string | null
 }
 
 export function ResetPasswordModal({
   isOpen,
   onClose,
-  onSuccess,
+  initialToken,
 }: ResetPasswordModalProps) {
-  const [showToast, setShowToast] = useState(false)
-  const timerRef = useRef<NodeJS.Timeout | null>(null)
-  const navigate = useNavigate()
-
-  // 비밀번호 재설정 스키마 검증
-  const methods = useForm<ResetPasswordFormData>({
-    resolver: zodResolver(resetPasswordSchema),
-    mode: 'onChange',
-    defaultValues: {
-      newPassword: '',
-      confirmPassword: '',
-    },
+  const vm = useResetPasswordModalVM({
+    isOpen,
+    onClose,
+    initialToken,
   })
 
-  // 타이머 cleanup
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-      }
-    }
-  }, [])
-
-  // 모달 닫힐 때 상태 초기화
-  useEffect(() => {
-    if (!isOpen) {
-      setShowToast(false)
-      methods.reset()
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-        timerRef.current = null
-      }
-    }
-  }, [isOpen, methods])
-
-  // 비밀번호 재설정 제출 핸들러
-  const onSubmit = async (data: ResetPasswordFormData) => {
-    setShowToast(true)
-    // 스키마 검증을 통과한 데이터만 여기 도달 (비밀번호 일치 검증 포함)
-    console.log('비밀번호 일치 확인 완료, 토스트 표시')
-    
-    // onSuccess 콜백은 다음 렌더링 사이클에서 실행되도록 setTimeout 사용
-    setTimeout(() => {
-      onSuccess?.(data)
-    }, 0)
-    
-    // 10초 후 토스트 숨기고 로그인 페이지로 이동
-    timerRef.current = setTimeout(() => {
-      setShowToast(false)
-      onClose()
-      navigate('/')
-      timerRef.current = null
-    }, 10000)
-  }
+  const { methods, sections, ui, actions } = vm
 
   return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        useBackdropV2={showToast}
-        toastPosition="center"
-        toast={
-          showToast ? (
-            <div 
-              className="reset-password-toast bg-white border border-gray-200 text-black px-5 py-4 shadow-lg flex flex-col items-center gap-3 rounded-[12px] overflow-hidden"
-              style={{ 
-                minWidth: '396px', 
-                minHeight: '128px'
-              }}
-            >
-              <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 14 14"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M11.6667 3.5L5.25 9.91667L2.33334 7"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <p className="title-l-b text-center" style={{ color: '#121212' }}>
-                  비밀번호 변경 완료!
-                </p>
-                <p className="subTitle-l text-center">
-                  잠시 후 로그인 페이지로 이동합니다.
-                </p>
-              </div>
-            </div>
-          ) : undefined
-        }
-      >
-
-      <Modal.Header>
+    <Modal
+      isOpen={isOpen}
+      onClose={actions.onClose}
+      useBackdropV2={vm.showToast}
+      toastPosition="center"
+      toast={vm.showToast ? <ResetPasswordToast /> : undefined}
+    >
+      <Modal.Header className="pb-0">
         <div className="flex flex-col items-center gap-2">
-          <img 
-            src="/icons/FindPW.svg" 
-            alt="비밀번호 재설정" 
-            style={{ width: '35px', height: '35px' }}
+          <img
+            src="/icons/FindPW.svg"
+            alt="비밀번호 재설정"
+            className="size-[35px]"
           />
           <h2 className="title-l-b">비밀번호 재설정</h2>
-          <p
-            className="text-[14px] font-normal text-center"
-            style={{ color: '#4D4D4D' }}
-          >
+          <p className="text-muted text-center text-[14px]">
             신규 비밀번호를 입력해주세요.
           </p>
+          <div
+            className="flex max-w-[360px] min-w-[192px] items-center justify-center text-center text-[14px] break-words"
+            aria-live="polite"
+          >
+            <span
+              className={cn(
+                ui.hasMessage ? 'visible' : 'invisible',
+                'text-error'
+              )}
+            >
+              {ui.messageDisplay}
+            </span>
+          </div>
         </div>
       </Modal.Header>
 
-      <Modal.Body>
+      <Modal.Body className="pt-0">
         <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
-
-            <Modal.InputRow
-              label={
-                <>
-                  <span>
-                    새 비밀번호<span className="text-red-500">*</span>
-                  </span>
-                  <span className="text-[#6201E0] font-semibold text-sm">
-                    6~15자의 영문 대소문자, 숫자, 특수문자 포함
-                  </span>
-                </>
-              }
-            >
-              <div className="flex flex-col gap-2">
-                <PasswordField<ResetPasswordFormData>
-                  name="newPassword"
-                  placeholder="비밀번호를 입력해주세요"
-                  helperVisibility="always"
-                  width={348}
-                />
-                {methods.formState.errors.newPassword && (
-                  <p
-                    className="text-[12px] font-normal text-left"
-                    style={{ color: '#EC0037' }}
-                  >
-                    *{methods.formState.errors.newPassword.message}
-                  </p>
-                )}
-              </div>
+          <form
+            onSubmit={sections.submit.onSubmit}
+            className="flex w-full max-w-[360px] flex-col gap-4"
+          >
+            <Modal.InputRow label={ui.newPasswordLabel}>
+              <PasswordField<ResetPasswordFormData>
+                name={sections.password.newPasswordInput.name}
+                placeholder={sections.password.newPasswordInput.placeholder}
+                helperVisibility={
+                  sections.password.newPasswordInput.helperVisibility
+                }
+                width={sections.password.newPasswordInput.width}
+              />
             </Modal.InputRow>
 
-            <Modal.InputRow
-              label={
-                <>
-                  비밀번호 확인<span className="text-red-500">*</span>
-                </>
-              }
-            >
-              <div className="flex flex-col gap-2">
-                <PasswordField<ResetPasswordFormData>
-                  name="confirmPassword"
-                  placeholder="비밀번호를 다시 입력해주세요"
-                  helperVisibility="always"
-                  width={348}
-                />
-                {methods.formState.errors.confirmPassword && (
-                  <p
-                    className="text-[12px] font-normal text-left"
-                    style={{ color: '#EC0037' }}
-                  >
-                    *{methods.formState.errors.confirmPassword.message}
-                  </p>
-                )}
-              </div>
-            </Modal.InputRow>
-
+            <div className="flex flex-col gap-2">
+              <PasswordField<ResetPasswordFormData>
+                name={sections.password.confirmPasswordInput.name}
+                placeholder={sections.password.confirmPasswordInput.placeholder}
+                helperVisibility={
+                  sections.password.confirmPasswordInput.helperVisibility
+                }
+                width={sections.password.confirmPasswordInput.width}
+                autoState={sections.password.confirmPasswordInput.autoState}
+                showStatusIcon={
+                  sections.password.confirmPasswordInput.showStatusIcon
+                }
+                showVisibilityToggle={
+                  sections.password.confirmPasswordInput.showVisibilityToggle
+                }
+              />
+            </div>
             <div className="pt-4">
               <Button
                 type="submit"
-                variant="primary"
+                variant={sections.submit.button.variant}
                 size="xl"
-                className="w-full min-w-[348px]"
+                className="w-full"
+                disabled={sections.submit.button.disabled}
               >
-                확인
+                {sections.submit.button.label}
               </Button>
             </div>
           </form>
         </FormProvider>
       </Modal.Body>
     </Modal>
-    </>
   )
 }

@@ -1,294 +1,129 @@
-import { useState, useEffect, useRef } from 'react'
-import { useForm, FormProvider } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { Modal } from '../Modal'
-import { Button } from '../../Button'
-import { CommonInputField } from '../../CommonInputField'
-import { findPasswordSchema, type FindPasswordFormData } from '@/schemas/modalSchemas'
-import { useModalTimer } from '@/hooks/useModalTimer'
-import cn from '@/lib/cn'
+// 비밀번호 찾기 모달 - 이메일 입력 → 이메일 인증 → 비밀번호 재설정으로 이동
+import { FormProvider } from 'react-hook-form'
+import type { FindPasswordFormData } from '@/schemas/modalSchemas'
+import { Button } from '@/components/common/Button'
+import { Modal } from '@/components/common/Modal'
+import {
+  VerificationMessageDisplay,
+  VerificationInputWithButton,
+} from './verificationModalHelpers'
+import {
+  useFindPasswordModalVM,
+  type UseFindPasswordModalVMResult,
+  type UseFindPasswordModalVMOptions,
+} from '@/hooks/vm/useFindPasswordModalVM'
 
-interface FindPasswordModalProps {
+export interface FindPasswordModalProps extends UseFindPasswordModalVMOptions {
   isOpen: boolean
-  onClose: () => void
-  onSuccess?: (data: FindPasswordFormData) => void
 }
 
-export function FindPasswordModal({
-  isOpen,
-  onClose,
-  onSuccess,
-}: FindPasswordModalProps) {
-  const [isVerified, setIsVerified] = useState(false)
-  const [verificationMessage, setVerificationMessage] = useState<string>('')
-  const [showToast, setShowToast] = useState(false)
-  const [isCodeSent, setIsCodeSent] = useState(false)
-  const [verificationError, setVerificationError] = useState<string>('')
-  const [sentCode, setSentCode] = useState<string>('')
-  const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const { isExpired, isActive, startTimer, formatTime } = useModalTimer(5)
+interface FindPasswordModalViewProps {
+  isOpen: boolean
+  vm: UseFindPasswordModalVMResult
+}
 
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current)
-      }
-    }
-  }, [])
+function FindPasswordModalView({ isOpen, vm }: FindPasswordModalViewProps) {
+  const { methods, sections, ui, actions } = vm
 
-  const methods = useForm<FindPasswordFormData>({
-    resolver: zodResolver(findPasswordSchema),
-    defaultValues: {
-      email: '',
-      verificationCode: '',
-    },
-  })
+  const headerSection = (
+    <div className="flex flex-col items-center gap-2">
+      <img
+        src="/icons/FindPW.svg"
+        alt="비밀번호 찾기"
+        className="size-[32px]"
+      />
+      <h2 className="title-l-b">비밀번호 찾기</h2>
+      <VerificationMessageDisplay
+        displayText={ui.displayText}
+        hasMessage={ui.hasMessage}
+        isMessageError={ui.isMessageError}
+        isDefaultGuide={ui.isDefaultGuide}
+      />
+    </div>
+  )
 
-  useEffect(() => {
-    if (!isOpen) {
-      setIsVerified(false)
-      setVerificationMessage('')
-      setShowToast(false)
-      setIsCodeSent(false)
-      setVerificationError('')
-      methods.reset()
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current)
-        toastTimerRef.current = null
-      }
-    }
-  }, [isOpen, methods])
+  const identitySection = (
+    <Modal.InputRow label="이메일" required>
+      <div className="flex flex-col gap-4">
+        <VerificationInputWithButton<FindPasswordFormData>
+          input={{
+            name: sections.identity.emailInput.name,
+            placeholder: sections.identity.emailInput.placeholder,
+            state: sections.identity.emailInput.state,
+            helperVisibility: sections.identity.emailInput.helperVisibility,
+            width: sections.identity.emailInput.width,
+          }}
+          button={{
+            onClick: sections.verify.sendButton.onClick,
+            disabled: sections.verify.sendButton.disabled,
+            isLoading: sections.verify.sendButton.isLoading,
+            label: sections.verify.sendButton.label,
+          }}
+        />
+        <VerificationInputWithButton<FindPasswordFormData>
+          input={{
+            name: sections.verify.codeInput.name,
+            placeholder: sections.verify.codeInput.placeholder,
+            state: sections.verify.codeInput.state,
+            helperVisibility: sections.verify.codeInput.helperVisibility,
+            width: sections.verify.codeInput.width,
+            rightSlot: sections.verify.codeInput.rightSlot,
+            disabled: sections.verify.codeInput.disabled,
+          }}
+          button={{
+            onClick: sections.verify.verifyButton.onClick,
+            disabled: sections.verify.verifyButton.disabled,
+            isLoading: sections.verify.verifyButton.isLoading,
+            label: sections.verify.verifyButton.label,
+          }}
+        />
+      </div>
+    </Modal.InputRow>
+  )
 
-  const handleSendCode = async () => {
-    const isValid = await methods.trigger('email')
-    if (!isValid) return
-
-    const email = methods.getValues('email')
-
-    // 인증번호 생성 , 여기서는 성공으로 가정, 실제로는 API 호출,목데이터는 123456 반환
-    const mockCode = '123456'
-    setSentCode(mockCode)
-
-    // 개발 환경에서 콘솔에 인증번호 출력,목데이터는 123456 반환
-    console.log('📱 인증번호 전송:', { 이메일: email, 인증번호: mockCode })
-
-    // 인증번호 전송 로직
-    startTimer()
-    setShowToast(true)
-    setIsCodeSent(true)
-    setVerificationError('') // 에러 메시지 초기화
-    setIsVerified(false) // 인증 상태 초기화
-    setVerificationMessage('') // 인증 메시지 초기화
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current)
-    }
-    toastTimerRef.current = setTimeout(() => setShowToast(false), 5000) // 5초 후 사라짐
-  }
-
-  const handleVerifyCode = async () => {
-    if (isExpired) {
-      methods.setError('verificationCode', {
-        message: '인증 시간이 만료되었습니다. 다시 전송해주세요.',
-      })
-      setVerificationMessage('')
-      setVerificationError('')
-      return
-    }
-
-    const isValid = await methods.trigger('verificationCode')
-    if (!isValid) {
-      setVerificationMessage('')
-      setVerificationError('')
-      return
-    }
-
-    const verificationCode = methods.getValues('verificationCode')
-
-    // 인증번호 확인 로직 , 여기서는 성공으로 가정, 실제로는 API 호출,목데이터는 123456 반환 
-    // 실패 시 인증코드가 일치하지 않습니다. 반환
-    // 성공 시 인증번호가 확인되었습니다. 반환
-    const codeIsValid = verificationCode === sentCode
-
-    if (!codeIsValid) {
-      setVerificationError('*인증코드가 일치하지 않습니다.')
-      setVerificationMessage('')
-      setIsVerified(false)
-      methods.setError('verificationCode', {
-        message: '인증코드가 일치하지 않습니다.',
-      })
-      return
-    }
-
-    setIsVerified(true)
-    setVerificationMessage('인증번호가 확인되었습니다.')
-    setVerificationError('')
-    methods.clearErrors('verificationCode')
-  }
-
-  const onSubmit = async (data: FindPasswordFormData) => {
-    if (!isVerified) {
-      methods.setError('verificationCode', {
-        message: '인증번호를 먼저 확인해주세요.',
-      })
-      return
-    }
-
-    setVerificationMessage('')
-    onSuccess?.(data)
-    onClose()
-  }
+  const submitSection = (
+    <div className="pt-4">
+      <Button
+        type="submit"
+        variant={sections.submit.button.variant}
+        size="xl"
+        className="w-full"
+        disabled={sections.submit.button.disabled}
+      >
+        {sections.submit.button.label}
+      </Button>
+    </div>
+  )
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      toastPosition="top-far"
-      toast={
-        showToast ? (
-            <div className="bg-white border border-gray-200 text-black px-5 py-4 gap-3 rounded-lg shadow-lg flex-center min-w-[270px] min-h-[60px]">
-            <div className="flex-shrink-0 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M11.6667 3.5L5.25 9.91667L2.33334 7"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <p className="text-[14px] font-normal" style={{ color: '#4D4D4D' }}>
-              전송 완료! 이메일을 확인해주세요.
-            </p>
-          </div>
-        ) : undefined
-      }
-    >
-      <Modal.Header>
-        <div className="flex flex-col items-center gap-2">
-          <img 
-            src="/icons/FindPW.svg" 
-            alt="비밀번호 찾기" 
-            style={{ width: '35px', height: '35px' }}
-          />
-          <h2 className="title-l-b">비밀번호 찾기</h2>
-          {!isCodeSent && (
-            <p className="text-[14px] text-[#4D4D4D] font-normal text-center">
-              이메일로 비밀번호 재설정링크를 보내드려요.
-            </p>
-          )}
-        </div>
-      </Modal.Header>
+    <Modal isOpen={isOpen} onClose={actions.onClose}>
+      <Modal.Header>{headerSection}</Modal.Header>
 
-      <Modal.Body>
+      <Modal.Body className="pt-0">
         <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-4">
-            <Modal.InputRow label="이메일" required>
-              <div className="flex flex-col gap-2">
-                {/* 첫 번째 줄: 이메일 입력창 + 인증코드전송 버튼 */}
-                <div className="flex gap-2">
-                  <div className="find-password-input" style={{ minWidth: '250px' }}>
-                    <CommonInputField<FindPasswordFormData>
-                      name="email"
-                      placeholder="이메일을 입력해주세요"
-                      helperVisibility="always"
-                      width={250}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleSendCode}
-                    disabled={isActive && !isExpired}
-                    className={cn(
-                      'w-[112px] h-[48px] rounded-[4px] border text-black text-base',
-                      'hover:bg-gray-200 transition-colors',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
-                    style={{
-                      backgroundColor: '#ececec',
-                      borderColor: '#bdbdbd',
-                      borderWidth: '1px',
-                    }}
-                  >
-                    인증코드전송
-                  </button>
-                </div>
-
-                {/* 두 번째 줄: 인증번호 입력창 + 인증코드확인 버튼 */}
-                <div className="flex gap-2">
-                  <div className="find-password-input" style={{ minWidth: '250px' }}>
-                    <CommonInputField<FindPasswordFormData>
-                      name="verificationCode"
-                      placeholder="인증번호 6자리를 입력해주세요"
-                      helperVisibility="always"
-                      width={250}
-                      rightSlot={
-                        isActive && !isExpired ? (
-                          <span className="text-red-500 text-sm font-medium">
-                            {formatTime}
-                          </span>
-                        ) : undefined
-                      }
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleVerifyCode}
-                    disabled={isExpired || isVerified}
-                    className={cn(
-                      'w-[112px] h-[48px] rounded-[4px] border text-black text-base',
-                      'hover:bg-gray-200 transition-colors',
-                      'disabled:opacity-50 disabled:cursor-not-allowed'
-                    )}
-                    style={{
-                      backgroundColor: '#ececec',
-                      borderColor: '#bdbdbd',
-                      borderWidth: '1px',
-                    }}
-                  >
-                    인증코드확인
-                  </button>
-                </div>
-
-                {/* 인증번호 확인 메시지 */}
-                {verificationMessage && (
-                  <p className="text-sm text-green-600 font-medium mt-2">
-                    {verificationMessage}
-                  </p>
-                )}
-
-                {/* 인증코드 에러 메시지 */}
-                {verificationError && (
-                  <p
-                    className="text-[12px] font-normal mt-2 text-left"
-                    style={{ color: '#EC0037' }}
-                  >
-                    {verificationError}
-                  </p>
-                )}
-              </div>
-            </Modal.InputRow>
-
-            <div className="pt-4">
-              <Button
-                type="submit"
-                variant="primary"
-                size="xl"
-                className="w-full max-w-[370px]"
-                disabled={!isVerified}
-              >
-                비밀번호 찾기
-              </Button>
-            </div>
+          <form
+            onSubmit={sections.submit.onSubmit}
+            className="flex w-full max-w-[360px] flex-col gap-4"
+          >
+            {identitySection}
+            {submitSection}
           </form>
         </FormProvider>
       </Modal.Body>
     </Modal>
   )
+}
+
+export function FindPasswordModal({
+  isOpen,
+  onClose,
+  onVerified,
+}: FindPasswordModalProps) {
+  const vm = useFindPasswordModalVM({
+    isOpen,
+    onClose,
+    onVerified,
+  })
+
+  return <FindPasswordModalView isOpen={isOpen} vm={vm} />
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -56,16 +56,23 @@ interface DraggableLabelProps {
   isResult?: boolean
 }
 
-function DraggableLabel({ id, label, item, isUsed, isResult }: DraggableLabelProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id,
-    disabled: isUsed || isResult,
-    data: { item, label },
-  })
+function DraggableLabel({
+  id,
+  label,
+  item,
+  isUsed,
+  isResult,
+}: DraggableLabelProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id,
+      disabled: isUsed || isResult,
+      data: { item, label },
+    })
 
   const style = {
     transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.5 : isUsed ? 0.4 : 1, 
+    opacity: isDragging ? 0.5 : isUsed ? 0.4 : 1,
     padding: '3px',
   }
 
@@ -75,8 +82,10 @@ function DraggableLabel({ id, label, item, isUsed, isResult }: DraggableLabelPro
       style={style}
       {...listeners}
       {...attributes}
-      className={`inline-flex items-center justify-center w-8 h-8 rounded-[4px] bg-[#EFE6FC] text-[18px] font-normal text-[#6201E0] ${
-        isUsed || isResult ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-[4px] bg-primary-100 text-primary text-[18px] font-normal ${
+        isUsed || isResult
+          ? 'cursor-not-allowed'
+          : 'cursor-grab active:cursor-grabbing'
       }`}
     >
       {label}
@@ -93,7 +102,14 @@ interface DroppableSlotProps {
   isSlotCorrect?: boolean
 }
 
-function DroppableSlot({ id, index, label, onRemove, isResult, isSlotCorrect }: DroppableSlotProps) {
+function DroppableSlot({
+  id,
+  index,
+  label,
+  onRemove,
+  isResult,
+  isSlotCorrect,
+}: DroppableSlotProps) {
   const { setNodeRef, isOver } = useDroppable({ id, disabled: isResult })
 
   const slotBorderClass =
@@ -101,20 +117,20 @@ function DroppableSlot({ id, index, label, onRemove, isResult, isSlotCorrect }: 
 
   const getLabelInnerClass = () => {
     if (!isResult || isSlotCorrect === undefined) {
-      return 'text-[18px] font-normal text-[#6201E0] bg-[#EFE6FC] w-8 h-8 flex items-center justify-center rounded-[4px]'
+      return 'text-primary bg-primary-100 text-[18px] font-normal w-8 h-8 flex items-center justify-center rounded-[4px]'
     }
     return isSlotCorrect
-      ? 'text-[20px] font-bold text-[#14C786] bg-[#F2F3F5] w-10 h-10 flex items-center justify-center rounded-[4px]'
-      : 'text-[20px] font-bold text-[#F85402] bg-[#F2F3F5] w-10 h-10 flex items-center justify-center rounded-[4px]'
+      ? 'text-success text-[20px] font-bold bg-surface w-10 h-10 flex items-center justify-center rounded-[4px]'
+      : 'text-warning text-[20px] font-bold bg-surface w-10 h-10 flex items-center justify-center rounded-[4px]'
   }
 
   return (
     <div
       ref={setNodeRef}
-      className={`w-[62px] h-[62px] p-[3px] rounded-[4px] bg-[#F2F3F5] flex items-center justify-center transition-colors ${slotBorderClass}`}
+      className={`flex h-[62px] w-[62px] items-center justify-center rounded-[4px] bg-surface p-[3px] transition-colors ${slotBorderClass}`}
     >
       {label ? (
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative flex h-full w-full items-center justify-center">
           {!isResult && (
             <Button
               type="button"
@@ -124,18 +140,16 @@ function DroppableSlot({ id, index, label, onRemove, isResult, isSlotCorrect }: 
                 e.stopPropagation()
                 onRemove()
               }}
-              className="absolute -top-1 -right-1 w-4 h-4 min-w-0 h-auto p-0 flex items-center justify-center text-gray-400 hover:text-gray-600 text-xs bg-white rounded-full border border-gray-300 hover:no-underline"
+              className="absolute -top-1 -right-1 flex h-4 w-4 min-w-0 items-center justify-center rounded-full border border-gray-300 bg-white p-0 text-xs text-gray-400 hover:text-gray-600 hover:no-underline"
               aria-label="제거"
             >
               ×
             </Button>
           )}
-          <span className={getLabelInnerClass()}>
-            {label}
-          </span>
+          <span className={getLabelInnerClass()}>{label}</span>
         </div>
       ) : (
-        <span className="text-[#F2F3F5] text-sm font-medium">{index + 1}</span>
+        <span className="text-mono-600 text-sm font-medium">{index + 1}</span>
       )}
     </div>
   )
@@ -150,15 +164,17 @@ export default function Ordering({
   isCorrect = false,
   explanation = null,
 }: OrderingProps) {
-  const options = question.options || []
-  const optionLabels = OPTION_LABELS.slice(0, options.length)
+  const options = useMemo(() => question.options || [], [question.options])
+  const optionLabels = useMemo(
+    () => OPTION_LABELS.slice(0, options.length),
+    [options.length]
+  )
 
   const [slots, setSlots] = useState<(string | null)[]>(() =>
     initializeSlots(options, answer, optionLabels)
   )
 
-  // 부모에서 넘긴 answer와 동기화. answer/options/optionLabels는 매 렌더마다 새 참조가 될 수 있어
-  // 의존 배열에 넣으면 무한 루프 → questionId, options 길이, answer 값(직렬화)만으로 동기화 여부 판단.
+  // 부모에서 넘긴 answer와 동기화. questionId, options 길이, answer 값(직렬화)만으로 동기화 여부 판단.
   const prevSyncKey = useRef<string | null>(null)
   useEffect(() => {
     const syncKey = `${question.questionId}:${options.length}:${JSON.stringify(answer)}`
@@ -168,7 +184,9 @@ export default function Ordering({
   }, [question.questionId, answer, options, optionLabels])
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: isResult ? 9999 : 5 } }),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: isResult ? 9999 : 5 },
+    }),
     useSensor(KeyboardSensor)
   )
 
@@ -190,11 +208,14 @@ export default function Ordering({
     const overId = over.id as string
     if (!overId.startsWith('slot-')) return
     const slotIndex = parseInt(overId.replace('slot-', ''), 10)
-    if (Number.isNaN(slotIndex) || slotIndex < 0 || slotIndex >= slots.length) return
+    if (Number.isNaN(slotIndex) || slotIndex < 0 || slotIndex >= slots.length)
+      return
 
     const draggedLabel = (active.id as string).replace('label-', '')
     const newSlots = [...slots]
-    const existingSlotIndex = newSlots.findIndex((label) => label === draggedLabel)
+    const existingSlotIndex = newSlots.findIndex(
+      (label) => label === draggedLabel
+    )
 
     if (existingSlotIndex !== -1) {
       newSlots[existingSlotIndex] = null
@@ -215,7 +236,8 @@ export default function Ordering({
   const isLabelUsed = (label: string) => slots.includes(label)
 
   const getSlotCorrectness = (index: number): boolean | undefined => {
-    if (!isResult || !correctAnswer || correctAnswer.length === 0) return undefined
+    if (!isResult || !correctAnswer || correctAnswer.length === 0)
+      return undefined
     const submittedOrder = convertLabelsToAnswers(slots)
     return submittedOrder[index] === correctAnswer[index]
   }
@@ -231,7 +253,7 @@ export default function Ordering({
             isUsed={isLabelUsed(optionLabels[index])}
             isResult={isResult}
           />
-          <span className="text-[16px] font-normal text-[#222222]">{item}</span>
+          <span className="text-foreground-secondary text-[16px] font-normal">{item}</span>
         </div>
       ))}
     </div>
@@ -256,24 +278,24 @@ export default function Ordering({
       >
         {/* 옵션 박스 */}
         {options.length > 0 && (
-          <div className="w-[648px] min-h-[228px] bg-[#F2F3F5]/50 p-[20px] rounded-lg mb-4 ml-6">
+          <div className="mb-4 ml-6 min-h-[228px] w-[648px] rounded-lg bg-surface/50 p-[20px]">
             {renderOptions()}
           </div>
         )}
 
         {/* 빈칸 영역 */}
-        <div className="ml-6 mt-4">
+        <div className="mt-4 ml-6">
           <div className="flex gap-[10px]">
             {slots.map((label, index) => (
-            <DroppableSlot
-              key={`slot-${index}`}
-              id={`slot-${index}`}
-              index={index}
-              label={label}
-              onRemove={() => handleRemoveFromSlot(index)}
-              isResult={isResult}
-              isSlotCorrect={getSlotCorrectness(index)}
-            />
+              <DroppableSlot
+                key={`slot-${index}`}
+                id={`slot-${index}`}
+                index={index}
+                label={label}
+                onRemove={() => handleRemoveFromSlot(index)}
+                isResult={isResult}
+                isSlotCorrect={getSlotCorrectness(index)}
+              />
             ))}
           </div>
         </div>
@@ -281,7 +303,10 @@ export default function Ordering({
 
       {isResult && explanation && (
         <div className="mt-5 ml-6">
-          <QuizResultExplanation explanation={explanation} isCorrect={isCorrect} />
+          <QuizResultExplanation
+            explanation={explanation}
+            isCorrect={isCorrect}
+          />
         </div>
       )}
     </div>

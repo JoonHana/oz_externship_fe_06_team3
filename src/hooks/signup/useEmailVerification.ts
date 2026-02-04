@@ -1,12 +1,15 @@
 import { z } from 'zod'
+// 회원가입 이메일 인증 - useVerificationFlow 래핑
 import type { Path } from 'react-hook-form'
 import type { SignupFormData } from '@/schemas/auth'
 import { useVerificationFlow } from '@/hooks/useVerificationFlow'
 import * as authApi from '@/api/auth'
-import { pickMessageFromAxios } from '@/utils/signupUtils'
+import {
+  mapSendEmailError,
+  mapVerifyEmailError,
+} from '@/utils/error/authEndpointErrorMapper'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
-
-const TTL_SEC = 5 * 60
+import { EMAIL_VERIFICATION_TTL_SECONDS } from '@/constants/auth'
 const emailZ = z.string().trim().email()
 
 type UseEmailVerificationArgs = {
@@ -29,7 +32,7 @@ export function useEmailVerification({
   return useVerificationFlow({
     identity: email,
     code: emailVerificationCode,
-    ttlSec: TTL_SEC,
+    ttlSec: EMAIL_VERIFICATION_TTL_SECONDS,
     busy,
     setBusy,
     clearErrors,
@@ -38,35 +41,20 @@ export function useEmailVerification({
     identityFields: ['email'],
     codeField: 'emailVerificationCode',
 
-    validateIdentity: (v) => {
-      const ok = emailZ.safeParse(v).success
+    validateIdentity: (emailValue) => {
+      const ok = emailZ.safeParse(emailValue).success
       return ok
         ? { ok: true }
         : { ok: false, message: AUTH_MESSAGES.email.identityInvalid }
     },
 
     send: (identity) => authApi.sendEmailVerification({ email: identity }),
-    verify: (identity, code) => authApi.verifyEmail({ email: identity, code }),
-    getToken: (res) => res.email_token,
+    verify: (identity, verificationCode) =>
+      authApi.verifyEmailCode({ email: identity, verificationCode }),
+    getToken: (response) => response.emailToken,
 
-    getSendErrorMessage: (err) =>
-      pickMessageFromAxios(
-        err,
-        {
-          409: AUTH_MESSAGES.email.sendErrorAlreadyRegistered,
-          400: AUTH_MESSAGES.email.sendErrorBadRequest,
-        },
-        AUTH_MESSAGES.email.sendErrorFallback
-      ),
-    getVerifyErrorMessage: (err) =>
-      pickMessageFromAxios(
-        err,
-        {
-          400: AUTH_MESSAGES.email.verifyErrorMismatch,
-          409: AUTH_MESSAGES.email.verifyErrorAlreadyRegistered,
-        },
-        AUTH_MESSAGES.email.verifyErrorFallback
-      ),
+    getSendErrorMessage: (err) => mapSendEmailError(err).message,
+    getVerifyErrorMessage: (err) => mapVerifyEmailError(err).message,
 
     text: {
       sent: AUTH_MESSAGES.email.sendSuccess,

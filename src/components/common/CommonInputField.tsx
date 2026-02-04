@@ -19,6 +19,7 @@ type CommonInputFieldProps<T extends FieldValues> = Omit<
   rules?: RegisterOptions<T>
   state?: FieldState
   stateOverride?: FieldState
+  transformOnChange?: (value: string) => string
 }
 
 export function CommonInputField<T extends FieldValues>({
@@ -27,6 +28,7 @@ export function CommonInputField<T extends FieldValues>({
   state = 'default',
   stateOverride,
   helperTextByState,
+  transformOnChange,
   ...props
 }: CommonInputFieldProps<T>) {
   const { control } = useFormContext<T>()
@@ -51,7 +53,7 @@ export function CommonInputField<T extends FieldValues>({
       name={field.name}
       ref={field.ref}
       value={fieldValue}
-      onChange={(v) => field.onChange(v)}
+      onChange={(v) => field.onChange(transformOnChange?.(v) ?? v)}
       onBlur={field.onBlur}
       state={stateOverride ?? resolvedState}
       helperTextByState={{

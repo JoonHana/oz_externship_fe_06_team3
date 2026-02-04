@@ -1,31 +1,128 @@
-import { FormProvider } from 'react-hook-form'
-import { Link } from 'react-router-dom'
+// 로그인 페이지 - 일반 로그인 + 소셜 로그인 + 아이디/비밀번호 찾기 모달
+import { useEffect, useMemo, useRef } from 'react'
+import { FormProvider, useForm, useWatch } from 'react-hook-form'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { zodResolver } from '@hookform/resolvers/zod'
 
-import cn from '@/lib/cn'
 import { CommonInputField } from '@/components/common/CommonInputField'
 import { PasswordField } from '@/components/common/PasswordField'
 import { Button } from '@/components/common/Button'
+import { FormErrorDisplay } from '@/components/common/FormErrorDisplay'
 import SocialLoginSection from '@/components/auth/SocialLoginSection'
+import {
+  FindIdResultModal,
+  ResetPasswordModal,
+} from '@/components/common/Modal'
+import {
+  FindIdModal,
+  FindPasswordModal,
+} from '@/components/common/Modal/variants'
 import type { SocialProviderId } from '@/types/social'
-import type { LoginFormData } from '@/schemas/auth'
 
-import { useLoginPage } from '@/hooks/useLoginPage'
+import { useAuthStore } from '@/store/authStore'
+import { useAccountRecoveryModals } from '@/hooks/useAccountRecoveryModals'
+import { loginSchema, type LoginFormData } from '@/schemas/auth'
+import { AUTH_MESSAGES } from '@/constants/authMessages'
+import { mapLoginError } from '@/utils/error/authEndpointErrorMapper'
+import { createSocialRedirect } from '@/api/socialAuth'
+
+function getRedirectPathFromLocation(locationState: unknown): string {
+  const state = locationState as { from?: string } | null
+  return typeof state?.from === 'string' ? state.from : '/'
+}
+
+function useClearRootErrorOnInputChange(
+  emailValue: string,
+  passwordValue: string,
+  rootError: string | null,
+  clearErrors: (name?: 'root') => void
+) {
+  const previousFormValuesKeyRef = useRef('')
+  useEffect(() => {
+    const formValuesKey = `${emailValue}|${passwordValue}`
+    if (previousFormValuesKeyRef.current === formValuesKey) return
+    previousFormValuesKeyRef.current = formValuesKey
+    if (rootError) clearErrors('root')
+  }, [emailValue, passwordValue, rootError, clearErrors])
+}
+
+function useLoginForm() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const login = useAuthStore((state) => state.login)
+
+  const redirectPath = useMemo(
+    () => getRedirectPathFromLocation(location.state),
+    [location.state]
+  )
+
+  const methods = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+    shouldFocusError: true,
+  })
+
+  const {
+    handleSubmit,
+    formState: { errors, isSubmitting, isValid },
+    control,
+    setError,
+    clearErrors,
+  } = methods
+
+  const rootError = errors.root?.message ?? null
+  const watchedFormValues = useWatch({ control }) as Partial<LoginFormData>
+  const emailValue = (watchedFormValues.email ?? '').toString()
+  const passwordValue = (watchedFormValues.password ?? '').toString()
+
+  useClearRootErrorOnInputChange(
+    emailValue,
+    passwordValue,
+    rootError,
+    clearErrors
+  )
+
+  const handleLoginSubmit = handleSubmit(async (formData) => {
+    clearErrors('root')
+    try {
+      await login(formData)
+      navigate(redirectPath, { replace: true })
+    } catch (error) {
+      const mappedError = mapLoginError(error)
+      setError('root', { type: 'server', message: mappedError.message })
+    }
+  })
+
+  const submitButton = useMemo(
+    () => ({
+      label: isSubmitting
+        ? AUTH_MESSAGES.login.submitBusy
+        : AUTH_MESSAGES.login.submitLabel,
+      disabled: !isValid || isSubmitting,
+      variant: (!isValid || isSubmitting ? 'disabled' : 'primary') as
+        | 'disabled'
+        | 'primary',
+    }),
+    [isValid, isSubmitting]
+  )
+
+  return { methods, onSubmit: handleLoginSubmit, rootError, submitButton }
+}
 
 export default function LoginPage() {
-  const { methods, vm } = useLoginPage()
+  const accountRecovery = useAccountRecoveryModals()
+  const { methods, onSubmit, rootError, submitButton } = useLoginForm()
 
   const handleSocialLogin = (provider: SocialProviderId) => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
-    window.location.href = `${baseUrl}/api/v1/accounts/login/${provider}/`
+    createSocialRedirect(provider)
   }
-
-  const { fields, messages, ui, actions } = vm
 
   return (
     <FormProvider {...methods}>
       <div className="flex h-[calc(100vh-96px)] items-center justify-center bg-white px-4 py-12">
         <div className="relative mb-[min(20vh)] flex w-[348px] flex-col items-center gap-16">
-          {/* 로고, 회원가입 */}
           <div className="flex w-full flex-col items-center gap-[27px]">
             <div className="flex w-[191px] flex-col items-center gap-4">
               <img
@@ -34,14 +131,12 @@ export default function LoginPage() {
                 src="/LoginPage_img/ozcoding_logo.png"
               />
             </div>
-
             <div className="flex w-full items-start justify-center gap-3">
               <div className="inline-flex items-center justify-center gap-2.5">
                 <div className="text-mono-600 truncate whitespace-nowrap">
                   아직 회원이 아니신가요?
                 </div>
               </div>
-
               <Link
                 to="/signup"
                 className="text-primary gap-2.5 text-[16px] leading-[22.4px] font-normal tracking-[-0.48px] whitespace-nowrap"
@@ -51,51 +146,37 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* 로그인 폼 */}
           <div className="flex w-full flex-col items-center">
             <div className="flex w-full flex-col items-start gap-10">
               <SocialLoginSection onLogin={handleSocialLogin} />
 
-              <form onSubmit={actions.onSubmit} className="w-full">
+              <form onSubmit={onSubmit} className="w-full">
                 <div className="flex flex-col items-start">
                   <div className="flex w-full flex-col gap-3">
                     <CommonInputField<LoginFormData>
-                      name={fields.email.name}
+                      name="email"
                       type="email"
                       placeholder="아이디 (example@gmail.com)"
                       width="100%"
                       placeholderVariant="a"
-                      state={fields.email.state}
+                      state="default"
                       stateOverride="default"
                       helperVisibility="focus"
-                      helperTextByState={
-                        fields.email.helperTextByState ?? { default: null }
-                      }
+                      helperTextByState={{ default: null }}
                     />
-
                     <div className="flex w-full flex-col">
                       <PasswordField<LoginFormData>
-                        name={fields.password.name}
+                        name="password"
                         placeholder="비밀번호를 입력해주세요."
                         width="100%"
                         placeholderVariant="a"
-                        state={fields.password.state}
+                        state="default"
                         stateOverride="default"
                         helperVisibility="never"
                         showDefaultHelper={false}
-                        helperTextByState={fields.password.helperTextByState}
                       />
                     </div>
-
-                    <div className="px-1 text-xs font-medium text-red-500">
-                      <span
-                        className={cn(
-                          messages.formError ? 'visible' : 'invisible'
-                        )}
-                      >
-                        {messages.formError ?? '\u00A0'}
-                      </span>
-                    </div>
+                    <FormErrorDisplay message={rootError} className="text-xs" />
                   </div>
 
                   <div className="inline-flex items-center">
@@ -104,19 +185,17 @@ export default function LoginPage() {
                       variant="link"
                       size="auto"
                       className="py-2 whitespace-nowrap"
-                      onClick={actions.goFindId}
+                      onClick={accountRecovery.actions.openFindId}
                     >
                       아이디 찾기
                     </Button>
-
                     <span className="text-mono-600 px-2 py-2 text-sm">|</span>
-
                     <Button
                       type="button"
                       variant="link"
                       size="auto"
                       className="py-2 whitespace-nowrap"
-                      onClick={actions.goFindPw}
+                      onClick={accountRecovery.actions.openFindPassword}
                     >
                       비밀번호 찾기
                     </Button>
@@ -124,12 +203,12 @@ export default function LoginPage() {
 
                   <Button
                     type="submit"
-                    disabled={ui.submitButton.disabled}
-                    variant={ui.submitButton.variant}
+                    disabled={submitButton.disabled}
+                    variant={submitButton.variant}
                     className="h-[52px] w-full gap-2.5 rounded px-2 py-2"
                   >
                     <div className="whitespace-nowrap">
-                      {ui.submitButton.label}
+                      {submitButton.label}
                     </div>
                   </Button>
                 </div>
@@ -138,6 +217,28 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      <FindIdModal
+        isOpen={accountRecovery.modals.findId.isOpen}
+        onClose={accountRecovery.modals.findId.close}
+        onFindIdSuccess={accountRecovery.actions.handleFindIdSuccess}
+      />
+      <FindIdResultModal
+        isOpen={accountRecovery.modals.findIdResult.isOpen}
+        onClose={accountRecovery.modals.findIdResult.close}
+        maskedEmail={accountRecovery.modals.findIdResult.maskedEmail}
+        onFindPasswordClick={accountRecovery.actions.goToFindPasswordFromResult}
+      />
+      <FindPasswordModal
+        isOpen={accountRecovery.modals.findPassword.isOpen}
+        onClose={accountRecovery.modals.findPassword.close}
+        onVerified={accountRecovery.actions.openResetPasswordWithToken}
+      />
+      <ResetPasswordModal
+        isOpen={accountRecovery.modals.resetPassword.isOpen}
+        onClose={accountRecovery.modals.resetPassword.close}
+        initialToken={accountRecovery.modals.resetPassword.emailToken}
+      />
     </FormProvider>
   )
 }

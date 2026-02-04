@@ -7,6 +7,7 @@ interface VerificationButtonProps {
   isLoading?: boolean
   children: ReactNode
   className?: string
+  variant?: 'primary' | 'gray'
 }
 
 export function VerificationButton({
@@ -15,6 +16,7 @@ export function VerificationButton({
   isLoading = false,
   children,
   className,
+  variant = 'primary',
 }: VerificationButtonProps) {
   return (
     <button
@@ -22,23 +24,17 @@ export function VerificationButton({
       onClick={onClick}
       disabled={disabled || isLoading}
       className={cn(
-        'w-[112px] h-[48px] rounded-[4px] border text-black text-base',
-        'hover:bg-gray-200 transition-colors',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-        'flex items-center justify-center',
+        'h-[48px] w-[112px] rounded-[4px] border text-base',
+        'flex items-center justify-center transition-colors',
+        variant === 'primary' &&
+          'bg-primary hover:bg-primary-hover active:bg-primary-active border-transparent text-white',
+        variant === 'gray' &&
+          'text-foreground border-gray-300 bg-gray-200 hover:bg-gray-300 active:bg-gray-400',
+        'disabled:cursor-not-allowed disabled:border-transparent disabled:bg-gray-200 disabled:text-gray-400',
         className
       )}
-      style={{
-        backgroundColor: '#ececec',
-        borderColor: '#bdbdbd',
-        borderWidth: '1px',
-      }}
     >
-      {isLoading ? (
-        <span className="text-sm">전송 중...</span>
-      ) : (
-        children
-      )}
+      {isLoading ? <span className="text-sm">전송 중...</span> : children}
     </button>
   )
 }

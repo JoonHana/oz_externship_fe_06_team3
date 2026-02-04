@@ -1,4 +1,4 @@
-// 입력+버튼+below 메시지 영역 공통 레이아웃 컴포넌트
+// 입력+버튼+아래 메시지 공통 레이아웃 (EmailSection, PhoneSection 등에서 사용)
 import type { ReactNode } from 'react'
 
 import cn from '@/lib/cn'

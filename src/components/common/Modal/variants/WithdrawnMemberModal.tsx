@@ -1,5 +1,5 @@
-import { Modal } from '../Modal'
-import { Button } from '../../Button'
+import { Button } from '@/components/common/Button'
+import { Modal } from '@/components/common/Modal'
 
 interface WithdrawnMemberModalProps {
   isOpen: boolean
