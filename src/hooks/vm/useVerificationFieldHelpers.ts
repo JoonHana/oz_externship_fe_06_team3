@@ -1,4 +1,4 @@
-// setRootError→errors.root, verificationCode 필드 에러/값 제어
+// 폼 에러 브릿지 - setRootError(→errors.root), verificationCode 필드 에러/값 제어
 import { useCallback } from 'react'
 import type {
   FieldValues,

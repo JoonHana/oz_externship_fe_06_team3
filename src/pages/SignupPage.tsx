@@ -1,4 +1,4 @@
-// 소셜 가입 or 일반회원 가입 선택
+// 회원가입 진입 페이지 - 소셜 가입 or 일반회원 가입 선택
 import { Link } from 'react-router-dom'
 import SocialLoginSection from '@/components/auth/SocialLoginSection'
 import type { SocialProviderId } from '@/types/social'

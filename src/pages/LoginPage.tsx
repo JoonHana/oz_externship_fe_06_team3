@@ -1,10 +1,5 @@
-/**
- * 로그인 페이지
- * - 일반 로그인 폼
- * - 아이디/비밀번호 찾기 모달
- * - 에러는 errors.root로 표시
- */
-import { useState, useEffect, useMemo, useRef } from 'react'
+// 로그인 페이지 - 일반 로그인 + 소셜 로그인 + 아이디/비밀번호 찾기 모달
+import { useEffect, useMemo, useRef } from 'react'
 import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -23,117 +18,47 @@ import {
   FindPasswordModal,
 } from '@/components/common/Modal/variants'
 import type { SocialProviderId } from '@/types/social'
-import type { FindPasswordVerifiedPayload } from '@/hooks/flow'
 
 import { useAuthStore } from '@/store/authStore'
+import { useAccountRecoveryModals } from '@/hooks/useAccountRecoveryModals'
 import { loginSchema, type LoginFormData } from '@/schemas/auth'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { mapLoginError } from '@/utils/error/authEndpointErrorMapper'
 import { createSocialRedirect } from '@/api/socialAuth'
 
-/** 아이디/비밀번호 찾기 모달 상태 및 액션 */
-function useAccountRecoveryModals() {
-  const [isFindIdOpen, setIsFindIdOpen] = useState(false)
-  const [isFindIdResultOpen, setIsFindIdResultOpen] = useState(false)
-  const [maskedEmail, setMaskedEmail] = useState('')
-  const [isFindPasswordOpen, setIsFindPasswordOpen] = useState(false)
-  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
-  const [emailToken, setEmailToken] = useState<string | null>(null)
-
-  const closeFindId = () => setIsFindIdOpen(false)
-  const closeFindIdResult = () => setIsFindIdResultOpen(false)
-  const closeFindPassword = () => setIsFindPasswordOpen(false)
-  const closeResetPassword = () => {
-    setIsResetPasswordOpen(false)
-    setEmailToken(null)
-  }
-
-  const openFindId = () => setIsFindIdOpen(true)
-  const openFindPassword = () => setIsFindPasswordOpen(true)
-
-  const handleFindIdSuccess = (maskedEmailResult: string) => {
-    setIsFindIdOpen(false)
-    setMaskedEmail(maskedEmailResult)
-    setIsFindIdResultOpen(true)
-  }
-
-  const goToFindPasswordFromResult = () => {
-    setIsFindIdResultOpen(false)
-    setIsFindPasswordOpen(true)
-  }
-
-  const openResetPasswordWithToken = (payload: FindPasswordVerifiedPayload) => {
-    setIsFindPasswordOpen(false)
-    setEmailToken(payload.emailToken)
-    setIsResetPasswordOpen(true)
-  }
-
-  return {
-    modals: {
-      findId: { isOpen: isFindIdOpen, close: closeFindId },
-      findIdResult: {
-        isOpen: isFindIdResultOpen,
-        close: closeFindIdResult,
-        maskedEmail,
-      },
-      findPassword: {
-        isOpen: isFindPasswordOpen,
-        close: closeFindPassword,
-      },
-      resetPassword: {
-        isOpen: isResetPasswordOpen,
-        close: closeResetPassword,
-        emailToken,
-      },
-    },
-    actions: {
-      openFindId,
-      handleFindIdSuccess,
-      openFindPassword,
-      goToFindPasswordFromResult,
-      openResetPasswordWithToken,
-    },
-  }
-}
-
-/** 로그인 폼 초기값 */
-const LOGIN_DEFAULT_VALUES: LoginFormData = { email: '', password: '' }
-
-/** 리다이렉트 경로 추출 */
-function getRedirectPath(locationState: unknown): string {
+function getRedirectPathFromLocation(locationState: unknown): string {
   const state = locationState as { from?: string } | null
   return typeof state?.from === 'string' ? state.from : '/'
 }
 
-/** 입력 변경 시 root 에러 초기화 */
 function useClearRootErrorOnInputChange(
-  email: string,
-  password: string,
+  emailValue: string,
+  passwordValue: string,
   rootError: string | null,
-  clearErrors: (name: 'root') => void
+  clearErrors: (name?: 'root') => void
 ) {
-  const prevInputKeyRef = useRef('')
+  const previousFormValuesKeyRef = useRef('')
   useEffect(() => {
-    const inputKey = `${email}|${password}`
-    if (prevInputKeyRef.current === inputKey) return
-    prevInputKeyRef.current = inputKey
+    const formValuesKey = `${emailValue}|${passwordValue}`
+    if (previousFormValuesKeyRef.current === formValuesKey) return
+    previousFormValuesKeyRef.current = formValuesKey
     if (rootError) clearErrors('root')
-  }, [email, password, rootError, clearErrors])
+  }, [emailValue, passwordValue, rootError, clearErrors])
 }
 
 function useLoginForm() {
   const navigate = useNavigate()
   const location = useLocation()
-  const login = useAuthStore((s) => s.login)
+  const login = useAuthStore((state) => state.login)
 
   const redirectPath = useMemo(
-    () => getRedirectPath(location.state),
+    () => getRedirectPathFromLocation(location.state),
     [location.state]
   )
 
   const methods = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: LOGIN_DEFAULT_VALUES,
+    defaultValues: { email: '', password: '' },
     mode: 'onChange',
     reValidateMode: 'onChange',
     shouldFocusError: true,
@@ -148,9 +73,9 @@ function useLoginForm() {
   } = methods
 
   const rootError = errors.root?.message ?? null
-  const watched = useWatch({ control }) as Partial<LoginFormData>
-  const emailValue = (watched.email ?? '').toString()
-  const passwordValue = (watched.password ?? '').toString()
+  const watchedFormValues = useWatch({ control }) as Partial<LoginFormData>
+  const emailValue = (watchedFormValues.email ?? '').toString()
+  const passwordValue = (watchedFormValues.password ?? '').toString()
 
   useClearRootErrorOnInputChange(
     emailValue,
@@ -198,7 +123,6 @@ export default function LoginPage() {
     <FormProvider {...methods}>
       <div className="flex h-[calc(100vh-96px)] items-center justify-center bg-white px-4 py-12">
         <div className="relative mb-[min(20vh)] flex w-[348px] flex-col items-center gap-16">
-          {/* 로고, 회원가입 */}
           <div className="flex w-full flex-col items-center gap-[27px]">
             <div className="flex w-[191px] flex-col items-center gap-4">
               <img
@@ -222,7 +146,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* 로그인 폼 */}
           <div className="flex w-full flex-col items-center">
             <div className="flex w-full flex-col items-start gap-10">
               <SocialLoginSection onLogin={handleSocialLogin} />

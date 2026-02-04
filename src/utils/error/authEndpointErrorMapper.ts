@@ -1,4 +1,4 @@
-// Auth API 엔드포인트별 에러 매핑 - 중앙화
+// Auth API 에러 → 폼에 보여줄 메시지로 변환 (mapLoginError, mapSendSmsError 등)
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { parseAxiosError, resolveMessage } from '@/utils/error/axiosErrorParser'
 import type { MappedError } from '@/utils/error/types'

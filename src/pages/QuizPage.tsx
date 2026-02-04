@@ -386,7 +386,7 @@ function QuizPage() {
       <Modal isOpen={isFullscreenModalOpen} onClose={() => {}}>
         <Modal.Body>
           <div className="flex min-w-[250px] flex-col items-center gap-4 py-4">
-            <p className="text-center text-[16px] text-[#222222]">
+            <p className="text-center text-[16px] text-foreground-secondary">
               전체화면이 해제되었습니다. <br />
               시험 진행을 위해 전체화면으로 돌아가 주세요.
             </p>

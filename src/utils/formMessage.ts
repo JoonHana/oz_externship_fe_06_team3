@@ -1,4 +1,4 @@
-// 로그인/회원가입 문구 관리를 위한 플로우 메시지 타입 정의
+// 폼 에러/성공 메시지 처리 - deriveFieldState, pickVisibleMessage 등
 import type { FieldState } from '@/components/common/CommonInput'
 
 export type FlowMessageScope = 'send' | 'verify' | 'expired' | null
@@ -76,4 +76,25 @@ export const MESSAGE_PLACEHOLDER = '\u00A0'
 // visibleMessage + placeholder. 항상 표시할 문자열(공백 포함)
 export function toMessageDisplay(visibleMessage: string | null): string {
   return visibleMessage?.trim() ? visibleMessage : MESSAGE_PLACEHOLDER
+}
+
+// 인증 모달 메시지 UI 파생 (FindId/FindPassword 공통)
+export function deriveVerificationMessageUI(params: {
+  error: string | null
+  notice: string | null
+  defaultGuide: string
+  defaultGuideAfterSend: string
+  codeSent: boolean
+}) {
+  const { error, notice, defaultGuide, defaultGuideAfterSend, codeSent } =
+    params
+  const guide = codeSent ? defaultGuideAfterSend : defaultGuide
+  const displayText =
+    (error ?? notice ?? guide)?.trim() || MESSAGE_PLACEHOLDER
+  return {
+    displayText,
+    isMessageError: Boolean(error),
+    isDefaultGuide: !error && !notice,
+    hasMessage: displayText !== MESSAGE_PLACEHOLDER,
+  }
 }

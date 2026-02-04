@@ -1,6 +1,8 @@
+// 회원가입 비밀번호 섹션 - 비밀번호 + 확인 입력
 import { Check } from 'lucide-react'
 
 import { AUTH_MESSAGES } from '@/constants/authMessages'
+import { SectionBlock } from '@/components/signup/SectionBlock'
 import { PasswordField } from '@/components/common/PasswordField'
 import { CommonInputField } from '@/components/common/CommonInputField'
 import type { FieldState } from '@/components/common/CommonInput'
@@ -20,19 +22,14 @@ export function PasswordSection({
   const isConfirmSuccess = passwordConfirmState === 'success'
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="inline-flex items-center gap-4">
-        <label className="inline-flex items-start text-left text-[16px] leading-[22.24px] font-normal tracking-[-0.48px] text-[#121212]">
-          비밀번호
-          <span className="text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
-            *
-          </span>
-        </label>
+    <SectionBlock
+      label="비밀번호"
+      rightText={
         <p className="text-primary text-left text-[14px] leading-[19.6px] font-semibold tracking-[-0.42px]">
           6~15자의 영문/숫자/특수문자 포함
         </p>
-      </div>
-
+      }
+    >
       <PasswordField<SignupFormData>
         name="password"
         placeholder="비밀번호를 입력해주세요"
@@ -53,12 +50,13 @@ export function PasswordSection({
         width="100%"
         placeholderVariant="a"
         state={passwordConfirmState}
+        stateOverride={isConfirmSuccess ? 'success' : undefined}
         helperVisibility="always"
         helperText={passwordConfirmMsg ?? undefined}
         rightSlot={
           isConfirmSuccess ? <Check className="text-success h-5 w-5" /> : null
         }
       />
-    </div>
+    </SectionBlock>
   )
 }

@@ -1,3 +1,4 @@
+// axios 에러 파싱 - status, detail, fieldErrors 추출 (authEndpointErrorMapper에서 사용)
 import axios from 'axios'
 
 export type ParsedAxiosError = {

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+// 회원가입 이메일 인증 - useVerificationFlow 래핑
 import type { Path } from 'react-hook-form'
 import type { SignupFormData } from '@/schemas/auth'
 import { useVerificationFlow } from '@/hooks/useVerificationFlow'
@@ -8,8 +9,7 @@ import {
   mapVerifyEmailError,
 } from '@/utils/error/authEndpointErrorMapper'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
-
-const TTL_SEC = 5 * 60
+import { EMAIL_VERIFICATION_TTL_SECONDS } from '@/constants/auth'
 const emailZ = z.string().trim().email()
 
 type UseEmailVerificationArgs = {
@@ -32,7 +32,7 @@ export function useEmailVerification({
   return useVerificationFlow({
     identity: email,
     code: emailVerificationCode,
-    ttlSec: TTL_SEC,
+    ttlSec: EMAIL_VERIFICATION_TTL_SECONDS,
     busy,
     setBusy,
     clearErrors,
@@ -41,8 +41,8 @@ export function useEmailVerification({
     identityFields: ['email'],
     codeField: 'emailVerificationCode',
 
-    validateIdentity: (v) => {
-      const ok = emailZ.safeParse(v).success
+    validateIdentity: (emailValue) => {
+      const ok = emailZ.safeParse(emailValue).success
       return ok
         ? { ok: true }
         : { ok: false, message: AUTH_MESSAGES.email.identityInvalid }
@@ -51,7 +51,7 @@ export function useEmailVerification({
     send: (identity) => authApi.sendEmailVerification({ email: identity }),
     verify: (identity, verificationCode) =>
       authApi.verifyEmailCode({ email: identity, verificationCode }),
-    getToken: (res) => res.emailToken,
+    getToken: (response) => response.emailToken,
 
     getSendErrorMessage: (err) => mapSendEmailError(err).message,
     getVerifyErrorMessage: (err) => mapVerifyEmailError(err).message,

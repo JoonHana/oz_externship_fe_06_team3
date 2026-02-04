@@ -1,13 +1,15 @@
+// 회원가입 이메일 섹션 - 이메일 입력 + 인증코드 전송/확인
 import { ActionRow } from '@/components/signup/ActionRow'
+import { SectionBlock } from '@/components/signup/SectionBlock'
 import { Button } from '@/components/common/Button'
 import { CommonInputField } from '@/components/common/CommonInputField'
 import type { FieldState } from '@/components/common/CommonInput'
 import type { SignupFormData } from '@/schemas/auth'
-import { type FlowMessage } from '@/utils/formMessage'
-import cn from '@/lib/cn'
+import type { FlowMessage } from '@/utils/formMessage'
 import {
   getVerificationButtonProps,
   getVerificationCodeRightSlot,
+  renderFlowMessage,
 } from './utils'
 
 export type EmailSectionProps = {
@@ -43,51 +45,18 @@ export function EmailSection({
   onVerifyEmailCode,
 }: EmailSectionProps) {
   const isCodePhase = emailCodeSent && !emailVerified
-  const emailBtn = getVerificationButtonProps(canSendEmail)
-  const codeBtn = getVerificationButtonProps(canVerifyEmail)
+  const sendCodeButtonProps = getVerificationButtonProps(canSendEmail)
+  const verifyCodeButtonProps = getVerificationButtonProps(canVerifyEmail)
 
-  const showSendMessage =
-    flowMessage.scope === 'send' &&
-    flowMessage.type !== 'idle' &&
-    flowMessage.message
-  const showVerifyMessage =
-    (flowMessage.scope === 'verify' || flowMessage.scope === 'expired') &&
-    flowMessage.type !== 'idle' &&
-    flowMessage.message
-
-  const firstRowBelow = showSendMessage ? (
-    <p
-      className={cn(
-        'text-xs font-medium',
-        flowMessage.type === 'success' && 'text-success',
-        flowMessage.type === 'error' && 'text-error'
-      )}
-    >
-      {flowMessage.message}
-    </p>
-  ) : null
-
-  const secondRowBelow = showVerifyMessage ? (
-    <p
-      className={cn(
-        'text-xs font-medium',
-        flowMessage.type === 'success' && 'text-success',
-        flowMessage.type === 'error' && 'text-error'
-      )}
-    >
-      {flowMessage.message}
-    </p>
-  ) : null
+  const sendMessageRow =
+    flowMessage.scope === 'send' ? renderFlowMessage(flowMessage) : null
+  const verifyMessageRow =
+    flowMessage.scope === 'verify' || flowMessage.scope === 'expired'
+      ? renderFlowMessage(flowMessage)
+      : null
 
   return (
-    <div className="flex flex-col gap-5">
-      <label className="inline-flex items-start text-left text-[16px] leading-[22.24px] font-normal tracking-[-0.48px] text-[#121212]">
-        이메일
-        <span className="text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
-          *
-        </span>
-      </label>
-
+    <SectionBlock label="이메일">
       <ActionRow
         left={
           <CommonInputField<SignupFormData>
@@ -115,15 +84,15 @@ export function EmailSection({
           <Button
             type="button"
             size="sm"
-            variant={emailBtn.variant}
-            disabled={emailBtn.disabled}
+            variant={sendCodeButtonProps.variant}
+            disabled={sendCodeButtonProps.disabled}
             className="whitespace-nowrap"
             onClick={onSendEmailCode}
           >
             {emailSendLabel}
           </Button>
         }
-        below={firstRowBelow}
+        below={sendMessageRow}
       />
 
       <ActionRow
@@ -149,16 +118,16 @@ export function EmailSection({
           <Button
             type="button"
             size="sm"
-            variant={codeBtn.variant}
-            disabled={codeBtn.disabled}
+            variant={verifyCodeButtonProps.variant}
+            disabled={verifyCodeButtonProps.disabled}
             className="whitespace-nowrap"
             onClick={onVerifyEmailCode}
           >
             인증번호 확인
           </Button>
         }
-        below={secondRowBelow}
+        below={verifyMessageRow}
       />
-    </div>
+    </SectionBlock>
   )
 }

@@ -23,8 +23,8 @@ export default function ShortAnswer({
   const answerColorClass = isResult
     ? isCorrect
       ? 'text-[#14C786]'
-      : 'text-[#EC0037]'
-    : 'text-[#222222]'
+      : 'text-error'
+    : 'text-foreground-secondary'
 
   return (
     <div className={containerClass}>
@@ -42,7 +42,7 @@ export default function ShortAnswer({
           value={answer ?? ''}
           onChange={(e) => onAnswerChange(question.questionId, e.target.value)}
           placeholder="20글자 이내로 입력해 주세요."
-          className={`h-[48px] w-[648px] rounded-lg bg-[#F2F3F5] px-4 py-[10px] text-[16px] font-normal ${answerColorClass} placeholder:text-[#BDBDBD]`}
+          className={`h-[48px] w-[648px] rounded-lg bg-surface px-4 py-[10px] text-[16px] font-normal ${answerColorClass} placeholder:text-mono-400`}
         />
       </div>
       {isResult && explanation && (

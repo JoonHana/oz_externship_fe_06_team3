@@ -1,4 +1,4 @@
-// 회원가입 폼. 전역 에러는 FormErrorDisplay(errors.root)
+// 일반회원 이메일 회원가입 폼 - 닉네임/이메일/휴대전화/비밀번호 등
 import { FormProvider } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 
@@ -26,7 +26,7 @@ export default function SignupEmailPage() {
         <div className="bg-white px-6 py-10">
           <div className="flex w-[480px] flex-col gap-9">
             <div className="flex flex-col items-center gap-4">
-              <p className="text-center text-[18px] leading-normal font-bold tracking-[-0.36px] text-[#000a30]">
+              <p className="text-center text-[18px] font-bold leading-normal tracking-[-0.36px] text-foreground">
                 마법같이 빠르게 성장시켜줄
               </p>
               <img
@@ -36,7 +36,7 @@ export default function SignupEmailPage() {
               />
             </div>
 
-            <h1 className="text-left text-[18px] leading-[25.2px] font-semibold tracking-[-0.54px] text-[#121212]">
+            <h1 className="text-left text-[18px] font-semibold leading-[25.2px] tracking-[-0.54px] text-foreground">
               회원가입
             </h1>
 

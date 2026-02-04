@@ -1,6 +1,7 @@
+// 회원가입 휴대전화 섹션 - 010-xxxx-xxxx + 인증번호 전송/확인
 import { ActionRow } from '@/components/signup/ActionRow'
+import { SectionBlock } from '@/components/signup/SectionBlock'
 import { Button } from '@/components/common/Button'
-import cn from '@/lib/cn'
 import { CommonInputField } from '@/components/common/CommonInputField'
 import type { FieldState } from '@/components/common/CommonInput'
 import type { SignupFormData } from '@/schemas/auth'
@@ -9,30 +10,15 @@ import type { FlowMessage } from '@/utils/formMessage'
 import {
   getVerificationButtonProps,
   getVerificationCodeRightSlot,
+  renderFlowMessage,
 } from './utils'
 
-// 휴대전화 중간/끝 자리수 (4자리)
 const PHONE_DIGIT_LENGTH = 4
 const PHONE_DIGIT_TRANSFORM = createDigitsOnlyTransform(PHONE_DIGIT_LENGTH)
 
 type TimerLike = {
   isRunning: boolean
   mmss: string
-}
-
-function renderFlowMessage(msg: FlowMessage) {
-  if (msg.type === 'idle' || !msg.message) return null
-  return (
-    <p
-      className={cn(
-        'text-xs font-medium',
-        msg.type === 'success' && 'text-success',
-        msg.type === 'error' && 'text-error'
-      )}
-    >
-      {msg.message}
-    </p>
-  )
 }
 
 export type PhoneSectionProps = {
@@ -69,15 +55,15 @@ export function PhoneSection({
   onSendSmsCode,
   onVerifySmsCode,
 }: PhoneSectionProps) {
-  const canTypeSmsCode = smsCodeSent && !smsVerified
-  const showTimerInCodeInput = smsCodeSent && smsTimer.isRunning && !smsVerified
+  const isCodeInputPhase = smsCodeSent && !smsVerified
+  const shouldShowTimer = smsCodeSent && smsTimer.isRunning && !smsVerified
 
-  const sendBtn = getVerificationButtonProps(canSendSms)
-  const verifyBtn = getVerificationButtonProps(canVerifySms)
+  const sendCodeButtonProps = getVerificationButtonProps(canSendSms)
+  const verifyCodeButtonProps = getVerificationButtonProps(canVerifySms)
 
   const smsCodeRightSlot = getVerificationCodeRightSlot({
     verified: smsVerified,
-    timerVisible: showTimerInCodeInput,
+    timerVisible: shouldShowTimer,
     mmss: smsTimer.mmss,
   })
 
@@ -90,10 +76,10 @@ export function PhoneSection({
       ? flowMessage
       : { type: 'idle', message: null, scope: null }
 
-  const firstRowBelow = renderFlowMessage(sendFlowMessage)
-  const secondRowBelow = renderFlowMessage(verifyFlowMessage)
+  const sendMessageRow = renderFlowMessage(sendFlowMessage)
+  const verifyMessageRow = renderFlowMessage(verifyFlowMessage)
 
-  const phoneDigitInputProps = {
+  const phoneDigitFieldProps = {
     type: 'text' as const,
     inputMode: 'numeric' as const,
     maxLength: PHONE_DIGIT_LENGTH,
@@ -105,7 +91,7 @@ export function PhoneSection({
     transformOnChange: PHONE_DIGIT_TRANSFORM,
   }
 
-  const phoneDigitsLeft = (
+  const phoneNumberInputs = (
     <div className="grid w-full min-w-0 grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-1">
       <div className="min-w-0">
         <CommonInputField<SignupFormData>
@@ -121,43 +107,36 @@ export function PhoneSection({
       <div className="min-w-0">
         <CommonInputField<SignupFormData>
           name="phone2"
-          {...phoneDigitInputProps}
+          {...phoneDigitFieldProps}
         />
       </div>
       <span className="text-mono-600 shrink-0 text-[14px]">-</span>
       <div className="min-w-0">
         <CommonInputField<SignupFormData>
           name="phone3"
-          {...phoneDigitInputProps}
+          {...phoneDigitFieldProps}
         />
       </div>
     </div>
   )
 
   return (
-    <div className="flex min-w-0 flex-col gap-5">
-      <label className="inline-flex items-start text-left text-[16px] leading-[22.24px] font-normal tracking-[-0.48px] text-[#121212]">
-        휴대전화
-        <span className="text-[16px] leading-normal font-normal tracking-[-0.32px] text-[#EC0037]">
-          *
-        </span>
-      </label>
-
+    <SectionBlock label="휴대전화" className="min-w-0">
       <ActionRow
-        left={phoneDigitsLeft}
+        left={phoneNumberInputs}
         right={
           <Button
             type="button"
             size="sm"
-            variant={sendBtn.variant}
-            disabled={sendBtn.disabled}
+            variant={sendCodeButtonProps.variant}
+            disabled={sendCodeButtonProps.disabled}
             className="whitespace-nowrap"
             onClick={onSendSmsCode}
           >
             {smsSendLabel}
           </Button>
         }
-        below={firstRowBelow}
+        below={sendMessageRow}
       />
 
       <ActionRow
@@ -172,23 +151,23 @@ export function PhoneSection({
             helperVisibility="always"
             rightSlot={smsCodeRightSlot}
             locked={smsVerified}
-            disabled={!canTypeSmsCode}
+            disabled={!isCodeInputPhase}
           />
         }
         right={
           <Button
             type="button"
             size="sm"
-            variant={verifyBtn.variant}
-            disabled={verifyBtn.disabled}
+            variant={verifyCodeButtonProps.variant}
+            disabled={verifyCodeButtonProps.disabled}
             className="whitespace-nowrap"
             onClick={onVerifySmsCode}
           >
             {smsVerified ? '인증완료' : '인증번호 확인'}
           </Button>
         }
-        below={secondRowBelow}
+        below={verifyMessageRow}
       />
-    </div>
+    </SectionBlock>
   )
 }

@@ -1,3 +1,4 @@
+// 전화번호/이메일 정규화 - API 전송 전 포맷 맞출 때 사용
 // 숫자만 추출, 내부 헬퍼 (createDigitsOnlyTransform, normalizePhone에서 사용)
 function stripNonDigits(input: string): string {
   return input.replace(/\D/g, '')

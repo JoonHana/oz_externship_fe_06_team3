@@ -1,4 +1,4 @@
-// AUTH_MESSAGES 상수로 로그인/회원가입 문구 중앙화
+// 로그인/회원가입/아이디찾기 등 화면에 보이는 문구 모음 (에러, 안내, 버튼 라벨)
 export const AUTH_MESSAGES = {
   common: {
     // 네트워크 오류
@@ -61,6 +61,7 @@ export const AUTH_MESSAGES = {
     match: '* 비밀번호가 일치합니다.',
     mismatch: '* 비밀번호가 일치하지 않습니다.',
     available: '* 사용 가능한 비밀번호입니다.',
+    formatHint: '6~15자의 영문 대소문자, 숫자, 특수문자 포함',
   },
   buttons: {
     resend: '재전송',
@@ -97,6 +98,8 @@ export const AUTH_MESSAGES = {
   },
   // 비밀번호 재설정
   resetPassword: {
+    submitLabel: '확인',
+    noTokenMessage: '인증 정보가 없습니다. 비밀번호 찾기부터 진행해주세요.',
     toastSuccess: '비밀번호 변경 완료!',
     toastRedirectMessage: '잠시 후 로그인 페이지로 이동합니다.',
     failed: '* 비밀번호 재설정에 실패했습니다. 다시 시도해주세요.',
