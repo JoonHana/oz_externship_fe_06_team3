@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Modal } from '../Modal'
-import { Button } from '../../Button'
-import { CommonInputField } from '../../CommonInputField'
+import { Button } from '@/components/common/Button'
+import { CommonInputField } from '@/components/common/CommonInputField'
+import { Modal } from '@/components/common/Modal'
 import {
   restoreAccountSchema,
   type RestoreAccountFormData,

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Modal } from '../Modal'
-import { Button } from '../../Button'
+import { Button } from '@/components/common/Button'
+import { Modal } from '@/components/common/Modal'
 import {
   registerStudentSchema,
   type RegisterStudentFormData,
