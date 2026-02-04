@@ -142,3 +142,8 @@ export async function resetPassword(
     new_password: payload.newPassword,
   })
 }
+
+export async function updateMyInfo(payload: Partial<User>): Promise<User> {
+  const { data } = await apiClient.patch<User>('/api/v1/accounts/me/', payload)
+  return data
+}

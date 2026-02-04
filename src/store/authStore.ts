@@ -6,10 +6,15 @@ import * as authApi from '@/api/auth'
 
 type AuthState = {
   accessToken: string | null
+  refreshToken: string | null
   user: User | null
   isAuthenticated: boolean
 
-  setAuth: (payload: { accessToken: string | null; user: User }) => void
+  setAuth: (payload: {
+    accessToken: string | null
+    refreshToken?: string
+    user: User
+  }) => void
   clearAuth: () => void
 
   login: (payload: LoginPayload) => Promise<void>
@@ -21,25 +26,39 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       accessToken: null,
+      refreshToken: null,
       user: null,
       isAuthenticated: false,
 
-      setAuth: ({ accessToken, user }) => {
-        set({ accessToken, user, isAuthenticated: true })
+      setAuth: ({ accessToken, refreshToken, user }) => {
+        set((prev) => ({
+          accessToken,
+          refreshToken: refreshToken ?? prev.refreshToken,
+          user,
+          isAuthenticated: true,
+        }))
       },
 
       clearAuth: () => {
-        set({ accessToken: null, user: null, isAuthenticated: false })
+        set({
+          accessToken: null,
+          refreshToken: null,
+          user: null,
+          isAuthenticated: false,
+        })
       },
 
       login: async (payload) => {
         try {
           const response = await authApi.login(payload)
           const accessToken = response?.access_token
-          if (!accessToken) throw new Error('LOGIN_FAILED')
-
+          let refreshToken = response?.refresh_token // undefined일 수 있음
+          if (!accessToken) {
+            throw new Error('LOGIN_FAILED')
+          }
           const user = await authApi.me(accessToken)
-          get().setAuth({ accessToken, user })
+          // refreshToken이 없으면 setAuth에 undefined로 저장 (별도 API에서 추후 갱신)
+          get().setAuth({ accessToken, refreshToken, user })
         } catch (error) {
           get().clearAuth()
           throw error
@@ -72,6 +91,7 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       partialize: (s) => ({
         accessToken: s.accessToken,
+        refreshToken: s.refreshToken,
         user: s.user,
         isAuthenticated: s.isAuthenticated,
       }),
