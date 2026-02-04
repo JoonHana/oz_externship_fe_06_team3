@@ -9,7 +9,7 @@ type AuthState = {
   user: User | null
   isAuthenticated: boolean
 
-  setAuth: (payload: { accessToken: string; user: User }) => void
+  setAuth: (payload: { accessToken: string | null; user: User }) => void
   clearAuth: () => void
 
   login: (payload: LoginPayload) => Promise<void>
