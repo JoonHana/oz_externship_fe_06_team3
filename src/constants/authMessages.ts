@@ -5,15 +5,14 @@ export const AUTH_MESSAGES = {
     networkError: '* 네트워크 연결을 확인해주세요.',
     // 500대 서버 오류
     serverError: '* 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-    // 생년월일 8자리 안내
-    birthdateFormat: '* 8자리로 입력해주세요. (예: 20000101)',
     // 제출 버튼 처리 중
     submitBusy: '처리 중...',
     // 가입하기 버튼
     submitLabel: '가입하기',
   },
-  // 폼 검증 실패 안내
+  // 폼 검증 실패 안내 (회원가입)
   form: {
+    birthdateFormat: '* 8자리로 입력해주세요. (예: 20000101)',
     requireNicknameCheck: '* 닉네임 중복확인을 진행해주세요.',
     requireEmailVerify: '* 이메일 인증을 완료해주세요.',
     requireSmsVerify: '* 휴대폰 인증을 완료해주세요.',
@@ -98,9 +97,6 @@ export const AUTH_MESSAGES = {
   },
   // 비밀번호 재설정
   resetPassword: {
-    success: '* 비밀번호 변경 완료!',
-    redirectMessage: '* 잠시 후 로그인 페이지로 이동합니다.',
-    // 토스트 전용 (별표 없음)
     toastSuccess: '비밀번호 변경 완료!',
     toastRedirectMessage: '잠시 후 로그인 페이지로 이동합니다.',
     failed: '* 비밀번호 재설정에 실패했습니다. 다시 시도해주세요.',

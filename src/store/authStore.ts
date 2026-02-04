@@ -33,33 +33,34 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (payload) => {
         try {
-          const res = await authApi.login(payload)
-          const token = res?.access_token
-          if (!token) throw new Error('LOGIN_FAILED')
+          const response = await authApi.login(payload)
+          const accessToken = response?.access_token
+          if (!accessToken) throw new Error('LOGIN_FAILED')
 
-          const user = await authApi.me(token)
-
-          get().setAuth({ accessToken: token, user })
-        } catch (err) {
+          const user = await authApi.me(accessToken)
+          get().setAuth({ accessToken, user })
+        } catch (error) {
           get().clearAuth()
-          throw err
+          throw error
         }
       },
 
       logout: async () => {
         try {
           await authApi.logout()
+        } catch {
+          // 로그아웃 API 실패 시에도 클라이언트 인증은 초기화
         } finally {
           get().clearAuth()
         }
       },
 
       restore: async () => {
-        const token = get().accessToken
-        if (!token) return
+        const accessToken = get().accessToken
+        if (!accessToken) return
 
         try {
-          const user = await authApi.me(token)
+          const user = await authApi.me(accessToken)
           set({ user, isAuthenticated: true })
         } catch {
           get().clearAuth()

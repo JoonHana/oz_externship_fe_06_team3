@@ -1,13 +1,21 @@
 import { apiClient } from '@/api/client'
+import type { LoginPayload, LoginResult, User } from '@/types/auth'
 
+/** DTO: API 응답 형식 (스네이크 케이스) */
 type VerifySmsResponseDTO = { sms_token: string; detail?: string }
 type VerifyEmailResponseDTO = { email_token: string; detail?: string }
 
+/** 이메일 인증 결과 */
 export type VerifyEmailResult = { emailToken: string; detail?: string }
+/** SMS 인증 결과 */
 export type VerifySmsResult = { smsToken: string; detail?: string }
+/** 아이디 찾기 요청 */
 export type FindMaskedEmailPayload = { name: string; smsToken: string }
+/** 아이디 찾기 결과 */
 export type FindMaskedEmailResult = { maskedEmail: string }
+/** 비밀번호 재설정 요청 */
 export type ResetPasswordPayload = { emailToken: string; newPassword: string }
+/** 회원가입 요청 */
 export type SignupPayload = {
   password: string
   passwordConfirm: string
@@ -19,7 +27,10 @@ export type SignupPayload = {
   smsToken: string
 }
 
-import type { LoginPayload, LoginResult, User } from '@/types/auth'
+/** API 요청 옵션 (취소 시그널 등) */
+interface ApiRequestOptions {
+  signal?: AbortSignal
+}
 
 export async function login(payload: LoginPayload): Promise<LoginResult> {
   const { data } = await apiClient.post<LoginResult>(
@@ -43,17 +54,18 @@ export async function me(accessToken: string | null = null): Promise<User> {
   return data
 }
 
-export async function checkNickname(payload: {
+/** 닉네임 중복확인 요청 */
+export interface CheckNicknamePayload {
   nickname: string
-}): Promise<void> {
+}
+
+export async function checkNickname(payload: CheckNicknamePayload): Promise<void> {
   await apiClient.post('/api/v1/accounts/check-nickname/', payload)
 }
 
-type ApiOptions = { signal?: AbortSignal }
-
 export async function sendEmailVerification(
   payload: { email: string },
-  options?: ApiOptions
+  options?: ApiRequestOptions
 ): Promise<void> {
   await apiClient.post(
     '/api/v1/accounts/verification/send-email/',
@@ -64,7 +76,7 @@ export async function sendEmailVerification(
 
 export async function verifyEmailCode(
   payload: { email: string; verificationCode: string },
-  options?: ApiOptions
+  options?: ApiRequestOptions
 ): Promise<VerifyEmailResult> {
   const { data } = await apiClient.post<VerifyEmailResponseDTO>(
     '/api/v1/accounts/verification/verify-email/',
@@ -76,7 +88,7 @@ export async function verifyEmailCode(
 
 export async function sendSmsVerification(
   payload: { phoneNumber: string },
-  options?: ApiOptions
+  options?: ApiRequestOptions
 ): Promise<void> {
   await apiClient.post(
     '/api/v1/accounts/verification/send-sms/',
@@ -87,7 +99,7 @@ export async function sendSmsVerification(
 
 export async function verifySmsCode(
   payload: { phoneNumber: string; verificationCode: string },
-  options?: ApiOptions
+  options?: ApiRequestOptions
 ): Promise<VerifySmsResult> {
   const { data } = await apiClient.post<VerifySmsResponseDTO>(
     '/api/v1/accounts/verification/verify-sms/',
@@ -115,7 +127,7 @@ export async function signup(payload: SignupPayload): Promise<void> {
 
 export async function findMaskedEmail(
   payload: FindMaskedEmailPayload,
-  options?: ApiOptions
+  options?: ApiRequestOptions
 ): Promise<FindMaskedEmailResult> {
   const { data } = await apiClient.post<{ email: string }>(
     '/api/v1/accounts/find-email/',

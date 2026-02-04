@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom'
 import SocialLoginSection from '@/components/auth/SocialLoginSection'
 import type { SocialProviderId } from '@/types/social'
-import { createSocialRedirect } from '@/lib/auth'
+import { createSocialRedirect } from '@/api/socialAuth'
 
 export default function SignupPage() {
   const handleSocialSignup = (provider: SocialProviderId) => {

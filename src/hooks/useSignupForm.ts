@@ -1,5 +1,8 @@
-// 회원가입 폼 전체를 관리하는 커스텀 훅.
-// RHF 세팅 + 닉네임 체크 + 이메일 인증 Flow + SMS 인증 Flow + 최종 signup/auto-login + UI 섹션별 props(sections) 생성까지 한 번에 제공
+/**
+ * 회원가입 폼 전체 관리 훅
+ * - RHF 세팅, 닉네임 중복확인, 이메일/SMS 인증 Flow
+ * - signup 후 자동 로그인, UI 섹션별 props(sections) 제공
+ */
 import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import { useForm, useWatch, type Path } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
@@ -201,10 +204,12 @@ export function useSignupForm() {
 
   const onCheckNickname = useCallback(async () => {
     setRootError(null)
-    const ok = await trigger('nickname')
-    if (!ok) return
+    const isNicknameValid = await trigger('nickname')
+    if (!isNicknameValid) return
+
     clearErrors('nickname')
     setBusyAction('nickname')
+
     try {
       await authApi.checkNickname({ nickname })
       setNicknameChecked(true)
@@ -214,10 +219,10 @@ export function useSignupForm() {
         message: AUTH_MESSAGES.nickname.available,
         scope: null,
       })
-    } catch (err) {
+    } catch (error) {
       setNicknameChecked(false)
       setNicknameFlowMessage(IDLE_FLOW_MESSAGE)
-      const mapped = mapCheckNicknameError(err)
+      const mapped = mapCheckNicknameError(error)
       setNicknameStatus('error')
       setError('nickname', { message: mapped.message })
     } finally {
@@ -225,28 +230,30 @@ export function useSignupForm() {
     }
   }, [nickname, trigger, clearErrors, setError, setRootError])
 
+  const validateSignupPrerequisites = useCallback(
+    (): string | null => {
+      if (!nicknameChecked) return AUTH_MESSAGES.form.requireNicknameCheck
+      if (!emailFlow.verified || !emailFlow.token) return AUTH_MESSAGES.form.requireEmailVerify
+      if (!smsFlow.verified || !smsFlow.token) return AUTH_MESSAGES.form.requireSmsVerify
+      return null
+    },
+    [nicknameChecked, emailFlow.verified, emailFlow.token, smsFlow.verified, smsFlow.token]
+  )
+
   const onSubmit = useCallback(
     (e?: import('react').BaseSyntheticEvent) => {
       return handleSubmit(async (data) => {
         setRootError(null)
-        if (!nicknameChecked) {
-          setRootError(AUTH_MESSAGES.form.requireNicknameCheck)
-          return
-        }
-        if (!emailFlow.verified || !emailFlow.token) {
-          setRootError(AUTH_MESSAGES.form.requireEmailVerify)
-          return
-        }
-        if (!smsFlow.verified || !smsFlow.token) {
-          setRootError(AUTH_MESSAGES.form.requireSmsVerify)
+
+        const prerequisiteError = validateSignupPrerequisites()
+        if (prerequisiteError) {
+          setRootError(prerequisiteError)
           return
         }
 
-        const birthday = formatBirthday(data.birthdate)
-        if (!birthday) {
-          setError('birthdate', {
-            message: AUTH_MESSAGES.common.birthdateFormat,
-          })
+        const formattedBirthday = formatBirthday(data.birthdate)
+        if (!formattedBirthday) {
+          setError('birthdate', { message: AUTH_MESSAGES.form.birthdateFormat })
           return
         }
 
@@ -257,7 +264,7 @@ export function useSignupForm() {
             passwordConfirm: data.passwordConfirm,
             nickname: data.nickname.trim(),
             name: data.name.trim(),
-            birthday,
+            birthday: formattedBirthday,
             gender: mapGender(data.gender),
             emailToken: emailFlow.token!,
             smsToken: smsFlow.token!,
@@ -267,8 +274,8 @@ export function useSignupForm() {
             password: data.password,
           })
           navigate('/', { replace: true })
-        } catch (err) {
-          const mapped = mapSignupError(err)
+        } catch (error) {
+          const mapped = mapSignupError(error)
           setRootError(mapped.message)
         } finally {
           setBusyAction((curr) => (curr === 'submit' ? null : curr))
@@ -277,10 +284,8 @@ export function useSignupForm() {
     },
     [
       handleSubmit,
-      nicknameChecked,
-      emailFlow.verified,
+      validateSignupPrerequisites,
       emailFlow.token,
-      smsFlow.verified,
       smsFlow.token,
       setRootError,
       setError,

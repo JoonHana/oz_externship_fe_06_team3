@@ -1,4 +1,9 @@
-// 로그인 + 아이디/비밀번호 찾기. 에러는 errors.root로.
+/**
+ * 로그인 페이지
+ * - 일반 로그인 폼
+ * - 아이디/비밀번호 찾기 모달
+ * - 에러는 errors.root로 표시
+ */
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -13,8 +18,10 @@ import {
   FindIdResultModal,
   ResetPasswordModal,
 } from '@/components/common/Modal'
-import { FindIdModalContainer } from '@/components/auth/FindIdModalContainer'
-import { FindPasswordModalContainer } from '@/components/auth/FindPasswordModalContainer'
+import {
+  FindIdModal,
+  FindPasswordModal,
+} from '@/components/common/Modal/variants'
 import type { SocialProviderId } from '@/types/social'
 import type { FindPasswordVerifiedPayload } from '@/hooks/flow'
 
@@ -22,72 +29,111 @@ import { useAuthStore } from '@/store/authStore'
 import { loginSchema, type LoginFormData } from '@/schemas/auth'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { mapLoginError } from '@/utils/error/authEndpointErrorMapper'
-import { createSocialRedirect } from '@/lib/auth'
+import { createSocialRedirect } from '@/api/socialAuth'
 
-// 찾기 모달 열기/닫기, 결과→비밀번호찾기→재설정 전환
-function useRecoveryModals() {
-  const [findIdOpen, setFindIdOpen] = useState(false)
-  const [findIdResultOpen, setFindIdResultOpen] = useState(false)
+/** 아이디/비밀번호 찾기 모달 상태 및 액션 */
+function useAccountRecoveryModals() {
+  const [isFindIdOpen, setIsFindIdOpen] = useState(false)
+  const [isFindIdResultOpen, setIsFindIdResultOpen] = useState(false)
   const [maskedEmail, setMaskedEmail] = useState('')
-  const [findPasswordOpen, setFindPasswordOpen] = useState(false)
-  const [resetPasswordOpen, setResetPasswordOpen] = useState(false)
+  const [isFindPasswordOpen, setIsFindPasswordOpen] = useState(false)
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false)
   const [emailToken, setEmailToken] = useState<string | null>(null)
+
+  const closeFindId = () => setIsFindIdOpen(false)
+  const closeFindIdResult = () => setIsFindIdResultOpen(false)
+  const closeFindPassword = () => setIsFindPasswordOpen(false)
+  const closeResetPassword = () => {
+    setIsResetPasswordOpen(false)
+    setEmailToken(null)
+  }
+
+  const openFindId = () => setIsFindIdOpen(true)
+  const openFindPassword = () => setIsFindPasswordOpen(true)
+
+  const handleFindIdSuccess = (maskedEmailResult: string) => {
+    setIsFindIdOpen(false)
+    setMaskedEmail(maskedEmailResult)
+    setIsFindIdResultOpen(true)
+  }
+
+  const goToFindPasswordFromResult = () => {
+    setIsFindIdResultOpen(false)
+    setIsFindPasswordOpen(true)
+  }
+
+  const openResetPasswordWithToken = (payload: FindPasswordVerifiedPayload) => {
+    setIsFindPasswordOpen(false)
+    setEmailToken(payload.emailToken)
+    setIsResetPasswordOpen(true)
+  }
 
   return {
     modals: {
-      findId: { isOpen: findIdOpen, close: () => setFindIdOpen(false) },
+      findId: { isOpen: isFindIdOpen, close: closeFindId },
       findIdResult: {
-        isOpen: findIdResultOpen,
-        close: () => setFindIdResultOpen(false),
+        isOpen: isFindIdResultOpen,
+        close: closeFindIdResult,
         maskedEmail,
       },
       findPassword: {
-        isOpen: findPasswordOpen,
-        close: () => setFindPasswordOpen(false),
+        isOpen: isFindPasswordOpen,
+        close: closeFindPassword,
       },
       resetPassword: {
-        isOpen: resetPasswordOpen,
-        close: () => {
-          setResetPasswordOpen(false)
-          setEmailToken(null)
-        },
+        isOpen: isResetPasswordOpen,
+        close: closeResetPassword,
         emailToken,
       },
     },
     actions: {
-      openFindId: () => setFindIdOpen(true),
-      handleFindIdSuccess: (email: string) => {
-        setFindIdOpen(false)
-        setMaskedEmail(email)
-        setFindIdResultOpen(true)
-      },
-      openFindPassword: () => setFindPasswordOpen(true),
-      goToPasswordFromResult: () => {
-        setFindIdResultOpen(false)
-        setFindPasswordOpen(true)
-      },
-      openResetPassword: (payload: FindPasswordVerifiedPayload) => {
-        setFindPasswordOpen(false)
-        setEmailToken(payload.emailToken)
-        setResetPasswordOpen(true)
-      },
+      openFindId,
+      handleFindIdSuccess,
+      openFindPassword,
+      goToFindPasswordFromResult,
+      openResetPasswordWithToken,
     },
   }
+}
+
+/** 로그인 폼 초기값 */
+const LOGIN_DEFAULT_VALUES: LoginFormData = { email: '', password: '' }
+
+/** 리다이렉트 경로 추출 */
+function getRedirectPath(locationState: unknown): string {
+  const state = locationState as { from?: string } | null
+  return typeof state?.from === 'string' ? state.from : '/'
+}
+
+/** 입력 변경 시 root 에러 초기화 */
+function useClearRootErrorOnInputChange(
+  email: string,
+  password: string,
+  rootError: string | null,
+  clearErrors: (name: 'root') => void
+) {
+  const prevInputKeyRef = useRef('')
+  useEffect(() => {
+    const inputKey = `${email}|${password}`
+    if (prevInputKeyRef.current === inputKey) return
+    prevInputKeyRef.current = inputKey
+    if (rootError) clearErrors('root')
+  }, [email, password, rootError, clearErrors])
 }
 
 function useLoginForm() {
   const navigate = useNavigate()
   const location = useLocation()
-  const authLogin = useAuthStore((s) => s.login)
+  const login = useAuthStore((s) => s.login)
 
-  const from = useMemo(() => {
-    const state = location.state as { from?: string } | null
-    return typeof state?.from === 'string' ? state.from : '/'
-  }, [location.state])
+  const redirectPath = useMemo(
+    () => getRedirectPath(location.state),
+    [location.state]
+  )
 
   const methods = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: LOGIN_DEFAULT_VALUES,
     mode: 'onChange',
     reValidateMode: 'onChange',
     shouldFocusError: true,
@@ -100,27 +146,27 @@ function useLoginForm() {
     setError,
     clearErrors,
   } = methods
+
   const rootError = errors.root?.message ?? null
-
   const watched = useWatch({ control }) as Partial<LoginFormData>
-  const email = (watched.email ?? '').toString()
-  const password = (watched.password ?? '').toString()
-  const prevInputKeyRef = useRef('')
-  useEffect(() => {
-    const key = `${email}|${password}`
-    if (prevInputKeyRef.current === key) return
-    prevInputKeyRef.current = key
-    if (rootError) clearErrors('root')
-  }, [email, password, rootError, clearErrors])
+  const emailValue = (watched.email ?? '').toString()
+  const passwordValue = (watched.password ?? '').toString()
 
-  const onSubmit = handleSubmit(async (data) => {
+  useClearRootErrorOnInputChange(
+    emailValue,
+    passwordValue,
+    rootError,
+    clearErrors
+  )
+
+  const handleLoginSubmit = handleSubmit(async (formData) => {
     clearErrors('root')
     try {
-      await authLogin(data)
-      navigate(from, { replace: true })
-    } catch (err) {
-      const mapped = mapLoginError(err)
-      setError('root', { type: 'server', message: mapped.message })
+      await login(formData)
+      navigate(redirectPath, { replace: true })
+    } catch (error) {
+      const mappedError = mapLoginError(error)
+      setError('root', { type: 'server', message: mappedError.message })
     }
   })
 
@@ -137,12 +183,11 @@ function useLoginForm() {
     [isValid, isSubmitting]
   )
 
-  return { methods, onSubmit, rootError, submitButton }
+  return { methods, onSubmit: handleLoginSubmit, rootError, submitButton }
 }
 
-// 로그인 페이지
 export default function LoginPage() {
-  const recovery = useRecoveryModals()
+  const accountRecovery = useAccountRecoveryModals()
   const { methods, onSubmit, rootError, submitButton } = useLoginForm()
 
   const handleSocialLogin = (provider: SocialProviderId) => {
@@ -217,7 +262,7 @@ export default function LoginPage() {
                       variant="link"
                       size="auto"
                       className="py-2 whitespace-nowrap"
-                      onClick={recovery.actions.openFindId}
+                      onClick={accountRecovery.actions.openFindId}
                     >
                       아이디 찾기
                     </Button>
@@ -227,7 +272,7 @@ export default function LoginPage() {
                       variant="link"
                       size="auto"
                       className="py-2 whitespace-nowrap"
-                      onClick={recovery.actions.openFindPassword}
+                      onClick={accountRecovery.actions.openFindPassword}
                     >
                       비밀번호 찾기
                     </Button>
@@ -250,26 +295,26 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <FindIdModalContainer
-        isOpen={recovery.modals.findId.isOpen}
-        onClose={recovery.modals.findId.close}
-        onFindIdSuccess={recovery.actions.handleFindIdSuccess}
+      <FindIdModal
+        isOpen={accountRecovery.modals.findId.isOpen}
+        onClose={accountRecovery.modals.findId.close}
+        onFindIdSuccess={accountRecovery.actions.handleFindIdSuccess}
       />
       <FindIdResultModal
-        isOpen={recovery.modals.findIdResult.isOpen}
-        onClose={recovery.modals.findIdResult.close}
-        maskedEmail={recovery.modals.findIdResult.maskedEmail}
-        onFindPasswordClick={recovery.actions.goToPasswordFromResult}
+        isOpen={accountRecovery.modals.findIdResult.isOpen}
+        onClose={accountRecovery.modals.findIdResult.close}
+        maskedEmail={accountRecovery.modals.findIdResult.maskedEmail}
+        onFindPasswordClick={accountRecovery.actions.goToFindPasswordFromResult}
       />
-      <FindPasswordModalContainer
-        isOpen={recovery.modals.findPassword.isOpen}
-        onClose={recovery.modals.findPassword.close}
-        onVerified={recovery.actions.openResetPassword}
+      <FindPasswordModal
+        isOpen={accountRecovery.modals.findPassword.isOpen}
+        onClose={accountRecovery.modals.findPassword.close}
+        onVerified={accountRecovery.actions.openResetPasswordWithToken}
       />
       <ResetPasswordModal
-        isOpen={recovery.modals.resetPassword.isOpen}
-        onClose={recovery.modals.resetPassword.close}
-        initialToken={recovery.modals.resetPassword.emailToken}
+        isOpen={accountRecovery.modals.resetPassword.isOpen}
+        onClose={accountRecovery.modals.resetPassword.close}
+        initialToken={accountRecovery.modals.resetPassword.emailToken}
       />
     </FormProvider>
   )
