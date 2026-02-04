@@ -19,6 +19,8 @@ interface QuizHeaderProps {
   timeRemaining?: string
   timeRemainingSuffix?: string
   cheatingCount?: number
+  /** 우측 타이머/부정행위 영역 노출 여부 (기본값: true) */
+  showExamStatus?: boolean
 }
 
 function QuizHeader({
@@ -27,6 +29,7 @@ function QuizHeader({
   timeRemaining = '29 : 17',
   timeRemainingSuffix = '뒤에 끝나요',
   cheatingCount: _cheatingCount = 0,
+  showExamStatus = true,
 }: QuizHeaderProps) {
   const maxCheatingCount = 3
   const cheatingCount = Math.min(Math.max(_cheatingCount, 0), maxCheatingCount)
@@ -60,25 +63,27 @@ function QuizHeader({
           <p className={contentStyle}>{message}</p>
         </div>
 
-        {/* 우측 영역 */}
-        <div className="flex items-center gap-4">
-          {/* 타이머 박스 */}
-          <div className={infoBoxStyle}>
-            <span className={timerNumberStyle}>{timeRemaining}</span>
-            <span className={timerTextStyle}> {timeRemainingSuffix}</span>
-          </div>
-          {/* 부정행위 카운트 */}
-          <div className={infoBoxStyle}>
-            <span className={warningLabelStyle}>부정행위</span>
-            <div className="flex gap-1">
-              {Array.from({ length: maxCheatingCount }).map((_, index) => (
-                <div key={index} className={getWarningBoxClass(index)}>
-                  <span className={getWarningTextClass(index)}>!</span>
-                </div>
-              ))}
+        {/* 우측 영역 (타이머 + 부정행위). 결과 페이지 등에서는 숨길 수 있도록 옵션 제공 */}
+        {showExamStatus && (
+          <div className="flex items-center gap-4">
+            {/* 타이머 박스 */}
+            <div className={infoBoxStyle}>
+              <span className={timerNumberStyle}>{timeRemaining}</span>
+              <span className={timerTextStyle}> {timeRemainingSuffix}</span>
+            </div>
+            {/* 부정행위 카운트 */}
+            <div className={infoBoxStyle}>
+              <span className={warningLabelStyle}>부정행위</span>
+              <div className="flex gap-1">
+                {Array.from({ length: maxCheatingCount }).map((_, index) => (
+                  <div key={index} className={getWarningBoxClass(index)}>
+                    <span className={getWarningTextClass(index)}>!</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </header>
   )
