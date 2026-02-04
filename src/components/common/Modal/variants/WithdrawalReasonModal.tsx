@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from '@/components/common/Button'
-import { CommonInputField } from '@/components/common/CommonInputField'
-import Dropdown from '@/components/common/Dropdown'
-import { Modal } from '@/components/common/Modal'
+import { Modal } from '../Modal'
+import { Button } from '../../Button'
+import Dropdown from '../../Dropdown'
+import { CommonInputField } from '../../CommonInputField'
 import {
   withdrawalReasonSchema,
   type WithdrawalReasonFormData,
@@ -34,7 +34,6 @@ export function WithdrawalReasonModal({
 }: WithdrawalReasonModalProps) {
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null)
   const navigate = useNavigate()
-  const logout = useAuthStore((state) => state.logout)
 
   useEffect(() => {
     return () => {
@@ -71,7 +70,7 @@ export function WithdrawalReasonModal({
   const onSubmit = async (data: WithdrawalReasonFormData) => {
     if (onSuccess) {
       await onSuccess(data)
-      logout()
+      useAuthStore.getState().logout()
       navigate('/login', { replace: true })
     }
     if (toastTimerRef.current) {
