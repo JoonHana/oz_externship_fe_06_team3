@@ -6,6 +6,11 @@ import { examDeploymentsHandler } from './handlers/quiz/examDeployments'
 import { examSubmissionHandler } from './handlers/quiz/examSubmission'
 import { examSubmissionResultHandler } from './handlers/quiz/examSubmissionResult'
 import { authHandlers } from './handlers/auth.mock'
+import {
+  coursesHandler,
+  cohortsHandler,
+  enrollStudentHandler,
+} from './handlers/info'
 
 export const helloHandler = http.get('/api/hello', () => {
   return HttpResponse.json({ message: 'Hello, world!', code: 200 })
@@ -21,4 +26,8 @@ export const handlers = [
   examDeploymentStatusHandler,
   examSubmissionHandler,
   examSubmissionResultHandler,
+  // Info (수강생 등록) 핸들러들
+  coursesHandler,
+  cohortsHandler,
+  enrollStudentHandler,
 ]

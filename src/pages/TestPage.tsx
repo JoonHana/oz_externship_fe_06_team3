@@ -211,9 +211,6 @@ function TestPage() {
       <RegisterStudentModal
         isOpen={registerStudentOpen}
         onClose={() => setRegisterStudentOpen(false)}
-        onSuccess={() => {
-          setRegisterStudentOpen(false)
-        }}
       />
 
       <WithdrawalReasonModal

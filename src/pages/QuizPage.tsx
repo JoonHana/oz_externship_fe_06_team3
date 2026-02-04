@@ -158,6 +158,17 @@ function QuizPage() {
     handleAutoSubmit();
   }
 
+  // 응시 페이지를 떠날 때 전체화면 해제 (제출 완료, 시간/상태 종료 )
+  const exitFullscreenIfActive = useCallback(async () => {
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen()
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
+
   // 제출 데이터 생성
   const buildSubmitPayload = () => {
     if (!data?.questions) return null
@@ -187,12 +198,15 @@ function QuizPage() {
 
   const handleSubmitCompleteConfirm = () => {
     setIsSubmitCompleteModalOpen(false)
-    if (submittedSubmissionId !== null) {
-      navigate(`/quiz/result/${submittedSubmissionId}`)
-      setSubmittedSubmissionId(null)
-    } else {
-      navigate('/mypage/quiz')
+    const goTo = () => {
+      if (submittedSubmissionId !== null) {
+        navigate(`/quiz/result/${submittedSubmissionId}`)
+        setSubmittedSubmissionId(null)
+      } else {
+        navigate('/mypage/quiz')
+      }
     }
+    exitFullscreenIfActive().then(goTo)
   }
 
   useEffect(() => {
@@ -280,17 +294,17 @@ function QuizPage() {
   const showQuizEndModal = isEnded && endReason === 'status'
 
   const handleEndConfirm = () => {
-    navigate('/mypage/quiz')
+    exitFullscreenIfActive().then(() => navigate('/mypage/quiz'))
   }
 
   // 상태 종료 시 QuizEndModal 표시 후 5초 뒤 쪽지시험 리스트로 이동
   useEffect(() => {
     if (!showQuizEndModal) return
     const timer = window.setTimeout(() => {
-      navigate('/mypage/quiz')
+      exitFullscreenIfActive().then(() => navigate('/mypage/quiz'))
     }, 5000)
     return () => window.clearTimeout(timer)
-  }, [showQuizEndModal, navigate])
+  }, [showQuizEndModal, navigate, exitFullscreenIfActive])
 
   const handleTimeEndTest = () => {
     setRemainingSeconds(0)
@@ -308,7 +322,7 @@ function QuizPage() {
       await document.documentElement.requestFullscreen()
       setIsFullscreenModalOpen(false)
     } catch {
-      // ignore
+      //전체화면 해제 실패 시 무시
     }
   }
 
