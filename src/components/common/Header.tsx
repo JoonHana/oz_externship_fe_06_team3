@@ -212,9 +212,6 @@ export default function Header() {
       <RegisterStudentModal
         isOpen={registerStudentModalOpen}
         onClose={() => setRegisterStudentModalOpen(false)}
-        onSuccess={() => {
-          setRegisterStudentModalOpen(false)
-        }}
       />
     </header>
   )
