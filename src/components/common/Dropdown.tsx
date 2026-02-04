@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 
 /**
@@ -25,6 +26,8 @@ type DropdownProps = {
   disabled?: boolean
   /** 값이 선택될 때 호출 */
   onChange?: (value: string) => void
+  /** true면 리스트를 modal-root에 포털로 렌더 (모달 안에서 사용할 때만 true 권장) */
+  renderListInPortal?: boolean
 }
 
 /**
@@ -50,18 +53,24 @@ function Dropdown({
   placeholder = '해당되는 항목을 선택해 주세요.',
   disabled = false,
   onChange,
+  renderListInPortal = false,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const dropdownListRef = useRef<HTMLDivElement | null>(null)
+  const modalRootRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    modalRootRef.current = document.getElementById('modal-root')
+  }, [])
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value),
     [options, value]
   )
 
-  let textColor = '#BDBDBD'
-  if (disabled) textColor = '#BDBDBD'
-  if (!disabled && (selectedOption || isOpen)) textColor = '#000000'
+  const textColor =
+    disabled ? '#BDBDBD' : (selectedOption || isOpen ? '#000000' : '#BDBDBD')
 
   let iconSrc = '/icons/arrow_down_gray.svg'
   if (!disabled && (selectedOption || isOpen)) {
@@ -70,15 +79,20 @@ function Dropdown({
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
-      if (!containerRef.current) return
-      if (!containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      if (
+        !containerRef.current?.contains(target) &&
+        !dropdownListRef.current?.contains(target)
+      ) {
         setIsOpen(false)
       }
     }
 
-    document.addEventListener('mousedown', handleOutsideClick)
+    if (isOpen) {
+      document.addEventListener('mousedown', handleOutsideClick)
+    }
     return () => document.removeEventListener('mousedown', handleOutsideClick)
-  }, [])
+  }, [isOpen])
 
   const handleToggle = () => {
     if (disabled) return
@@ -94,7 +108,7 @@ function Dropdown({
   return (
     <div
       ref={containerRef}
-      className="relative w-full max-w-[288px] text-[14px]"
+      className="relative w-full text-[14px]"
     >
       <button
         type="button"
@@ -126,38 +140,86 @@ function Dropdown({
         </span>
       </button>
 
-      <div
-        className={clsx(
-          'dropdown-scrollbar absolute top-[calc(100%+4px)] left-0 z-10 flex w-full flex-col gap-[5px] overflow-x-hidden overflow-y-auto',
-          'border-mono-400 rounded-[4px] border bg-white py-[5px]',
-          'origin-top transition-all duration-200 ease-out',
-          isOpen
-            ? 'max-h-[240px] scale-100 opacity-100'
-            : 'pointer-events-none max-h-0 scale-95 opacity-0'
-        )}
-      >
-        {options.map((option) => {
-          const isSelected = option.value === value
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleSelect(option.value)}
+      {renderListInPortal && isOpen && modalRootRef.current
+        ? createPortal(
+            <div
+              ref={dropdownListRef}
               className={clsx(
-                'mx-auto flex h-[48px] w-[calc(100%-10px)] items-center justify-between px-[11px] py-[10px]',
-                'gap-[16px] text-left',
-                'hover:bg-primary-100 rounded-[4px]',
-                isSelected ? 'text-primary font-semibold' : 'text-black'
+                'dropdown-scrollbar fixed z-[110] flex flex-col gap-[5px] overflow-x-hidden overflow-y-auto',
+                'border-mono-400 rounded-[4px] border bg-white py-[5px]',
+                'origin-top transition-all duration-200 ease-out',
+                'scale-100 opacity-100'
+              )}
+              style={
+                containerRef.current
+                  ? {
+                      top: `${containerRef.current.getBoundingClientRect().bottom + 4}px`,
+                      left: `${containerRef.current.getBoundingClientRect().left}px`,
+                      width: `${containerRef.current.getBoundingClientRect().width}px`,
+                      maxHeight: '240px',
+                    }
+                  : undefined
+              }
+            >
+              {options.map((option) => {
+                const isSelected = option.value === value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleSelect(option.value)}
+                    className={clsx(
+                      'mx-auto flex h-[48px] w-[calc(100%-10px)] items-center justify-between px-[11px] py-[10px]',
+                      'gap-[16px] text-left',
+                      'hover:bg-primary-100 rounded-[4px]',
+                      isSelected ? 'text-primary font-semibold' : 'text-black'
+                    )}
+                  >
+                    <span className="flex-1 truncate">{option.label}</span>
+                    {isSelected && (
+                      <img src="/icons/check_purple.svg" alt="" className="h-[11px] w-[13px]" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>,
+            modalRootRef.current
+          )
+        : (
+            <div
+              ref={dropdownListRef}
+              className={clsx(
+                'dropdown-scrollbar absolute top-[calc(100%+4px)] left-0 z-10 flex w-full flex-col gap-[5px] overflow-x-hidden overflow-y-auto',
+                'border-mono-400 rounded-[4px] border bg-white py-[5px]',
+                'origin-top transition-all duration-200 ease-out',
+                isOpen
+                  ? 'max-h-[240px] scale-100 opacity-100'
+                  : 'pointer-events-none max-h-0 scale-95 opacity-0'
               )}
             >
-              <span className="flex-1 truncate">{option.label}</span>
-              {isSelected && (
-                <img src="/icons/check_purple.svg" alt="" className="h-[11px] w-[13px]" />
-              )}
-            </button>
-          )
-        })}
-      </div>
+              {options.map((option) => {
+                const isSelected = option.value === value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleSelect(option.value)}
+                    className={clsx(
+                      'mx-auto flex h-[48px] w-[calc(100%-10px)] items-center justify-between px-[11px] py-[10px]',
+                      'gap-[16px] text-left',
+                      'hover:bg-primary-100 rounded-[4px]',
+                      isSelected ? 'text-primary font-semibold' : 'text-black'
+                    )}
+                  >
+                    <span className="flex-1 truncate">{option.label}</span>
+                    {isSelected && (
+                      <img src="/icons/check_purple.svg" alt="" className="h-[11px] w-[13px]" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
     </div>
   )
 }
