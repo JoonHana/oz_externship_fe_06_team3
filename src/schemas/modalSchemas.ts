@@ -1,5 +1,6 @@
 import { WITHDRAW_REASON_MAP } from '@/constants/withdrawReason'
 import { z } from 'zod'
+import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { PASSWORD_REGEX } from '@/schemas/auth'
 import { normalizePhone } from '@/utils/normalize'
 
@@ -46,7 +47,7 @@ export const resetPasswordSchema = z
     newPassword: z
       .string()
       .min(1, '비밀번호를 입력해주세요.')
-      .regex(PASSWORD_REGEX, '6~15자의 영문 대소문자, 숫자, 특수문자 포함'),
+      .regex(PASSWORD_REGEX, AUTH_MESSAGES.password.formatHint),
     confirmPassword: z.string().min(1, '비밀번호 확인을 입력해주세요.'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {

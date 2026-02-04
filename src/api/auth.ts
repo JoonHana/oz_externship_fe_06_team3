@@ -1,21 +1,17 @@
+// 로그인, 회원가입, 인증(이메일/SMS), 아이디찾기, 비밀번호재설정 API
 import { apiClient } from '@/api/client'
 import type { LoginPayload, LoginResult, User } from '@/types/auth'
 
-/** DTO: API 응답 형식 (스네이크 케이스) */
+// DTO: API 응답 형식 (스네이크 케이스)
 type VerifySmsResponseDTO = { sms_token: string; detail?: string }
 type VerifyEmailResponseDTO = { email_token: string; detail?: string }
 
-/** 이메일 인증 결과 */
+// 이메일/SMS 인증, 아이디찾기, 비밀번호재설정, 회원가입 DTO
 export type VerifyEmailResult = { emailToken: string; detail?: string }
-/** SMS 인증 결과 */
 export type VerifySmsResult = { smsToken: string; detail?: string }
-/** 아이디 찾기 요청 */
 export type FindMaskedEmailPayload = { name: string; smsToken: string }
-/** 아이디 찾기 결과 */
 export type FindMaskedEmailResult = { maskedEmail: string }
-/** 비밀번호 재설정 요청 */
 export type ResetPasswordPayload = { emailToken: string; newPassword: string }
-/** 회원가입 요청 */
 export type SignupPayload = {
   password: string
   passwordConfirm: string
@@ -27,7 +23,7 @@ export type SignupPayload = {
   smsToken: string
 }
 
-/** API 요청 옵션 (취소 시그널 등) */
+// API 요청 옵션 (AbortSignal 등)
 interface ApiRequestOptions {
   signal?: AbortSignal
 }
@@ -54,12 +50,13 @@ export async function me(accessToken: string | null = null): Promise<User> {
   return data
 }
 
-/** 닉네임 중복확인 요청 */
 export interface CheckNicknamePayload {
   nickname: string
 }
 
-export async function checkNickname(payload: CheckNicknamePayload): Promise<void> {
+export async function checkNickname(
+  payload: CheckNicknamePayload
+): Promise<void> {
   await apiClient.post('/api/v1/accounts/check-nickname/', payload)
 }
 

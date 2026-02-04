@@ -1,3 +1,4 @@
+// 로그인/회원가입 폼 검증 스키마 (zod)
 import { z } from 'zod'
 
 export const PASSWORD_REGEX =
