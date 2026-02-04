@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import {
-  FindIdModal,
   FindIdResultModal,
-  FindPasswordModal,
   ResetPasswordModal,
   WithdrawnMemberModal,
   RestoreAccountModal,
@@ -13,14 +11,19 @@ import {
   QuizEndModal,
   Button,
 } from '@/components/common'
+import {
+  FindIdModal,
+  FindPasswordModal,
+} from '@/components/common/Modal/variants'
 
 function TestPage() {
   // 각 모달의 열림 상태 관리
   const [findIdOpen, setFindIdOpen] = useState(false)
   const [findIdResultOpen, setFindIdResultOpen] = useState(false)
-  const [foundEmail, setFoundEmail] = useState<string>('')
+  const [maskedEmail, setMaskedEmail] = useState<string>('')
   const [findPasswordOpen, setFindPasswordOpen] = useState(false)
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false)
+  const [emailToken, setEmailToken] = useState<string | null>(null)
   const [withdrawnMemberOpen, setWithdrawnMemberOpen] = useState(false)
   const [restoreAccountOpen, setRestoreAccountOpen] = useState(false)
   const [registerStudentOpen, setRegisterStudentOpen] = useState(false)
@@ -32,16 +35,12 @@ function TestPage() {
   const [quizEndOpen, setQuizEndOpen] = useState(false)
 
   return (
-    <div className="p-8 space-y-4">
+    <div className="space-y-4 p-8">
       <h1 className="title-xl mb-8">모달 테스트 페이지</h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {/* 1. 아이디 찾기 */}
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={() => setFindIdOpen(true)}
-        >
+        <Button variant="primary" size="lg" onClick={() => setFindIdOpen(true)}>
           아이디 찾기
         </Button>
 
@@ -158,8 +157,8 @@ function TestPage() {
       <FindIdModal
         isOpen={findIdOpen}
         onClose={() => setFindIdOpen(false)}
-        onFindIdSuccess={(email) => {
-          setFoundEmail(email)
+        onFindIdSuccess={(result) => {
+          setMaskedEmail(result)
           setFindIdOpen(false)
           setFindIdResultOpen(true)
         }}
@@ -168,7 +167,7 @@ function TestPage() {
       <FindIdResultModal
         isOpen={findIdResultOpen}
         onClose={() => setFindIdResultOpen(false)}
-        email={foundEmail || 'test@example.com'}
+        maskedEmail={maskedEmail || 'test@example.com'}
         onFindPasswordClick={() => {
           setFindIdResultOpen(false)
           setFindPasswordOpen(true)
@@ -178,19 +177,20 @@ function TestPage() {
       <FindPasswordModal
         isOpen={findPasswordOpen}
         onClose={() => setFindPasswordOpen(false)}
-        onSuccess={(data) => {
-          console.log('비밀번호 찾기 성공:', data)
+        onVerified={(payload) => {
           setFindPasswordOpen(false)
+          setEmailToken(payload.emailToken)
           setResetPasswordOpen(true)
         }}
       />
 
       <ResetPasswordModal
         isOpen={resetPasswordOpen}
-        onClose={() => setResetPasswordOpen(false)}
-        onSuccess={(data) => {
-          console.log('비밀번호 재설정 성공:', data)
+        onClose={() => {
+          setResetPasswordOpen(false)
+          setEmailToken(null) // emailToken 1회 사용 후 삭제, 모달 닫을 때 초기화
         }}
+        initialToken={emailToken}
       />
 
       <WithdrawnMemberModal
@@ -205,25 +205,18 @@ function TestPage() {
       <RestoreAccountModal
         isOpen={restoreAccountOpen}
         onClose={() => setRestoreAccountOpen(false)}
-        onSuccess={(data) => {
-          console.log('계정 복구 성공:', data)
-        }}
+        onSuccess={() => {}}
       />
 
       <RegisterStudentModal
         isOpen={registerStudentOpen}
         onClose={() => setRegisterStudentOpen(false)}
-        onSuccess={(data) => {
-          console.log('수강생 등록 성공:', data)
-          setRegisterStudentOpen(false)
-        }}
       />
 
       <WithdrawalReasonModal
         isOpen={withdrawalReasonOpen}
         onClose={() => setWithdrawalReasonOpen(false)}
-        onSuccess={(data) => {
-          console.log('탈퇴 사유 제출:', data)
+        onSuccess={() => {
           setWithdrawalReasonOpen(false)
         }}
       />
@@ -231,8 +224,7 @@ function TestPage() {
       <StartQuizModal
         isOpen={startQuizOpen}
         onClose={() => setStartQuizOpen(false)}
-        onSuccess={(data) => {
-          console.log('쪽지시험 시작:', data)
+        onSuccess={() => {
           setStartQuizOpen(false)
         }}
         // 테스트 페이지용 더미 데이터 (실제 화면에서는 QuizCard에서 전달)
@@ -248,27 +240,21 @@ function TestPage() {
         isOpen={cheatingWarning1Open}
         onClose={() => setCheatingWarning1Open(false)}
         warningLevel={1}
-        onConfirm={() => {
-          console.log('1차 경고 확인')
-        }}
+        onConfirm={() => {}}
       />
 
       <CheatingWarningModal
         isOpen={cheatingWarning2Open}
         onClose={() => setCheatingWarning2Open(false)}
         warningLevel={2}
-        onConfirm={() => {
-          console.log('2차 경고 확인')
-        }}
+        onConfirm={() => {}}
       />
 
       <CheatingWarningModal
         isOpen={cheatingWarning3Open}
         onClose={() => setCheatingWarning3Open(false)}
         warningLevel={3}
-        onConfirm={() => {
-          console.log('3차 경고 확인')
-        }}
+        onConfirm={() => {}}
       />
 
       <QuizEndModal

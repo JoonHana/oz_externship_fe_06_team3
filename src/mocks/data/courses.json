@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "웹 개발 초격차 프론트엔드 부트캠프",
+    "tag": "frontend",
+    "thumbnail_img_url": ""
+  },
+  {
+    "id": 2,
+    "name": "웹 개발 초격차 백엔드 부트캠프",
+    "tag": "backend",
+    "thumbnail_img_url": ""
+  },
+  {
+    "id": 3,
+    "name": "IT 스타트업 실무형 사업 개발자(BD) 부트캠프",
+    "tag": "bd",
+    "thumbnail_img_url": ""
+  },
+  {
+    "id": 4,
+    "name": "스타트업 맞춤형 프로덕트 디자이너",
+    "tag": "designer",
+    "thumbnail_img_url": ""
+  },
+  {
+    "id": 5,
+    "name": "IT스타트업 실무형 풀스택 웹 개발 부트캠프 (React + Node.js)",
+    "tag": "fullstack",
+    "thumbnail_img_url": ""
+  }
+]

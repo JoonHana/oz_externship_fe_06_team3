@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router'
-import { Modal } from '../Modal'
-import { Button } from '../../Button'
-import { CommonInputField } from '../../CommonInputField'
+import { Button } from '@/components/common/Button'
+import { CommonInputField } from '@/components/common/CommonInputField'
+import { Modal } from '@/components/common/Modal'
 import { useCheckExamCodeMutation } from '@/hooks/useQuiz'
 import { startQuizSchema, type StartQuizFormData } from '@/schemas/modalSchemas'
 
@@ -76,7 +76,7 @@ export function StartQuizModal({
       onClose()
       await requestFullscreen()
       navigate(`/quiz/${deploymentId}`)
-    } catch (error) {
+    } catch {
       methods.setError('code', {
         type: 'manual',
         message: '*코드번호가 일치하지 않습니다.',
@@ -94,20 +94,20 @@ export function StartQuizModal({
             <img
               src={imageUrl}
               alt={subjectName}
-              className="w-16 h-16"
+              className="h-16 w-16"
               onError={() => setImageError(true)}
             />
           )}
           <div className="flex flex-col items-center gap-2">
-            <h2 className="text-center text-[18px] font-semibold text-[#121212]">
+            <h2 className="text-center text-[18px] font-semibold text-foreground">
               {quizName}
             </h2>
             <p className="text-center">
-              <span className="text-[14px] font-normal text-[#303030]">
+              <span className="text-muted-dark text-[14px] font-normal">
                 총 {questionCount}문항
-              </span>
-              {' '}ㆍ{' '}
-              <span className="text-[14px] font-normal text-[#6201E0]">
+              </span>{' '}
+              ㆍ{' '}
+              <span className="text-primary text-[14px] font-normal">
                 제한시간 {timeLimit}분
               </span>
             </p>
@@ -124,10 +124,10 @@ export function StartQuizModal({
                   name="code"
                   placeholder="참가 코드를 입력해주세요"
                   helperVisibility="always"
-                  state={methods.formState.errors.code ? "error" : "default"}
+                  state={methods.formState.errors.code ? 'error' : 'default'}
                   helperTextByState={{
                     error: (
-                      <span className="text-[12px] font-normal text-[#EC0037]">
+                      <span className="text-error text-[12px] font-normal">
                         {methods.formState.errors.code?.message}
                       </span>
                     ),
@@ -137,10 +137,10 @@ export function StartQuizModal({
             </Modal.InputRow>
 
             <div className="pt-4">
-              <Button 
-                type="submit" 
-                variant="primary" 
-                size="xl" 
+              <Button
+                type="submit"
+                variant="primary"
+                size="xl"
                 className="w-full"
                 style={{ minWidth: '348px' }}
                 disabled={isSubmitting}

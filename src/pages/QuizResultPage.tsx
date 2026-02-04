@@ -11,6 +11,9 @@ import {
   Ordering,
   ShortAnswer,
 } from '@/components/quiz'
+import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
+
+type QuizQuestion = ExamDeploymentDetailResult['questions'][0]
 
 function QuizResultPage() {
   const navigate = useNavigate()
@@ -28,7 +31,7 @@ function QuizResultPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen w-full">
+      <div className="flex min-h-screen w-full items-center justify-center">
         <Loading />
       </div>
     )
@@ -38,15 +41,16 @@ function QuizResultPage() {
     question: NonNullable<typeof data>['questions'][0],
     index: number
   ) => {
-    const mapped = {
+    const mapped: QuizQuestion = {
       questionId: question.id,
       number: index + 1,
-      type: question.type,
+      type: question.type as QuizQuestion['type'],
       question: question.question,
       point: question.point,
       prompt: question.prompt,
       blankCount: question.blankCount,
       options: question.options,
+      answerInput: null,
     }
 
     const submitted = question.submittedAnswer
@@ -55,9 +59,9 @@ function QuizResultPage() {
       case 'single_choice':
         return (
           <SingleChoice
-            question={mapped as any}
+            question={mapped}
             answer={(submitted?.[0] ?? null) as string | null}
-            onAnswerChange={() => { }}
+            onAnswerChange={() => {}}
             isResult
             correctAnswer={(question.answer?.[0] ?? null) as string | null}
             isCorrect={question.isCorrect}
@@ -67,9 +71,9 @@ function QuizResultPage() {
       case 'multiple_choice':
         return (
           <MultipleChoice
-            question={mapped as any}
+            question={mapped}
             answer={(submitted ?? null) as string[] | null}
-            onAnswerChange={() => { }}
+            onAnswerChange={() => {}}
             isResult
             correctAnswer={(question.answer ?? null) as string[] | null}
             isCorrect={question.isCorrect}
@@ -79,9 +83,9 @@ function QuizResultPage() {
       case 'short_answer':
         return (
           <ShortAnswer
-            question={mapped as any}
+            question={mapped}
             answer={(submitted?.[0] ?? '') as string}
-            onAnswerChange={() => { }}
+            onAnswerChange={() => {}}
             isResult
             isCorrect={question.isCorrect}
             explanation={question.explanation}
@@ -90,9 +94,9 @@ function QuizResultPage() {
       case 'ox':
         return (
           <OX
-            question={mapped as any}
+            question={mapped}
             answer={(submitted?.[0] ?? null) as string | null}
-            onAnswerChange={() => { }}
+            onAnswerChange={() => {}}
             isResult
             correctAnswer={(question.answer?.[0] ?? null) as string | null}
             isCorrect={question.isCorrect}
@@ -102,9 +106,9 @@ function QuizResultPage() {
       case 'fill_blank':
         return (
           <FillBlank
-            question={mapped as any}
+            question={mapped}
             answer={(submitted ?? null) as string[] | null}
-            onAnswerChange={() => { }}
+            onAnswerChange={() => {}}
             isResult
             correctAnswer={(question.answer ?? null) as string[] | null}
             isCorrect={question.isCorrect}
@@ -114,9 +118,9 @@ function QuizResultPage() {
       case 'ordering':
         return (
           <Ordering
-            question={mapped as any}
+            question={mapped}
             answer={(submitted ?? null) as string[] | null}
-            onAnswerChange={() => { }}
+            onAnswerChange={() => {}}
             isResult
             correctAnswer={(question.answer ?? null) as string[] | null}
             isCorrect={question.isCorrect}
@@ -128,7 +132,6 @@ function QuizResultPage() {
     }
   }
 
-
   return (
     <div>
       <QuizHeader
@@ -139,7 +142,7 @@ function QuizResultPage() {
       <main>
         <QuizResultTop />
         <div className="flex justify-center">
-          <div className="w-[1290px] py-10 space-y-6">
+          <div className="w-[1290px] space-y-6 py-10">
             {data?.questions?.map((question, index) => (
               <div key={question.id} className="space-y-4">
                 {renderQuestion(question, index)}
@@ -150,7 +153,7 @@ function QuizResultPage() {
       </main>
 
       <footer>
-        <div className="flex justify-center mb-10">
+        <div className="mb-10 flex justify-center">
           <Button
             variant="primary"
             size="xs"

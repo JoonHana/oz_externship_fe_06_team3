@@ -48,15 +48,15 @@ export default function FillBlank({
   }
 
   const getBlankColorClass = (index: number) => {
-    if (!isResult) return 'text-[#222222]'
+    if (!isResult) return 'text-foreground-secondary'
     const submitted = answers[index] ?? ''
     const correct = correctAnswer?.[index] ?? ''
     const isBlankCorrect = submitted === correct
-    return isBlankCorrect ? 'text-[#14C786]' : 'text-[#EC0037]'
+    return isBlankCorrect ? 'text-success' : 'text-error'
   }
 
   const getLabelColorClass = (index: number) => {
-    if (!isResult) return 'text-[#121212]'
+    if (!isResult) return 'text-foreground'
     const submitted = answers[index] ?? ''
     const correct = correctAnswer?.[index] ?? ''
     const isBlankCorrect = submitted === correct
@@ -81,7 +81,7 @@ export default function FillBlank({
     })
 
     return (
-      <div className="whitespace-pre-wrap text-[16px] font-normal text-[#222222]">
+      <div className="whitespace-pre-wrap text-foreground-secondary text-[16px] font-normal">
         {result}
       </div>
     )
@@ -101,7 +101,7 @@ export default function FillBlank({
 
       {/* 지문 박스 */}
       {question.prompt && (
-        <div className="w-[648px] min-h-[96px] bg-[#F2F3F5]/50 p-[20px] rounded-lg mb-[26px] ml-6">
+        <div className="mb-[26px] ml-6 min-h-[96px] w-[648px] rounded-lg bg-surface/50 p-[20px]">
           {renderPromptWithBlanks()}
         </div>
       )}
@@ -111,7 +111,7 @@ export default function FillBlank({
         {blankLabels.map((label, index) => (
           <div
             key={label}
-            className="relative w-[308px] h-[48px] bg-[#F2F3F5] rounded-[4px] flex items-center px-4 py-2"
+            className="relative flex h-[48px] w-[308px] items-center rounded-[4px] bg-surface px-4 py-2"
           >
             <span className={`text-[16px] font-bold mr-2 ${getLabelColorClass(index)}`}>
               {label}
@@ -122,7 +122,7 @@ export default function FillBlank({
               onChange={(e) => handleInputChange(index, e.target.value)}
               placeholder={isResult ? '' : '정답을 입력해 주세요.'}
               readOnly={isResult}
-              className={`flex-1 h-full bg-transparent border-none outline-none text-[16px] font-bold placeholder:text-[16px] placeholder:text-[#BDBDBD] placeholder:font-normal ${getBlankColorClass(index)}`}
+              className={`flex-1 h-full border-none bg-transparent outline-none text-[16px] font-bold placeholder:text-[16px] placeholder:font-normal placeholder:text-mono-400 ${getBlankColorClass(index)}`}
             />
           </div>
         ))}

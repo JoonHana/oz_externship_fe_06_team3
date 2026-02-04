@@ -1,28 +1,43 @@
-import { createContext, useContext, type ReactNode, useRef, useEffect, useState } from 'react'
+import { type ReactNode, useRef, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import cn from '@/lib/cn'
-
-interface ModalContextValue {
-  onClose?: () => void
-}
-//
-const ModalContext = createContext<ModalContextValue>({})
-//
-export const useModalContext = () => useContext(ModalContext)
+import { ModalContext, useModalContext } from './useModalContext'
 
 // 모달 스택 관리
 let modalStack: string[] = []
 let modalIdCounter = 0
 
+// 중첩 모달에서 스크롤락 유지용 ref-count
+let bodyScrollLockCount = 0
+let previousBodyOverflow: string | null = null
+
+function lockBodyScroll() {
+  if (typeof document === 'undefined') return
+  if (bodyScrollLockCount === 0) {
+    previousBodyOverflow = document.body.style.overflow
+  }
+  document.body.style.overflow = 'hidden'
+  bodyScrollLockCount += 1
+}
+
+function unlockBodyScroll() {
+  if (typeof document === 'undefined') return
+  bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1)
+  if (bodyScrollLockCount === 0) {
+    document.body.style.overflow = previousBodyOverflow ?? ''
+    previousBodyOverflow = null
+  }
+}
+
 const generateModalId = () => `modal-${++modalIdCounter}`
 
 const addToStack = (id: string) => {
-  modalStack = [...modalStack.filter(m => m !== id), id]
+  modalStack = [...modalStack.filter((m) => m !== id), id]
 }
 
 const removeFromStack = (id: string) => {
-  modalStack = modalStack.filter(m => m !== id)
+  modalStack = modalStack.filter((m) => m !== id)
 }
 
 const getTopModalId = () => {
@@ -87,17 +102,81 @@ export function Modal({
     }
   }, [isOpen])
 
-
+  // 중첩 모달에서 스크롤락 유지
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
+    if (!isOpen) return
+    lockBodyScroll()
+    return () => unlockBodyScroll()
   }, [isOpen])
+
+  /** ──────────────── Render helpers ──────────────── */
+  const overlayZIndex = 50 + modalStack.length - 1
+  const toastZIndex = overlayZIndex + 1
+  const inactiveModalZIndex = 50 + modalStack.indexOf(modalIdRef.current)
+
+  const renderBackdropV1 = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 bg-black/50"
+      style={{ zIndex: overlayZIndex }}
+      onClick={onClose}
+    />
+  )
+
+  const renderBackdropV2 = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 bg-black/50"
+      style={{
+        zIndex: overlayZIndex,
+        pointerEvents: 'none',
+        clipPath: `polygon(
+          0% 0%,
+          0% 100%,
+          calc(50% - 198px) 100%,
+          calc(50% - 198px) calc(50% - 64px),
+          calc(50% + 198px) calc(50% - 64px),
+          calc(50% + 198px) calc(50% + 64px),
+          calc(50% - 198px) calc(50% + 64px),
+          calc(50% - 198px) 100%,
+          100% 100%,
+          100% 0%
+        )`,
+      }}
+    />
+  )
+
+  const renderToastLayer = () =>
+    toast && (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className="fixed inset-0 flex items-center justify-center p-4"
+        style={{ zIndex: toastZIndex }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className={cn(
+            'fixed left-1/2 -translate-x-1/2 transform',
+            toastPosition === 'top'
+              ? 'top-1/2 -translate-y-[calc(50%+20px)]'
+              : toastPosition === 'top-far'
+                ? 'top-[120px]'
+                : 'top-1/2 -translate-y-1/2'
+          )}
+        >
+          {toast}
+        </div>
+      </motion.div>
+    )
 
   if (!modalRoot.current) return null
 
@@ -110,7 +189,7 @@ export function Modal({
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
         className="fixed inset-0 bg-black/50"
-        style={{ zIndex: 50 + modalStack.indexOf(modalIdRef.current) }}
+        style={{ zIndex: inactiveModalZIndex }}
       />,
       modalRoot.current
     )
@@ -121,69 +200,11 @@ export function Modal({
       {isOpen && isTopModal && (
         <>
           {/* Backdrop V1 - 기본 전체 화면 오버레이 */}
-          {!useBackdropV2 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50"
-              style={{ zIndex: 50 + modalStack.length - 1 }}
-              onClick={onClose}
-            />
-          )}
+          {!useBackdropV2 && renderBackdropV1()}
           {/* Backdrop V2 - 토스트 알림창 영역( 정 가운데 영역 396px × 128px, Radius:12px)을 제외한 오버레이 */}
-          {useBackdropV2 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/50"
-              style={{ 
-                zIndex: 50 + modalStack.length - 1,
-                pointerEvents: 'none',
-                clipPath: `polygon(
-                  0% 0%,
-                  0% 100%,
-                  calc(50% - 198px) 100%,
-                  calc(50% - 198px) calc(50% - 64px),
-                  calc(50% + 198px) calc(50% - 64px),
-                  calc(50% + 198px) calc(50% + 64px),
-                  calc(50% - 198px) calc(50% + 64px),
-                  calc(50% - 198px) 100%,
-                  100% 100%,
-                  100% 0%
-                )`,
-              }}
-            />
-          )}
+          {useBackdropV2 && renderBackdropV2()}
           {/* 토스트 알림창 (useBackdropV2가 true일 때 맨 앞에 표시, e.stopPropagation() 적용) */}
-          {useBackdropV2 && toast && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="fixed inset-0 flex items-center justify-center p-4"
-              style={{ zIndex: 50 + modalStack.length + 1 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div
-                className={cn(
-                  'fixed left-1/2 transform -translate-x-1/2',
-                  toastPosition === 'top'
-                    ? 'top-1/2 -translate-y-[calc(50%+20px)]'
-                    : toastPosition === 'top-far'
-                    ? 'top-1/2 -translate-y-[calc(50%+270px)]'
-                    : 'top-1/2 -translate-y-1/2'
-                )}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {toast}
-              </div>
-            </motion.div>
-          )}
+          {useBackdropV2 && renderToastLayer()}
           {/* Modal Content - 항상 표시, useBackdropV2가 true일 때는 뒤에 배치 */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -191,20 +212,22 @@ export function Modal({
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="fixed inset-0 flex items-center justify-center p-4"
-            style={{ 
-              zIndex: useBackdropV2 ? 50 + modalStack.length - 1 : 50 + modalStack.length 
+            style={{
+              zIndex: useBackdropV2
+                ? 50 + modalStack.length - 1
+                : 50 + modalStack.length,
             }}
           >
             {/* 토스트 알림창 (일반 모달 내부) */}
             {!useBackdropV2 && toast && (
               <div
                 className={cn(
-                  'fixed left-1/2 transform -translate-x-1/2 z-[100] pointer-events-none',
+                  'pointer-events-none fixed left-1/2 z-[100] -translate-x-1/2 transform',
                   toastPosition === 'top'
                     ? 'top-1/2 -translate-y-[calc(50%+20px)]'
                     : toastPosition === 'top-far'
-                    ? 'top-1/2 -translate-y-[calc(50%+270px)]'
-                    : 'top-1/2 -translate-y-1/2'
+                      ? 'top-1/2 -translate-y-[calc(50%+270px)]'
+                      : 'top-1/2 -translate-y-1/2'
                 )}
               >
                 {toast}
@@ -214,16 +237,19 @@ export function Modal({
               {/* useBackdropV2가 true일 때 모달 본체 위에 backdrop overlay */}
               {useBackdropV2 && (
                 <div
-                  className="absolute inset-0 bg-black/50 rounded-lg"
+                  className="absolute inset-0 rounded-lg bg-black/50"
                   style={{ zIndex: 1 }}
                 />
               )}
               <div
                 className={cn(
-                  'bg-white rounded-lg shadow-xl w-auto max-h-[90vh] overflow-y-auto',
+                  'max-h-[90vh] w-auto overflow-y-auto rounded-lg bg-white shadow-xl',
                   className
                 )}
-                style={{ position: 'relative', zIndex: useBackdropV2 ? 0 : 'auto' }}
+                style={{
+                  position: 'relative',
+                  zIndex: useBackdropV2 ? 0 : 'auto',
+                }}
               >
                 <ModalContext.Provider value={{ onClose }}>
                   {children}
@@ -238,9 +264,7 @@ export function Modal({
   )
 }
 
-/**
- * Modal Header Component
- */
+// 모달 헤더 컴포넌트
 interface ModalHeaderProps {
   children: ReactNode
   className?: string
@@ -255,22 +279,17 @@ Modal.Header = function ModalHeader({
   const { onClose } = useModalContext()
 
   return (
-    <div
-      className={cn(
-        'flex flex-col p-6 bg-white',
-        className
-      )}
-    >
+    <div className={cn('flex flex-col bg-white p-6', className)}>
       {/* 닫기 버튼 - 첫 번째 줄 우측 상단 */}
       {showCloseButton && onClose && (
-        <div className="flex justify-end mb-4">
+        <div className="mb-4 flex justify-end">
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            className="rounded p-1 transition-colors hover:bg-gray-100"
             aria-label="닫기"
           >
             <svg
-              className="w-6 h-6"
+              className="h-6 w-6"
               fill="none"
               stroke="#9D9D9D"
               viewBox="0 0 24 24"
@@ -286,39 +305,30 @@ Modal.Header = function ModalHeader({
         </div>
       )}
       {/* 내용 - 두 번째 줄 (이미지, 제목 등) */}
-      <div className="flex-1 flex flex-col items-center text-center">{children}</div>
+      <div className="flex flex-1 flex-col items-center text-center">
+        {children}
+      </div>
     </div>
   )
 }
 
-/**
- * Modal Body Component
- */
+// 모달 바디 컴포넌트
 interface ModalBodyProps {
   children: ReactNode
   className?: string
 }
 
 Modal.Body = function ModalBody({ children, className }: ModalBodyProps) {
-  return (
-    <div className={cn('p-6 bg-white', className)}>
-      {children}
-    </div>
-  )
+  return <div className={cn('bg-white p-6', className)}>{children}</div>
 }
 
-/**
- * Modal Footer Component
- */
+// 모달 footer 컴포넌트
 interface ModalFooterProps {
   children: ReactNode
   className?: string
 }
 
-Modal.Footer = function ModalFooter({
-  children,
-  className,
-}: ModalFooterProps) {
+Modal.Footer = function ModalFooter({ children, className }: ModalFooterProps) {
   return (
     <div
       className={cn(
@@ -331,10 +341,7 @@ Modal.Footer = function ModalFooter({
   )
 }
 
-/**
- * Modal Input Row Component
- * 라벨과 입력 필드를 함께 표시하는 행 컴포넌트
- */
+// 모달 입력 행 컴포넌트
 interface ModalInputRowProps {
   label: string | ReactNode
   required?: boolean
@@ -352,26 +359,29 @@ Modal.InputRow = function ModalInputRow({
 }: ModalInputRowProps) {
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <label className={cn('label-common flex items-center gap-2', labelClassName)}>
+      <label
+        className={cn('label-common flex items-center gap-2', labelClassName)}
+      >
         {typeof label === 'string' ? (
-          <>
+          <span className="inline-flex items-baseline gap-0">
             {label}
-            {required && <span className="text-red-500">*</span>}
-          </>
+            {required && <span className="text-error">*</span>}
+          </span>
+        ) : required ? (
+          <span className="inline-flex items-baseline gap-0">
+            {label}
+            <span className="text-error">*</span>
+          </span>
         ) : (
           label
         )}
-        {typeof label !== 'string' && required && <span className="text-red-500">*</span>}
       </label>
       {children}
     </div>
   )
 }
 
-/**
- * Modal Toast Component
- * 모달 상단에 표시되는 토스트 메시지
- */
+// 모달 토스트 컴포넌트
 interface ModalToastProps {
   message: string
   isVisible: boolean
@@ -386,8 +396,8 @@ Modal.Toast = function ModalToast({
   className,
 }: ModalToastProps) {
   const bgColorMap = {
-    success: 'bg-green-50 border-green-200 text-green-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
+    success: 'bg-success-50 border-success-200 text-success-800',
+    error: 'bg-error-50 border-error-200 text-error-800',
     info: 'bg-blue-50 border-blue-200 text-blue-800',
   }
 
@@ -399,7 +409,7 @@ Modal.Toast = function ModalToast({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className={cn(
-        'mx-6 mt-6 p-4 rounded-lg border',
+        'mx-6 mt-6 rounded-lg border p-4',
         bgColorMap[type],
         className
       )}

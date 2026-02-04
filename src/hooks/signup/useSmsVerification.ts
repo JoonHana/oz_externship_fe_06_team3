@@ -1,12 +1,16 @@
+// 회원가입 SMS 인증 - useVerificationFlow 래핑
 import type { Path } from 'react-hook-form'
 import type { SignupFormData } from '@/schemas/auth'
 import { useVerificationFlow } from '@/hooks/useVerificationFlow'
 import * as authApi from '@/api/auth'
-import { pickMessageFromAxios } from '@/utils/signupUtils'
+import {
+  mapSendSmsError,
+  mapVerifySmsError,
+} from '@/utils/error/authEndpointErrorMapper'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
-
-/** SMS 인증코드 유효시간 10분  */
-const TTL_SEC = 10 * 60
+import {
+  SMS_VERIFICATION_TTL_SECONDS,
+} from '@/constants/auth'
 
 type UseSmsVerificationArgs = {
   phoneNumber: string
@@ -32,7 +36,7 @@ export function useSmsVerification({
   return useVerificationFlow({
     identity: phoneNumber,
     code: phoneVerificationCode,
-    ttlSec: TTL_SEC,
+    ttlSec: SMS_VERIFICATION_TTL_SECONDS,
     busy,
     setBusy,
     clearErrors,
@@ -42,15 +46,16 @@ export function useSmsVerification({
     codeField: 'phoneVerificationCode',
 
     validateIdentity: () => {
-      const p2ok = /^\d{4}$/.test(phone2)
-      const p3ok = /^\d{4}$/.test(phone3)
-      if (!p2ok || !p3ok) {
+      const PHONE_DIGIT_REGEX = /^\d{4}$/
+      const isPhone2Valid = PHONE_DIGIT_REGEX.test(phone2)
+      const isPhone3Valid = PHONE_DIGIT_REGEX.test(phone3)
+      if (!isPhone2Valid || !isPhone3Valid) {
         return {
           ok: false,
           message: AUTH_MESSAGES.sms.identityInvalid,
           fieldErrors: {
-            ...(p2ok ? {} : { phone2: AUTH_MESSAGES.sms.phoneDigitError }),
-            ...(p3ok ? {} : { phone3: AUTH_MESSAGES.sms.phoneDigitError }),
+            ...(isPhone2Valid ? {} : { phone2: AUTH_MESSAGES.sms.phoneDigitError }),
+            ...(isPhone3Valid ? {} : { phone3: AUTH_MESSAGES.sms.phoneDigitError }),
           },
         }
       }
@@ -63,29 +68,13 @@ export function useSmsVerification({
       return { ok: true }
     },
 
-    send: (identity) => authApi.sendSmsVerification({ phone_number: identity }),
-    verify: (identity, code) =>
-      authApi.verifySms({ phone_number: identity, code }),
-    getToken: (res) => res.sms_token,
+    send: (identity) => authApi.sendSmsVerification({ phoneNumber: identity }),
+    verify: (identity, verificationCode) =>
+      authApi.verifySmsCode({ phoneNumber: identity, verificationCode }),
+    getToken: (response) => response.smsToken,
 
-    getSendErrorMessage: (err) =>
-      pickMessageFromAxios(
-        err,
-        {
-          409: AUTH_MESSAGES.sms.sendErrorAlreadyRegistered,
-          400: AUTH_MESSAGES.sms.sendErrorBadRequest,
-        },
-        AUTH_MESSAGES.sms.sendErrorFallback
-      ),
-    getVerifyErrorMessage: (err) =>
-      pickMessageFromAxios(
-        err,
-        {
-          400: AUTH_MESSAGES.sms.verifyErrorMismatch,
-          409: AUTH_MESSAGES.sms.verifyErrorAlreadyRegistered,
-        },
-        AUTH_MESSAGES.sms.verifyErrorFallback
-      ),
+    getSendErrorMessage: (err) => mapSendSmsError(err).message,
+    getVerifyErrorMessage: (err) => mapVerifySmsError(err).message,
 
     text: {
       sent: AUTH_MESSAGES.sms.sendSuccess,

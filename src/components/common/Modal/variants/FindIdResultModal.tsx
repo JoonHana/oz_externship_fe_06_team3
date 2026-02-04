@@ -1,113 +1,76 @@
-import { Link } from 'react-router'
-import { Modal } from '../Modal'
+// 아이디 찾기 결과 - maskedEmail 표시, 로그인/비밀번호 찾기 버튼
+import { Link } from 'react-router-dom'
+import { Button } from '@/components/common/Button'
+import { Modal } from '@/components/common/Modal'
 import cn from '@/lib/cn'
+import { maskEmailForDisplay } from '@/utils/emailMask'
 
 interface FindIdResultModalProps {
   isOpen: boolean
   onClose: () => void
-  email: string
+  maskedEmail: string
   onFindPasswordClick?: () => void
 }
 
 export function FindIdResultModal({
   isOpen,
   onClose,
-  email,
+  maskedEmail,
   onFindPasswordClick,
 }: FindIdResultModalProps) {
   const handleFindPasswordClick = () => {
     onClose()
     onFindPasswordClick?.()
   }
-  // 이메일 마스킹 처리
-  const maskEmail = (email: string) => {
-    if (email.length <= 4) return email
-
-    // .com 제외 4글자를 ****로 처리
-    const last4 = email.slice(-4)
-    const beforeLast4 = email.slice(0, -4) 
-    // 앞 부분이 4글자 이하면 모두 ****로 처리
-    if (beforeLast4.length <= 4) {
-      return `${'*'.repeat(beforeLast4.length)}${last4}`
-    }
-    // .com 제외 4글자를 ****로 처리
-    const frontPart = beforeLast4.slice(0, -4)
-    return `${frontPart}****${last4}`
-  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <Modal.Header>
         <div className="flex flex-col items-center gap-2">
-          <img 
-            src="/icons/FindId.svg" 
-            alt="아이디 찾기" 
-            style={{ width: '35px', height: '35px' }}
+          <img
+            src="/icons/FindId.svg"
+            alt="아이디 찾기"
+            className="size-[32px]"
           />
-          <h2 className="title-l-b">아이디 찾기</h2>
-          <p className="text-[14px] text-[#121212] font-normal text-center">
+          <h2 className="title-l-b text-foreground">아이디 찾기</h2>
+          <p className="text-foreground text-center text-[14px] font-normal">
             입력하신 정보와 일치하는 아이디입니다.
           </p>
         </div>
       </Modal.Header>
 
-      <Modal.Body>
-        <div className="flex flex-col items-center gap-6">
+      <Modal.Body className="pt-0">
+        <div className="flex w-full max-w-[360px] flex-col items-center gap-8">
           <div
             className={cn(
-              'w-full min-w-[348px] max-w-[348px] rounded-[4px] border',
-              'bg-[#ececec] border-[#bdbdbd]'
+              'flex w-full items-center justify-center rounded-[4px] bg-[#F2F2F2] px-6 py-10'
             )}
-            style={{
-              paddingTop: '40px',
-              paddingRight: '16px',
-              paddingBottom: '40px',
-              paddingLeft: '16px',
-              borderWidth: '1px',
-            }}
           >
-            <p
-              className="text-center"
-              style={{
-                fontSize: '18px',
-                fontWeight: 600, // SemiBold
-                color: '#121212',
-              }}
-            >
-              {maskEmail(email)}
+            <p className="text-foreground text-center text-[18px] leading-[22px] font-bold">
+              {maskEmailForDisplay(maskedEmail)}
             </p>
           </div>
 
-          <div className="flex gap-3 w-full max-w-[348px]">
-            <Link to="/" className="flex-1">
-              <button
-                className={cn(
-                  'w-full max-w-[168px] h-[48px] rounded-[4px] border',
-                  'bg-white border-[#6201E0] text-[#6201E0]',
-                  'hover:bg-gray-50 transition-colors'
-                )}
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 600, // SemiBold
-                }}
-              >
-                로그인
-              </button>
-            </Link>
-            <button
-              onClick={handleFindPasswordClick}
+          <div className="flex w-full max-w-[348px] justify-center gap-3">
+            <Link
+              to="/login"
+              onClick={onClose}
               className={cn(
-                'w-full max-w-[168px] h-[48px] rounded-[4px] border border-transparent',
-                'bg-[#6201E0] text-[#FAFAFA]',
-                'hover:bg-[#4E01B3] transition-colors'
+                'border-primary text-primary flex h-12 w-[168px] items-center justify-center rounded-[4px] border font-semibold',
+                'bg-white hover:bg-gray-50'
               )}
-              style={{
-                fontSize: '16px',
-                fontWeight: 600, // SemiBold
-              }}
+            >
+              로그인
+            </Link>
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              className="w-[168px]"
+              onClick={handleFindPasswordClick}
             >
               비밀번호 찾기
-            </button>
+            </Button>
           </div>
         </div>
       </Modal.Body>
