@@ -293,6 +293,7 @@ function QuizPage() {
   const showTimeEndModal = isEnded && endReason === 'time'
   const showQuizEndModal = isEnded && endReason === 'status'
 
+  // 시험 종료 시 전체화면 해제 후 쪽지시험 리스트로 이동
   const handleEndConfirm = () => {
     exitFullscreenIfActive().then(() => navigate('/mypage/quiz'))
   }
