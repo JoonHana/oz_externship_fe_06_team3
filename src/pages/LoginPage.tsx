@@ -1,5 +1,5 @@
 // 로그인 페이지 - 일반 로그인 + 소셜 로그인 + 아이디/비밀번호 찾기 모달
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,10 +12,12 @@ import SocialLoginSection from '@/components/auth/SocialLoginSection'
 import {
   FindIdResultModal,
   ResetPasswordModal,
+  RestoreAccountResultModal,
+  WithdrawnMemberModal,
 } from '@/components/common/Modal'
 import {
   FindIdModal,
-  FindPasswordModal,
+  EmailVerificationModal,
 } from '@/components/common/Modal/variants'
 import type { SocialProviderId } from '@/types/social'
 
@@ -24,7 +26,9 @@ import { useAccountRecoveryModals } from '@/hooks/useAccountRecoveryModals'
 import { loginSchema, type LoginFormData } from '@/schemas/auth'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { mapLoginError } from '@/utils/error/authEndpointErrorMapper'
+import { parseAxiosError } from '@/utils/error/axiosErrorParser'
 import { createSocialRedirect } from '@/api/socialAuth'
+import { restoreAccount } from '@/api/auth'
 
 function getRedirectPathFromLocation(locationState: unknown): string {
   const state = locationState as { from?: string } | null
@@ -46,7 +50,7 @@ function useClearRootErrorOnInputChange(
   }, [emailValue, passwordValue, rootError, clearErrors])
 }
 
-function useLoginForm() {
+function useLoginForm(onWithdrawnMember?: () => void) {
   const navigate = useNavigate()
   const location = useLocation()
   const login = useAuthStore((state) => state.login)
@@ -90,6 +94,11 @@ function useLoginForm() {
       await login(formData)
       navigate(redirectPath, { replace: true })
     } catch (error) {
+      const parsedError = parseAxiosError(error)
+      if (parsedError.status === 403) {
+        onWithdrawnMember?.()
+        return
+      }
       const mappedError = mapLoginError(error)
       setError('root', { type: 'server', message: mappedError.message })
     }
@@ -113,7 +122,28 @@ function useLoginForm() {
 
 export default function LoginPage() {
   const accountRecovery = useAccountRecoveryModals()
-  const { methods, onSubmit, rootError, submitButton } = useLoginForm()
+  const [withdrawnMemberOpen, setWithdrawnMemberOpen] = useState(false)
+  const [restoreAccountOpen, setRestoreAccountOpen] = useState(false)
+  const [restoreResultOpen, setRestoreResultOpen] = useState(false)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!restoreResultOpen) return
+    const timer = setTimeout(() => {
+      setRestoreResultOpen(false)
+      navigate('/login', { replace: true })
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [navigate, restoreResultOpen])
+
+  const handleRestoreVerified = async (payload: { email: string; emailToken: string }) => {
+    await restoreAccount({ emailToken: payload.emailToken })
+    setRestoreAccountOpen(false)
+    setRestoreResultOpen(true)
+  }
+  const { methods, onSubmit, rootError, submitButton } = useLoginForm(() =>
+    setWithdrawnMemberOpen(true)
+  )
 
   const handleSocialLogin = (provider: SocialProviderId) => {
     createSocialRedirect(provider)
@@ -229,7 +259,7 @@ export default function LoginPage() {
         maskedEmail={accountRecovery.modals.findIdResult.maskedEmail}
         onFindPasswordClick={accountRecovery.actions.goToFindPasswordFromResult}
       />
-      <FindPasswordModal
+      <EmailVerificationModal
         isOpen={accountRecovery.modals.findPassword.isOpen}
         onClose={accountRecovery.modals.findPassword.close}
         onVerified={accountRecovery.actions.openResetPasswordWithToken}
@@ -238,6 +268,24 @@ export default function LoginPage() {
         isOpen={accountRecovery.modals.resetPassword.isOpen}
         onClose={accountRecovery.modals.resetPassword.close}
         initialToken={accountRecovery.modals.resetPassword.emailToken}
+      />
+      <EmailVerificationModal
+        isOpen={restoreAccountOpen}
+        onClose={() => setRestoreAccountOpen(false)}
+        mode="restoreAccount"
+        onSubmitVerified={handleRestoreVerified}
+      />
+      <RestoreAccountResultModal
+        isOpen={restoreResultOpen}
+        onClose={() => setRestoreResultOpen(false)}
+      />
+      <WithdrawnMemberModal
+        isOpen={withdrawnMemberOpen}
+        onClose={() => setWithdrawnMemberOpen(false)}
+        onRestoreAccount={() => {
+          setWithdrawnMemberOpen(false)
+          setRestoreAccountOpen(true)
+        }}
       />
     </FormProvider>
   )

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate } from 'react-router'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/common/Button'
 import { CommonInputField } from '@/components/common/CommonInputField'
 import { Modal } from '@/components/common/Modal'
 import { useCheckExamCodeMutation } from '@/hooks/useQuiz'
 import { startQuizSchema, type StartQuizFormData } from '@/schemas/modalSchemas'
+import { parseAxiosError, resolveMessage } from '@/utils/error/axiosErrorParser'
 
 interface StartQuizModalProps {
   isOpen: boolean
@@ -66,6 +67,13 @@ export function StartQuizModal({
   const onSubmit = async (data: StartQuizFormData) => {
     setIsSubmitting(true)
 
+    // 디버깅: 전달되는 값 확인
+    console.log('[StartQuizModal] API 호출:', {
+      deploymentId,
+      code: data.code,
+      url: `/api/v1/exams/deployments/${deploymentId}/check-code`,
+    })
+
     try {
       await checkCodeMutation.mutateAsync({
         deploymentId,
@@ -76,10 +84,22 @@ export function StartQuizModal({
       onClose()
       await requestFullscreen()
       navigate(`/quiz/${deploymentId}`)
-    } catch {
+    } catch (error) {
+      const parsed = parseAxiosError(error)
+      const errorMessage = resolveMessage(
+        parsed,
+        {
+          400: '*코드번호가 일치하지 않습니다.',
+          401: '*인증이 필요합니다. 다시 로그인해주세요.',
+          403: '*접근 권한이 없습니다.',
+          404: '*시험 정보를 찾을 수 없습니다.',
+          423: '*시험이 잠겨있습니다.',
+        },
+        '*코드번호가 일치하지 않습니다.'
+      )
       methods.setError('code', {
         type: 'manual',
-        message: '*코드번호가 일치하지 않습니다.',
+        message: errorMessage,
       })
     } finally {
       setIsSubmitting(false)

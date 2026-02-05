@@ -143,6 +143,28 @@ export async function resetPassword(
   })
 }
 
+export async function restoreAccount(payload: {
+  emailToken: string
+}): Promise<void> {
+  await apiClient.post('/api/v1/accounts/restore/', {
+    email_token: payload.emailToken,
+  })
+}
+
+export async function changePassword(payload: {
+  oldPassword: string
+  newPassword: string
+}): Promise<{ detail: string }> {
+  const { data } = await apiClient.post<{ detail: string }>(
+    '/api/v1/accounts/change-password/',
+    {
+      old_password: payload.oldPassword,
+      new_password: payload.newPassword,
+    }
+  )
+  return data
+}
+
 export async function updateMyInfo(payload: Partial<User>): Promise<User> {
   const { data } = await apiClient.patch<User>('/api/v1/accounts/me/', payload)
   return data
