@@ -162,8 +162,12 @@ export function useEmailVerificationModalVM({
     verifyCode: '인증번호확인',
     submit: '계정 다시 사용하기',
   }
+  const findPasswordMessages = {
+    ...AUTH_MESSAGES.findPassword,
+    failed: AUTH_MESSAGES.resetPassword.failed,
+  }
   const messages =
-    mode === 'restoreAccount' ? restoreMessages : AUTH_MESSAGES.findPassword
+    mode === 'restoreAccount' ? restoreMessages : findPasswordMessages
   const buttonLabels =
     mode === 'restoreAccount'
       ? restoreButtons
