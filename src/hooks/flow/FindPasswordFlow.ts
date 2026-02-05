@@ -37,6 +37,8 @@ export type UseFindPasswordFlowOptions = {
   clearFieldError: (field: 'verificationCode') => void
   setVerificationCodeValue: (value: string) => void
   onVerified?: (payload: FindPasswordVerifiedPayload) => void
+  sendSuccessNotice?: string
+  verifySuccessNotice?: string
 }
 
 export type UseFindPasswordFlowResult = {
@@ -69,6 +71,8 @@ export function useFindPasswordFlow({
   clearFieldError,
   setVerificationCodeValue,
   onVerified,
+  sendSuccessNotice,
+  verifySuccessNotice,
 }: UseFindPasswordFlowOptions): UseFindPasswordFlowResult {
   const emailNormalized = normalizeEmail(email)
   const abortControllerRef = useFlowAbortController(isOpen)
@@ -96,8 +100,10 @@ export function useFindPasswordFlow({
       mapVerifyEmailError,
       (msg) => setFieldError('verificationCode', msg)
     ),
-    sendSuccessNotice: AUTH_MESSAGES.findPassword.sendSuccess,
-    verifySuccessNotice: AUTH_MESSAGES.findPassword.verifySuccess,
+    sendSuccessNotice:
+      sendSuccessNotice ?? AUTH_MESSAGES.findPassword.sendSuccess,
+    verifySuccessNotice:
+      verifySuccessNotice ?? AUTH_MESSAGES.findPassword.verifySuccess,
     onInvalidate: () => setVerificationCodeValue(''),
   })
 
