@@ -7,6 +7,7 @@ import App from '@/App'
 
 import { apiClient } from '@/api/client'
 import { setupAuthInterceptor } from '@/api/setupInterceptors'
+import { setupRefreshInterceptor } from '@/api/setupRefreshInterceptor'
 import { useAuthStore } from '@/store/authStore'
 
 const queryClient = new QueryClient()
@@ -24,6 +25,7 @@ async function enableMocking() {
 
 async function bootstrap() {
   setupAuthInterceptor(apiClient, () => useAuthStore.getState().accessToken)
+  setupRefreshInterceptor(apiClient, () => useAuthStore.getState())
 
   await enableMocking()
 

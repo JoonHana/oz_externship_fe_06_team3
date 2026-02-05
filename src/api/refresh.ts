@@ -1,9 +1,17 @@
 import { apiClient } from '@/api/client'
 
-export async function refreshToken(refreshToken: string) {
-  const { data } = await apiClient.post<{ access_token: string }>(
+/** 401 응답 인터셉터에서 리프레시 재시도 무한 루프 방지용 플래그 */
+export const REFRESH_REQUEST_CONFIG = { __isRefreshRequest: true } as const
+
+export async function refreshToken(token: string): Promise<string> {
+  const { data } = await apiClient.post<{ access_token?: string }>(
     '/api/v1/accounts/me/refresh/',
-    { refresh_token: refreshToken }
+    { refresh_token: token },
+    REFRESH_REQUEST_CONFIG as object
   )
-  return data.access_token
+  const accessToken = data?.access_token
+  if (!accessToken) {
+    throw new Error('Refresh response missing access_token')
+  }
+  return accessToken
 }
