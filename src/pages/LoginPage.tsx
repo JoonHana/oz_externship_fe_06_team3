@@ -30,11 +30,13 @@ import { parseAxiosError } from '@/utils/error/axiosErrorParser'
 import { createSocialRedirect } from '@/api/socialAuth'
 import { restoreAccount } from '@/api/auth'
 
+// 로그인 성공 후 어디로 이동할지 결정
 function getRedirectPathFromLocation(locationState: unknown): string {
   const state = locationState as { from?: string } | null
   return typeof state?.from === 'string' ? state.from : '/'
 }
 
+// 사용자가 입력을 바꾸면 에러 메시지를 자동으로 지움
 function useClearRootErrorOnInputChange(
   emailValue: string,
   passwordValue: string,
@@ -120,6 +122,7 @@ function useLoginForm(onWithdrawnMember?: () => void) {
   return { methods, onSubmit: handleLoginSubmit, rootError, submitButton }
 }
 
+// 로그인 페이지 컴포넌트
 export default function LoginPage() {
   const accountRecovery = useAccountRecoveryModals()
   const [withdrawnMemberOpen, setWithdrawnMemberOpen] = useState(false)
@@ -151,7 +154,7 @@ export default function LoginPage() {
 
   return (
     <FormProvider {...methods}>
-      <div className="flex h-[calc(100vh-96px)] items-center justify-center bg-white px-4 py-12">
+      <div className="flex min-h-[calc(100vh-96px)] items-center justify-center px-4 py-12">
         <div className="relative mb-[min(20vh)] flex w-[348px] flex-col items-center gap-16">
           <div className="flex w-full flex-col items-center gap-[27px]">
             <div className="flex w-[191px] flex-col items-center gap-4">
@@ -169,7 +172,7 @@ export default function LoginPage() {
               </div>
               <Link
                 to="/signup"
-                className="text-primary gap-2.5 text-[16px] leading-[22.4px] font-normal tracking-[-0.48px] whitespace-nowrap"
+                className="text-primary gap-2.5 text-[16px] whitespace-nowrap"
               >
                 회원가입 하기
               </Link>
