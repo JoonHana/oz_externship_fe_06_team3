@@ -1,4 +1,4 @@
-// 비밀번호 찾기 모달 - 이메일 입력 → 이메일 인증 → 비밀번호 재설정으로 이동
+// ??? ?? ?? ?? - ???? ??/?? ??
 import { FormProvider } from 'react-hook-form'
 import type { FindPasswordFormData } from '@/schemas/modalSchemas'
 import { Button } from '@/components/common/Button'
@@ -8,31 +8,36 @@ import {
   VerificationInputWithButton,
 } from './verificationModalHelpers'
 import {
-  useFindPasswordModalVM,
-  type UseFindPasswordModalVMResult,
-  type UseFindPasswordModalVMOptions,
-} from '@/hooks/vm/useFindPasswordModalVM'
+  useEmailVerificationModalVM,
+  type UseEmailVerificationModalVMResult,
+  type UseEmailVerificationModalVMOptions,
+} from '@/hooks/vm/useEmailVerificationModalVM'
 
-export interface FindPasswordModalProps extends UseFindPasswordModalVMOptions {
+export interface EmailVerificationModalProps extends UseEmailVerificationModalVMOptions {
   isOpen: boolean
 }
 
-interface FindPasswordModalViewProps {
+interface EmailVerificationModalViewProps {
   isOpen: boolean
-  vm: UseFindPasswordModalVMResult
+  vm: UseEmailVerificationModalVMResult
+  header: {
+    iconSrc: string
+    iconAlt: string
+    title: string
+  }
 }
 
-function FindPasswordModalView({ isOpen, vm }: FindPasswordModalViewProps) {
+function EmailVerificationModalView({
+  isOpen,
+  vm,
+  header,
+}: EmailVerificationModalViewProps) {
   const { methods, sections, ui, actions } = vm
 
   const headerSection = (
     <div className="flex flex-col items-center gap-2">
-      <img
-        src="/icons/FindPW.svg"
-        alt="비밀번호 찾기"
-        className="size-[32px]"
-      />
-      <h2 className="title-l-b">비밀번호 찾기</h2>
+      <img src={header.iconSrc} alt={header.iconAlt} className="size-[32px]" />
+      <h2 className="title-l-b">{header.title}</h2>
       <VerificationMessageDisplay
         displayText={ui.displayText}
         hasMessage={ui.hasMessage}
@@ -114,16 +119,33 @@ function FindPasswordModalView({ isOpen, vm }: FindPasswordModalViewProps) {
   )
 }
 
-export function FindPasswordModal({
+export function EmailVerificationModal({
   isOpen,
   onClose,
   onVerified,
-}: FindPasswordModalProps) {
-  const vm = useFindPasswordModalVM({
+  onSubmitVerified,
+  mode = 'findPassword',
+}: EmailVerificationModalProps) {
+  const header =
+    mode === 'restoreAccount'
+      ? {
+          iconSrc: '/icons/RestoreAccount.svg',
+          iconAlt: '계정 다시 사용하기',
+          title: '계정 다시 사용하기',
+        }
+      : {
+          iconSrc: '/icons/FindPW.svg',
+          iconAlt: '비밀번호 찾기',
+          title: '비밀번호 찾기',
+        }
+
+  const vm = useEmailVerificationModalVM({
     isOpen,
     onClose,
     onVerified,
+    onSubmitVerified,
+    mode,
   })
 
-  return <FindPasswordModalView isOpen={isOpen} vm={vm} />
+  return <EmailVerificationModalView isOpen={isOpen} vm={vm} header={header} />
 }
