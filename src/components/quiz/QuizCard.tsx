@@ -79,6 +79,10 @@ export default function QuizCard({ quiz, skeleton = false }: QuizCardProps) {
   const handleImageError = () => setImageError(true)
   const handleFallbackImageError = () => setFallbackImageError(true)
   const handleButtonClick = () => {
+    // 디버깅: quiz 객체 전체 확인
+    console.log('[QuizCard] quiz 객체 전체:', JSON.stringify(quiz, null, 2))
+    console.log('[QuizCard] quiz.id (deploymentId로 사용될 값):', quiz.id)
+    
     if (isDone && quiz.submissionId) {
       navigate(`/quiz/result/${quiz.submissionId}`)
     } else {
@@ -124,15 +128,15 @@ export default function QuizCard({ quiz, skeleton = false }: QuizCardProps) {
 
       {!isDone && (
         <StartQuizModal
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          deploymentId={quiz.id}
-          imageUrl={imageUrl || fallbackImageUrl}
-          subjectName={quiz.exam.subject.title}
-          quizName={quiz.exam.title}
-          questionCount={quiz.questionCount}
-          timeLimit={quiz.durationTime}
-        />
+  isOpen={isModalOpen}
+  onClose={handleModalClose}
+  deploymentId={quiz.id}          // ✅ 다시 목록에서 받은 id 사용
+  imageUrl={imageUrl || fallbackImageUrl}
+  subjectName={quiz.exam.subject.title}
+  quizName={quiz.exam.title}
+  questionCount={quiz.questionCount}
+  timeLimit={quiz.durationTime}
+/>
       )}
     </div>
   )

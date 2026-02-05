@@ -68,17 +68,21 @@ export const fetchExamDeploymentStatus = async (deploymentId: number) => {
 
 /**
  * 쪽지시험 입장 코드 검증
+ * 성공: 204 No Content (응답 body 없음)
+ * 실패: 400, 401, 403, 404, 423
  * 사용 예:
  * const data = await checkExamCode(101, '123456')
  */
 export const checkExamCode = async (deploymentId: number, code: string) => {
   const response = await apiClient.post(
-    `/api/v1/exams/deployments/${deploymentId}/check-code`,
+    // 백엔드 실제 동작 기준: 언더스코어 버전(/check_code)이 2xx, 하이픈(/check-code)은 404
+    `/api/v1/exams/deployments/${deploymentId}/check_code`,
     {
       code,
     }
   )
-  return mapCheckCodeResult(response.data)
+  // 204 No Content는 응답 body가 없을 수 있음
+  return mapCheckCodeResult(response.data ?? {})
 }
 
 export interface ExamSubmissionAnswerPayload {
