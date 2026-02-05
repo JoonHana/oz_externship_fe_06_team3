@@ -13,7 +13,7 @@ import {
 } from '@/components/common'
 import {
   FindIdModal,
-  FindPasswordModal,
+  EmailVerificationModal,
 } from '@/components/common/Modal/variants'
 
 function TestPage() {
@@ -174,7 +174,7 @@ function TestPage() {
         }}
       />
 
-      <FindPasswordModal
+      <EmailVerificationModal
         isOpen={findPasswordOpen}
         onClose={() => setFindPasswordOpen(false)}
         onVerified={(payload) => {

@@ -143,6 +143,14 @@ export async function resetPassword(
   })
 }
 
+export async function restoreAccount(payload: {
+  emailToken: string
+}): Promise<void> {
+  await apiClient.post('/api/v1/accounts/restore/', {
+    email_token: payload.emailToken,
+  })
+}
+
 export async function updateMyInfo(payload: Partial<User>): Promise<User> {
   const { data } = await apiClient.patch<User>('/api/v1/accounts/me/', payload)
   return data
