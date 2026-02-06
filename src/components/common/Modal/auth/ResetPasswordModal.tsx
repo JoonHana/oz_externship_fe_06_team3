@@ -20,6 +20,7 @@ export function ResetPasswordModal({
   onClose,
   initialToken,
 }: ResetPasswordModalProps) {
+  // 모달 VM
   const vm = useResetPasswordModalVM({
     isOpen,
     onClose,
@@ -28,6 +29,7 @@ export function ResetPasswordModal({
 
   const { methods, sections, ui, actions } = vm
 
+  // 토스트 표시 시 입력 폼 숨김
   return (
     <Modal
       isOpen={isOpen}

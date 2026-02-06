@@ -26,6 +26,7 @@ interface FindIdModalViewProps {
 function FindIdModalView({ isOpen, vm }: FindIdModalViewProps) {
   const { methods, sections, ui, actions } = vm
 
+  // 헤더/안내 메시지
   const headerSection = (
     <div className="flex flex-col items-center gap-2">
       <img src="/icons/FindId.svg" alt="아이디 찾기" className="size-[32px]" />
@@ -39,6 +40,7 @@ function FindIdModalView({ isOpen, vm }: FindIdModalViewProps) {
     </div>
   )
 
+  // 이름 입력 섹션
   const identitySection = (
     <Modal.InputRow
       label="이름"
@@ -56,6 +58,7 @@ function FindIdModalView({ isOpen, vm }: FindIdModalViewProps) {
     </Modal.InputRow>
   )
 
+  // 휴대전화 인증 섹션
   const verifySection = (
     <Modal.InputRow
       label="휴대전화"
@@ -100,6 +103,7 @@ function FindIdModalView({ isOpen, vm }: FindIdModalViewProps) {
     </Modal.InputRow>
   )
 
+  // 제출 버튼 섹션
   const submitSection = (
     <div className="pt-4">
       <Button

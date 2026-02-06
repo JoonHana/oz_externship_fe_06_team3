@@ -34,14 +34,15 @@ function EmailVerificationToast() {
           />
         </svg>
       </div>
-      <p className="text-[14px] font-normal leading-[24px] text-[#4D4D4D]">
+      <p className="text-[14px] leading-[24px] font-normal text-[#4D4D4D]">
         전송 완료! 이메일을 확인해주세요.
       </p>
     </div>
   )
 }
 
-export interface EmailVerificationModalProps extends UseEmailVerificationModalVMOptions {
+export interface EmailVerificationModalProps
+  extends UseEmailVerificationModalVMOptions {
   isOpen: boolean
 }
 
@@ -62,6 +63,7 @@ function EmailVerificationModalView({
 }: EmailVerificationModalViewProps) {
   const { methods, sections, ui, actions } = vm
 
+  // 헤더/안내 메시지
   const headerSection = (
     <div className="flex flex-col items-center gap-2">
       <img src={header.iconSrc} alt={header.iconAlt} className="size-[32px]" />
@@ -75,6 +77,7 @@ function EmailVerificationModalView({
     </div>
   )
 
+  // 이메일 인증 입력 섹션
   const identitySection = (
     <Modal.InputRow label="이메일" required>
       <div className="flex flex-col gap-4">
@@ -114,6 +117,7 @@ function EmailVerificationModalView({
     </Modal.InputRow>
   )
 
+  // 제출 버튼 섹션
   const submitSection = (
     <div className="pt-4">
       <Button
@@ -159,18 +163,19 @@ export function EmailVerificationModal({
   onSubmitVerified,
   mode = 'findPassword',
 }: EmailVerificationModalProps) {
+  // 모드별 헤더
   const header =
     mode === 'restoreAccount'
       ? {
-        iconSrc: '/icons/RestoreAccount.svg',
-        iconAlt: '계정 다시 사용하기',
-        title: '계정 다시 사용하기',
-      }
+          iconSrc: '/icons/RestoreAccount.svg',
+          iconAlt: '계정 다시 사용하기',
+          title: '계정 다시 사용하기',
+        }
       : {
-        iconSrc: '/icons/FindPW.svg',
-        iconAlt: '비밀번호 찾기',
-        title: '비밀번호 찾기',
-      }
+          iconSrc: '/icons/FindPW.svg',
+          iconAlt: '비밀번호 찾기',
+          title: '비밀번호 찾기',
+        }
 
   const vm = useEmailVerificationModalVM({
     isOpen,
