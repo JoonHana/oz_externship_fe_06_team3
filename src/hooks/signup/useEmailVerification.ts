@@ -1,5 +1,5 @@
+// 이메일 인증 (인증번호 전송 → 인증번호 입력 → 인증 완료) - useVerificationFlow 래핑
 import { z } from 'zod'
-// 회원가입 이메일 인증 - useVerificationFlow 래핑
 import type { Path } from 'react-hook-form'
 import type { SignupFormData } from '@/schemas/auth'
 import { useVerificationFlow } from '@/hooks/useVerificationFlow'
@@ -10,6 +10,8 @@ import {
 } from '@/utils/error/authEndpointErrorMapper'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { EMAIL_VERIFICATION_TTL_SECONDS } from '@/constants/auth'
+
+// 이메일 유효성 검사
 const emailZ = z.string().trim().email()
 
 type UseEmailVerificationArgs = {
@@ -21,6 +23,7 @@ type UseEmailVerificationArgs = {
   setFieldError: (name: Path<SignupFormData>, message: string) => void
 }
 
+// 이메일 인증 훅
 export function useEmailVerification({
   email,
   emailVerificationCode,
@@ -42,6 +45,7 @@ export function useEmailVerification({
     codeField: 'emailVerificationCode',
 
     validateIdentity: (emailValue) => {
+      // 이메일 유효성 검사 성공 결과만 추출
       const ok = emailZ.safeParse(emailValue).success
       return ok
         ? { ok: true }

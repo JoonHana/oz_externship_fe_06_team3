@@ -1,4 +1,5 @@
-﻿import { useEffect, useRef, useState } from 'react'
+// 소셜 로그인 콜백 처리 페이지
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/common/Button'
@@ -6,6 +7,7 @@ import Loading from '@/components/common/Loading'
 import * as authApi from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
 
+// access_token 쿠키 조회
 const getCookie = (name: string): string | null => {
   const raw = document.cookie
     .split(';')
@@ -35,6 +37,7 @@ export default function SocialLoginCallbackPage() {
     if (hasRunRef.current) return
     hasRunRef.current = true
 
+    // 에러 코드 처리
     const params = new URLSearchParams(window.location.search)
     const errorCode = params.get('error_code')
 
@@ -46,6 +49,7 @@ export default function SocialLoginCallbackPage() {
       return
     }
 
+    // 토큰 쿠키 확인
     const token = getCookie('access_token')
 
     if (!token) {
@@ -53,6 +57,7 @@ export default function SocialLoginCallbackPage() {
       return
     }
 
+    // 사용자 정보 복구 및 세션 설정
     const restoreSession = async () => {
       try {
         const user = await authApi.me(token)
@@ -70,7 +75,7 @@ export default function SocialLoginCallbackPage() {
 
   if (!errorMessage) {
     return (
-      <div className="flex h-[calc(100vh-96px)] flex-col items-center justify-center gap-6 bg-white px-4">
+      <div className="flex min-h-[calc(100vh-96px)] flex-col items-center justify-center gap-6 bg-white px-4">
         <p className="text-mono-700 text-base">로그인 처리 중입니다.</p>
         <Loading />
       </div>
@@ -78,7 +83,7 @@ export default function SocialLoginCallbackPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-96px)] flex-col items-center justify-center gap-6 bg-white px-4">
+    <div className="flex min-h-[calc(100vh-96px)] flex-col items-center justify-center gap-6 bg-white px-4">
       <p className="text-center text-base text-red-500">{errorMessage}</p>
       <Button
         type="button"

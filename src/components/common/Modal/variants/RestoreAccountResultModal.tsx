@@ -26,9 +26,9 @@ export function RestoreAccountResultModal({
                 <path
                   d="M18.33 8L9.85312 16.4769L6 12.6238"
                   stroke="#FAFAFA"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
             </div>

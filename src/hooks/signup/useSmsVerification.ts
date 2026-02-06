@@ -1,4 +1,4 @@
-// 회원가입 SMS 인증 - useVerificationFlow 래핑
+// SMS 인증 (인증번호 전송 → 인증번호 입력 → 인증 완료) - useVerificationFlow 래핑
 import type { Path } from 'react-hook-form'
 import type { SignupFormData } from '@/schemas/auth'
 import { useVerificationFlow } from '@/hooks/useVerificationFlow'
@@ -8,9 +8,9 @@ import {
   mapVerifySmsError,
 } from '@/utils/error/authEndpointErrorMapper'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
-import {
-  SMS_VERIFICATION_TTL_SECONDS,
-} from '@/constants/auth'
+import { SMS_VERIFICATION_TTL_SECONDS } from '@/constants/auth'
+
+const PHONE_DIGIT_REGEX = /^\d{4}$/
 
 type UseSmsVerificationArgs = {
   phoneNumber: string
@@ -46,7 +46,6 @@ export function useSmsVerification({
     codeField: 'phoneVerificationCode',
 
     validateIdentity: () => {
-      const PHONE_DIGIT_REGEX = /^\d{4}$/
       const isPhone2Valid = PHONE_DIGIT_REGEX.test(phone2)
       const isPhone3Valid = PHONE_DIGIT_REGEX.test(phone3)
       if (!isPhone2Valid || !isPhone3Valid) {
@@ -54,8 +53,12 @@ export function useSmsVerification({
           ok: false,
           message: AUTH_MESSAGES.sms.identityInvalid,
           fieldErrors: {
-            ...(isPhone2Valid ? {} : { phone2: AUTH_MESSAGES.sms.phoneDigitError }),
-            ...(isPhone3Valid ? {} : { phone3: AUTH_MESSAGES.sms.phoneDigitError }),
+            ...(isPhone2Valid
+              ? {}
+              : { phone2: AUTH_MESSAGES.sms.phoneDigitError }),
+            ...(isPhone3Valid
+              ? {}
+              : { phone3: AUTH_MESSAGES.sms.phoneDigitError }),
           },
         }
       }

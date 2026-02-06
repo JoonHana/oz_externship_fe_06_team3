@@ -1,4 +1,4 @@
-// 아이디/비밀번호 찾기 모달 열기·닫기, 토큰 전달 상태 (LoginPage에서 사용)
+// 아이디/비밀번호 찾기 모달 열기·닫기, 토큰 전달 상태 관리 훅
 import { useState } from 'react'
 import type { FindPasswordVerifiedPayload } from '@/hooks/flow'
 

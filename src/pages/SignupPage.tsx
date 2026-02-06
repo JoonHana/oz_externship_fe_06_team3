@@ -5,6 +5,7 @@ import type { SocialProviderId } from '@/types/social'
 import { createSocialRedirect } from '@/api/socialAuth'
 
 export default function SignupPage() {
+  // 소셜 회원가입 리다이렉트
   const handleSocialSignup = (provider: SocialProviderId) => {
     createSocialRedirect(provider)
   }

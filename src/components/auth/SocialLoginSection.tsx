@@ -1,7 +1,6 @@
 // 소셜 로그인 버튼 (카카오, 네이버) - createSocialRedirect 호출
 import { Button } from '@/components/common/Button'
-
-export type SocialProviderId = 'kakao' | 'naver'
+import type { SocialProviderId } from '@/types/social'
 
 const SOCIAL_PROVIDERS_LOGIN = [
   {
@@ -40,10 +39,7 @@ type Props = {
   mode?: 'login' | 'signup'
 }
 
-export default function SocialLoginSection({
-  onLogin,
-  mode = 'login',
-}: Props) {
+export default function SocialLoginSection({ onLogin, mode = 'login' }: Props) {
   const providers =
     mode === 'signup' ? SOCIAL_PROVIDERS_SIGNUP : SOCIAL_PROVIDERS_LOGIN
   return (

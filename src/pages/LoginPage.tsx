@@ -1,8 +1,6 @@
 // 로그인 페이지 - 일반 로그인 + 소셜 로그인 + 아이디/비밀번호 찾기 모달
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { FormProvider, useForm, useWatch } from 'react-hook-form'
+import { FormProvider } from 'react-hook-form'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { zodResolver } from '@hookform/resolvers/zod'
 
 import { CommonInputField } from '@/components/common/CommonInputField'
 import { PasswordField } from '@/components/common/PasswordField'
@@ -20,134 +18,56 @@ import {
   EmailVerificationModal,
 } from '@/components/common/Modal/variants'
 import type { SocialProviderId } from '@/types/social'
+import type { LoginFormData } from '@/schemas/auth'
 
 import { useAuthStore } from '@/store/authStore'
-import { useAccountRecoveryModals } from '@/hooks/useAccountRecoveryModals'
-import { loginSchema, type LoginFormData } from '@/schemas/auth'
-import { AUTH_MESSAGES } from '@/constants/authMessages'
+import {
+  useLoginForm,
+  useAccountRecoveryModals,
+  useWithdrawnMemberFlow,
+} from '@/hooks/login'
 import { mapLoginError } from '@/utils/error/authEndpointErrorMapper'
 import { parseAxiosError } from '@/utils/error/axiosErrorParser'
 import { createSocialRedirect } from '@/api/socialAuth'
-import { restoreAccount } from '@/api/auth'
 
-// 로그인 성공 후 어디로 이동할지 결정
-function getRedirectPathFromLocation(locationState: unknown): string {
-  const state = locationState as { from?: string } | null
-  return typeof state?.from === 'string' ? state.from : '/'
-}
-
-// 사용자가 입력을 바꾸면 에러 메시지를 자동으로 지움
-function useClearRootErrorOnInputChange(
-  emailValue: string,
-  passwordValue: string,
-  rootError: string | null,
-  clearErrors: (name?: 'root') => void
-) {
-  const previousFormValuesKeyRef = useRef('')
-  useEffect(() => {
-    const formValuesKey = `${emailValue}|${passwordValue}`
-    if (previousFormValuesKeyRef.current === formValuesKey) return
-    previousFormValuesKeyRef.current = formValuesKey
-    if (rootError) clearErrors('root')
-  }, [emailValue, passwordValue, rootError, clearErrors])
-}
-
-function useLoginForm(onWithdrawnMember?: () => void) {
+// 로그인 페이지 컴포넌트
+export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const login = useAuthStore((state) => state.login)
 
-  const redirectPath = useMemo(
-    () => getRedirectPathFromLocation(location.state),
-    [location.state]
-  )
+  const { methods, rootError, submitButton } = useLoginForm()
+  const accountRecovery = useAccountRecoveryModals()
+  const withdrawnMemberFlow = useWithdrawnMemberFlow(navigate)
 
-  const methods = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
-    mode: 'onChange',
-    reValidateMode: 'onChange',
-    shouldFocusError: true,
-  })
+  const { handleSubmit, setError, clearErrors } = methods
+  const redirectPath = getRedirectPathFromLocation(location.state)
 
-  const {
-    handleSubmit,
-    formState: { errors, isSubmitting, isValid },
-    control,
-    setError,
-    clearErrors,
-  } = methods
-
-  const rootError = errors.root?.message ?? null
-  const watchedFormValues = useWatch({ control }) as Partial<LoginFormData>
-  const emailValue = (watchedFormValues.email ?? '').toString()
-  const passwordValue = (watchedFormValues.password ?? '').toString()
-
-  useClearRootErrorOnInputChange(
-    emailValue,
-    passwordValue,
-    rootError,
-    clearErrors
-  )
-
+  // 로그인 제출 플로우
   const handleLoginSubmit = handleSubmit(async (formData) => {
     clearErrors('root')
+
     try {
       await login(formData)
       navigate(redirectPath, { replace: true })
     } catch (error) {
       const parsedError = parseAxiosError(error)
-      if (parsedError.status === 403) {
-        onWithdrawnMember?.()
+      const isWithdrawnMemberError = parsedError.status === 403
+
+      if (isWithdrawnMemberError) {
+        withdrawnMemberFlow.actions.openWithdrawnModal()
         return
       }
+
       const mappedError = mapLoginError(error)
-      setError('root', { type: 'server', message: mappedError.message })
+      setError('root', {
+        type: 'server',
+        message: mappedError.message,
+      })
     }
   })
 
-  const submitButton = useMemo(
-    () => ({
-      label: isSubmitting
-        ? AUTH_MESSAGES.login.submitBusy
-        : AUTH_MESSAGES.login.submitLabel,
-      disabled: !isValid || isSubmitting,
-      variant: (!isValid || isSubmitting ? 'disabled' : 'primary') as
-        | 'disabled'
-        | 'primary',
-    }),
-    [isValid, isSubmitting]
-  )
-
-  return { methods, onSubmit: handleLoginSubmit, rootError, submitButton }
-}
-
-// 로그인 페이지 컴포넌트
-export default function LoginPage() {
-  const accountRecovery = useAccountRecoveryModals()
-  const [withdrawnMemberOpen, setWithdrawnMemberOpen] = useState(false)
-  const [restoreAccountOpen, setRestoreAccountOpen] = useState(false)
-  const [restoreResultOpen, setRestoreResultOpen] = useState(false)
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    if (!restoreResultOpen) return
-    const timer = setTimeout(() => {
-      setRestoreResultOpen(false)
-      navigate('/login', { replace: true })
-    }, 2000)
-    return () => clearTimeout(timer)
-  }, [navigate, restoreResultOpen])
-
-  const handleRestoreVerified = async (payload: { email: string; emailToken: string }) => {
-    await restoreAccount({ emailToken: payload.emailToken })
-    setRestoreAccountOpen(false)
-    setRestoreResultOpen(true)
-  }
-  const { methods, onSubmit, rootError, submitButton } = useLoginForm(() =>
-    setWithdrawnMemberOpen(true)
-  )
-
+  // 소셜 로그인 리다이렉트
   const handleSocialLogin = (provider: SocialProviderId) => {
     createSocialRedirect(provider)
   }
@@ -183,7 +103,7 @@ export default function LoginPage() {
             <div className="flex w-full flex-col items-start gap-10">
               <SocialLoginSection onLogin={handleSocialLogin} />
 
-              <form onSubmit={onSubmit} className="w-full">
+              <form onSubmit={handleLoginSubmit} className="w-full">
                 <div className="flex flex-col items-start">
                   <div className="flex w-full flex-col gap-3">
                     <CommonInputField<LoginFormData>
@@ -251,6 +171,7 @@ export default function LoginPage() {
         </div>
       </div>
 
+      {/* 아이디/비밀번호 찾기 모달 */}
       <FindIdModal
         isOpen={accountRecovery.modals.findId.isOpen}
         onClose={accountRecovery.modals.findId.close}
@@ -272,24 +193,29 @@ export default function LoginPage() {
         onClose={accountRecovery.modals.resetPassword.close}
         initialToken={accountRecovery.modals.resetPassword.emailToken}
       />
+
+      {/* 탈퇴회원 복구 플로우 모달 */}
+      <WithdrawnMemberModal
+        isOpen={withdrawnMemberFlow.modals.withdrawn.isOpen}
+        onClose={withdrawnMemberFlow.modals.withdrawn.close}
+        onRestoreAccount={withdrawnMemberFlow.actions.handleStartRestore}
+      />
       <EmailVerificationModal
-        isOpen={restoreAccountOpen}
-        onClose={() => setRestoreAccountOpen(false)}
+        isOpen={withdrawnMemberFlow.modals.restore.isOpen}
+        onClose={withdrawnMemberFlow.modals.restore.close}
         mode="restoreAccount"
-        onSubmitVerified={handleRestoreVerified}
+        onSubmitVerified={withdrawnMemberFlow.actions.handleRestoreVerified}
       />
       <RestoreAccountResultModal
-        isOpen={restoreResultOpen}
-        onClose={() => setRestoreResultOpen(false)}
-      />
-      <WithdrawnMemberModal
-        isOpen={withdrawnMemberOpen}
-        onClose={() => setWithdrawnMemberOpen(false)}
-        onRestoreAccount={() => {
-          setWithdrawnMemberOpen(false)
-          setRestoreAccountOpen(true)
-        }}
+        isOpen={withdrawnMemberFlow.modals.result.isOpen}
+        onClose={withdrawnMemberFlow.modals.result.close}
       />
     </FormProvider>
   )
+}
+
+// 로그인 성공 후 어디로 이동할지 결정
+function getRedirectPathFromLocation(locationState: unknown): string {
+  const state = locationState as { from?: string } | null
+  return typeof state?.from === 'string' ? state.from : '/'
 }
