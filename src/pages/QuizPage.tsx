@@ -45,6 +45,7 @@ function QuizPage() {
   const [endReason, setEndReason] = useState<
     'time' | 'status' | 'cheating' | null
   >(null)
+  // 타이머: 실 API duration_time(분)으로 초기화됨. 로딩 전까지 30분 표시
   const [remainingSeconds, setRemainingSeconds] = useState(30 * 60)
   const [cheatingCount, setCheatingCount] = useState(0)
   const [openModal, setOpenModal] = useState<OpenModal | null>(null)
@@ -240,18 +241,15 @@ function QuizPage() {
     }
   }, [handleCheatingDetected, cheatingCount])
 
-  // 문제 불러온 뒤 API의 duration_time, elapsed_time으로 타이머 초기화 (한 번만)
+  // 실 API duration_time(분), elapsed_time(분)으로 남은 시간 계산 후 타이머에 적용 (최초 1회)
   useEffect(() => {
     if (!data || hasInitializedTimerFromApi.current || isEnded) return
     hasInitializedTimerFromApi.current = true
-    const totalSeconds = data.durationTime * 60
+    const durationMinutes = data.durationTime
+    const totalSeconds = durationMinutes * 60
     const elapsedSeconds = (data.elapsedTime ?? 0) * 60
     const remaining = Math.max(0, totalSeconds - elapsedSeconds)
-    setRemainingSeconds(remaining)
-    if (remaining <= 0) {
-      setIsEnded(true)
-      setEndReason('time')
-    }
+    setRemainingSeconds(remaining > 0 ? remaining : totalSeconds)
   }, [data, isEnded])
 
   useEffect(() => {

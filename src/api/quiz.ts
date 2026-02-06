@@ -46,12 +46,28 @@ export const fetchExamDeployments = async (params: FetchExamDeploymentsParams = 
  * 쪽지시험 상세/문항 조회
  * 사용 예:
  * const data = await fetchExamDeploymentDetail(101)
+ * 실 API가 { data: ... } 또는 { result: ... } 로 감싸서 보낼 수 있음.
  */
 export const fetchExamDeploymentDetail = async (deploymentId: number) => {
-  const response = await apiClient.get<ExamDeploymentDetailResponse>(
-    `/api/v1/exams/deployments/${deploymentId}`
-  )
-  return mapExamDeploymentDetail(response.data)
+  const response = await apiClient.get<
+    ExamDeploymentDetailResponse | { data: ExamDeploymentDetailResponse } | { result: ExamDeploymentDetailResponse }
+  >(`/api/v1/exams/deployments/${deploymentId}`)
+  const raw = response.data as Record<string, unknown>
+  let payload: ExamDeploymentDetailResponse = raw?.data && typeof raw.data === 'object'
+    ? (raw.data as ExamDeploymentDetailResponse)
+    : raw?.result && typeof raw.result === 'object'
+      ? (raw.result as ExamDeploymentDetailResponse)
+      : (response.data as ExamDeploymentDetailResponse)
+  // 실 API가 { exam: { exam_id, duration_time, ... }, questions: [] } 형태일 수 있음
+  const payloadRaw = payload as unknown as Record<string, unknown>
+  if (payload && payloadRaw.exam != null && Array.isArray(payloadRaw.questions)) {
+    const exam = payloadRaw.exam as Record<string, unknown>
+    payload = {
+      ...(exam as unknown as ExamDeploymentDetailResponse),
+      questions: payloadRaw.questions as ExamDeploymentDetailResponse['questions'],
+    }
+  }
+  return mapExamDeploymentDetail(payload)
 }
 
 /**
