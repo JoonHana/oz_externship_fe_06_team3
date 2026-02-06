@@ -25,6 +25,7 @@ import {
   Ordering,
   ShortAnswer,
 } from '@/components/quiz'
+import { QUIZ_LIST_PATH, getQuizVerifiedKey } from '@/constants/quiz'
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 
 type Question = ExamDeploymentDetailResult['questions'][0]
@@ -50,6 +51,7 @@ function QuizPage() {
   const queryClient = useQueryClient()
   const { deploymentId } = useParams<{ deploymentId: string }>()
   const deploymentIdNumber = deploymentId ? Number(deploymentId) : 0
+  const [isAccessAllowed, setIsAccessAllowed] = useState<boolean | null>(null)
   const [isEnded, setIsEnded] = useState(false)
   const [endReason, setEndReason] = useState<
     'time' | 'status' | 'cheating' | null
@@ -137,8 +139,15 @@ function QuizPage() {
 
   const navigateToResultOrList = (submissionId: number | null) => {
     exitFullscreenIfActive().then(() =>
-      navigate(submissionId != null ? `/quiz/result/${submissionId}` : '/mypage/quiz')
+      navigate(
+        submissionId != null ? `/quiz/result/${submissionId}` : QUIZ_LIST_PATH
+      )
     )
+  }
+
+  const clearVerificationAndNavigate = (submissionId: number | null) => {
+    sessionStorage.removeItem(getQuizVerifiedKey(deploymentIdNumber))
+    navigateToResultOrList(submissionId)
   }
 
   // 푼 문항은 제출값, 미응답은 '' 또는 []로 제출(서버에서 0점 처리)
@@ -158,24 +167,24 @@ function QuizPage() {
     }
   }
 
-  // 3회 부정행위 감지 시: 시험 종료 처리 후 현재 답안 자동 제출 → 결과 페이지 이동, 목록 응시완료 반영
+  // 3회 부정행위 감지 시: 시험 종료 처리 후 현재 답안 자동 제출 → 결과 페이지 이동
   const handleCheatingTerminate = () => {
     setOpenModal(null)
     setIsEnded(true)
     setEndReason('cheating')
     const payload = buildSubmitPayload()
     if (!payload) {
-      navigateToResultOrList(null)
+      clearVerificationAndNavigate(null)
       return
     }
     submissionMutation.mutate(payload, {
       onSuccess: (result) => {
         applySubmitSuccess(result)
-        navigateToResultOrList(result.submissionId)
+        clearVerificationAndNavigate(result.submissionId)
       },
       onError: () => {
         queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
-        navigateToResultOrList(null)
+        clearVerificationAndNavigate(null)
       },
     })
   }
@@ -196,14 +205,14 @@ function QuizPage() {
     setOpenModal(null)
     setSubmittedSubmissionId(null)
     submittedSubmissionIdRef.current = null
-    navigateToResultOrList(sid)
+    clearVerificationAndNavigate(sid)
   }
 
   const handleEndConfirm = () => {
     const sid = submittedSubmissionIdRef.current ?? submittedSubmissionId
     setSubmittedSubmissionId(null)
     submittedSubmissionIdRef.current = null
-    navigateToResultOrList(sid)
+    clearVerificationAndNavigate(sid)
   }
 
   // —— 시간 종료 (버튼/실제 만료 공통) ——
@@ -247,6 +256,24 @@ function QuizPage() {
   }
 
   const handleCloseSubmitCompleteModal = () => setOpenModal(null)
+
+  // 참가코드 검증 없이 URL로 직접 접근 시 경고 팝업 후 목록으로 리다이렉트
+  useEffect(() => {
+    const hasValidDeployment =
+      deploymentId && deploymentIdNumber > 0
+    const isVerified =
+      hasValidDeployment &&
+      sessionStorage.getItem(getQuizVerifiedKey(deploymentIdNumber))
+
+    if (!isVerified) {
+      window.alert(
+        '접근할 수 없습니다. 쪽지시험 목록에서 참가코드를 입력한 후 응시해 주세요.'
+      )
+      navigate(QUIZ_LIST_PATH, { replace: true })
+      return
+    }
+    setIsAccessAllowed(true)
+  }, [deploymentId, deploymentIdNumber, navigate])
 
   // —— 부수효과: 이벤트 리스너 & 타이머 ——
   useEffect(() => {
@@ -343,17 +370,17 @@ function QuizPage() {
   useEffect(() => {
     if (!showQuizEndModal) return
     const timer = window.setTimeout(() => {
-      navigateToResultOrList(submittedSubmissionIdRef.current)
+      clearVerificationAndNavigate(submittedSubmissionIdRef.current)
     }, STATUS_END_AUTO_NAVIGATE_MS)
     return () => window.clearTimeout(timer)
-  }, [showQuizEndModal, navigateToResultOrList])
+  }, [showQuizEndModal])
 
   const warningLevel = Math.min(
     Math.max(cheatingCount, 1),
     3
   ) as 1 | 2 | 3
 
-  if (isLoading) {
+  if (isAccessAllowed !== true || isLoading) {
     return <Loading />
   }
 

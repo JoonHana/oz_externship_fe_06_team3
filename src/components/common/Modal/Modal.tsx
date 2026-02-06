@@ -66,8 +66,13 @@ export function Modal({
 }: ModalProps) {
   const modalRoot = useRef<HTMLElement | null>(null)
   const modalIdRef = useRef<string>(generateModalId())
+  const [rootReady, setRootReady] = useState(false)
   useEffect(() => {
-    modalRoot.current = document.getElementById('modal-root')
+    const root = document.getElementById('modal-root')
+    if (root) {
+      modalRoot.current = root
+      setRootReady(true)
+    }
   }, [])
 
   const [isTopModal, setIsTopModal] = useState(isOpen)
@@ -178,7 +183,7 @@ export function Modal({
       </motion.div>
     )
 
-  if (!modalRoot.current) return null
+  if (!rootReady || !modalRoot.current) return null
 
   // 맨 위 모달이 아니면 backdrop처럼 처리
   if (isOpen && !isTopModal) {
