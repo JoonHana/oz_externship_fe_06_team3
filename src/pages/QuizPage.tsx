@@ -52,6 +52,7 @@ function QuizPage() {
     number | null
   >(null)
   const lastCheatingAtRef = useRef(0)
+  const hasInitializedTimerFromApi = useRef(false)
 
   const submissionMutation = useExamSubmissionMutation()
   const { data, isLoading } = useExamDeploymentDetailQuery(
@@ -238,6 +239,20 @@ function QuizPage() {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [handleCheatingDetected, cheatingCount])
+
+  // 문제 불러온 뒤 API의 duration_time, elapsed_time으로 타이머 초기화 (한 번만)
+  useEffect(() => {
+    if (!data || hasInitializedTimerFromApi.current || isEnded) return
+    hasInitializedTimerFromApi.current = true
+    const totalSeconds = data.durationTime * 60
+    const elapsedSeconds = (data.elapsedTime ?? 0) * 60
+    const remaining = Math.max(0, totalSeconds - elapsedSeconds)
+    setRemainingSeconds(remaining)
+    if (remaining <= 0) {
+      setIsEnded(true)
+      setEndReason('time')
+    }
+  }, [data, isEnded])
 
   useEffect(() => {
     if (isEnded) return
