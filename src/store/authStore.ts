@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.login(payload)
           const accessToken = response?.access_token
-          let refreshToken = response?.refresh_token // undefined일 수 있음
+          const refreshToken = response?.refresh_token // undefined일 수 있음
           if (!accessToken) {
             throw new Error('LOGIN_FAILED')
           }

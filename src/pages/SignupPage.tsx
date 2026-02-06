@@ -5,12 +5,13 @@ import type { SocialProviderId } from '@/types/social'
 import { createSocialRedirect } from '@/api/socialAuth'
 
 export default function SignupPage() {
+  // 소셜 회원가입 리다이렉트
   const handleSocialSignup = (provider: SocialProviderId) => {
     createSocialRedirect(provider)
   }
 
   return (
-    <div className="flex h-[calc(100vh-96px)] items-center justify-center bg-white px-4 py-12">
+    <div className="flex min-h-[calc(100vh-96px)] items-center justify-center px-4 py-12">
       <div className="relative mb-[min(40vh)] flex w-[348px] flex-col items-center gap-16">
         <div className="flex w-full flex-col items-center gap-[27px]">
           <div className="flex w-[191px] flex-col items-center gap-4">
@@ -27,7 +28,7 @@ export default function SignupPage() {
               </span>
               <Link
                 to="/login"
-                className="text-primary text-[16px] leading-[22.4px] font-normal tracking-[-0.48px] whitespace-nowrap hover:underline"
+                className="text-primary text-[16px] whitespace-nowrap hover:underline"
               >
                 로그인하기
               </Link>
@@ -41,7 +42,7 @@ export default function SignupPage() {
             <div className="flex w-full justify-center">
               <Link
                 to="/signup/email"
-                className="text-mono-600 text-[16px] leading-[22.4px] font-normal tracking-[-0.48px] whitespace-nowrap underline"
+                className="text-mono-600 text-[16px] whitespace-nowrap underline"
               >
                 일반회원 가입
               </Link>
