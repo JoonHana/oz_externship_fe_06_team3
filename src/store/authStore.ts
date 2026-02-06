@@ -8,7 +8,6 @@ type AuthState = {
   accessToken: string | null
   refreshToken: string | null
   user: User | null
-  isAuthenticated: boolean
 
   setAuth: (payload: {
     accessToken: string | null
@@ -28,14 +27,12 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       user: null,
-      isAuthenticated: false,
 
       setAuth: ({ accessToken, refreshToken, user }) => {
         set((prev) => ({
           accessToken,
           refreshToken: refreshToken ?? prev.refreshToken,
           user,
-          isAuthenticated: true,
         }))
       },
 
@@ -44,7 +41,6 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           refreshToken: null,
           user: null,
-          isAuthenticated: false,
         })
       },
 
@@ -80,12 +76,12 @@ export const useAuthStore = create<AuthState>()(
         if (!accessToken) return
 
         try {
-          const user = await authApi.me(accessToken)
-          set({ user, isAuthenticated: true })
-        } catch {
-          get().clearAuth()
-        }
-      },
+        const user = await authApi.me(accessToken)
+        set({ user })
+      } catch {
+        get().clearAuth()
+      }
+    },
     }),
     {
       name: 'auth-storage',
@@ -93,7 +89,6 @@ export const useAuthStore = create<AuthState>()(
         accessToken: s.accessToken,
         refreshToken: s.refreshToken,
         user: s.user,
-        isAuthenticated: s.isAuthenticated,
       }),
     }
   )
