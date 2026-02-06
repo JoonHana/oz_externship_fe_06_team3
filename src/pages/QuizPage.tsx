@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Button,
@@ -28,6 +28,15 @@ import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 
 type Question = ExamDeploymentDetailResult['questions'][0]
 
+/** 열린 모달: cheating=부정행위 안내(1차·2차 경고 → 3차 시 종료), fullscreen=전체화면 해제 안내, submitComplete=제출 완료 */
+type OpenModal = 'cheating' | 'fullscreen' | 'submitComplete'
+
+const ARRAY_ANSWER_TYPES = new Set<Question['type']>([
+  'multiple_choice',
+  'fill_blank',
+  'ordering',
+])
+
 function QuizPage() {
   const navigate = useNavigate()
   const { deploymentId } = useParams<{ deploymentId: string }>()
@@ -38,14 +47,13 @@ function QuizPage() {
   >(null)
   const [remainingSeconds, setRemainingSeconds] = useState(30 * 60)
   const [cheatingCount, setCheatingCount] = useState(0)
-  const [isCheatingModalOpen, setIsCheatingModalOpen] = useState(false)
-  const [isFullscreenModalOpen, setIsFullscreenModalOpen] = useState(false)
-  const [isSubmitCompleteModalOpen, setIsSubmitCompleteModalOpen] = useState(false)
-  const [submittedSubmissionId, setSubmittedSubmissionId] = useState<number | null>(null)
+  const [openModal, setOpenModal] = useState<OpenModal | null>(null)
+  const [submittedSubmissionId, setSubmittedSubmissionId] = useState<
+    number | null
+  >(null)
   const lastCheatingAtRef = useRef(0)
 
   const submissionMutation = useExamSubmissionMutation()
-
   const { data, isLoading } = useExamDeploymentDetailQuery(
     deploymentIdNumber,
     !!deploymentId
@@ -54,112 +62,63 @@ function QuizPage() {
     deploymentIdNumber,
     !!deploymentId && !isEnded
   )
-
-  // 답변 상태 관리
   const [answers, setAnswers] = useState<
     Record<number, string | string[] | null>
   >({})
 
   // 답변 변경 핸들러
-  const handleAnswerChange = (
-    questionId: number,
-    answer: string | string[]
-  ) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: answer,
-    }))
+  const handleAnswerChange = (questionId: number, answer: string | string[]) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: answer }))
   }
 
-  // 문제 유형별 컴포넌트 렌더링
-  // 남은 문제 유형 2가지 추가 예정 :  ⭐️ 다중선택(체크박스), 단답형(텍스트 입력) ⭐️
   const renderQuestion = (question: Question) => {
-    const answer = answers[question.questionId] || null
 
+    // 문제에 대한 답변 처리
+    const answer = answers[question.questionId] ?? null
+    // 문제에 대한 공통 속성 처리
+    const commonProps = {
+      question, // 문제 정보
+      onAnswerChange: handleAnswerChange, // 답변 변경 핸들러
+    }
     switch (question.type) {
-      case 'single_choice': // 단일선택 (라디오 버튼)
+      case 'single_choice':
+        return <SingleChoice {...commonProps} answer={answer as string | null} />
+      case 'multiple_choice':
         return (
-          <SingleChoice
-            question={question}
-            answer={answer as string | null}
-            onAnswerChange={handleAnswerChange}
-          />
+          <MultipleChoice {...commonProps} answer={answer as string[] | null} />
         )
-      case 'multiple_choice': // 다중선택
-        return (
-          <MultipleChoice
-            question={question}
-            answer={answer as string[] | null}
-            onAnswerChange={handleAnswerChange}
-          />
-        )
-      case 'short_answer': // 단답형
-        return (
-          <ShortAnswer
-            question={question}
-            answer={answer as string | null}
-            onAnswerChange={handleAnswerChange}
-          />
-        )
-      case 'ox': // O/X 선택
-        return (
-          <OX
-            question={question}
-            answer={answer as string | null}
-            onAnswerChange={handleAnswerChange}
-          />
-        )
-      case 'fill_blank': // 빈칸 채우기
-        return (
-          <FillBlank
-            question={question}
-            answer={answer as string[] | null}
-            onAnswerChange={handleAnswerChange}
-          />
-        )
-      case 'ordering': // 순서 맞추기
-        return (
-          <Ordering
-            question={question}
-            answer={answer as string[] | null}
-            onAnswerChange={handleAnswerChange}
-          />
-        )
+      case 'short_answer':
+        return <ShortAnswer {...commonProps} answer={answer as string | null} />
+      case 'ox':
+        return <OX {...commonProps} answer={answer as string | null} />
+      case 'fill_blank':
+        return <FillBlank {...commonProps} answer={answer as string[] | null} />
+      case 'ordering':
+        return <Ordering {...commonProps} answer={answer as string[] | null} />
       default:
         return null
     }
   }
 
-  const handleAutoSubmit = () => {
-    // 부정행위로 종료될 때 자동 제출 처리(나중에 API 연결 예정)
-  }
-
-  
-  const handleCheatingDetected = useCallback(() => {
+  const handleCheatingDetected = () => {
     if (isEnded) return
     const now = Date.now()
     if (now - lastCheatingAtRef.current < 800) return
     lastCheatingAtRef.current = now
-
     setCheatingCount((prev) => {
       const next = Math.min(prev + 1, 3)
-      setIsCheatingModalOpen(true)
+      setOpenModal('cheating')
       return next
     })
-  }, [isEnded])
-
-  const handleCheatingClose = () => {
-    setIsCheatingModalOpen(false)
   }
 
+  const handleCheatingClose = () => setOpenModal(null)
   const handleCheatingTerminate = () => {
-    setIsCheatingModalOpen(false)
+    setOpenModal(null)
     // TODO: 3회 부정행위 감지 시 자동 제출 및 결과 페이지 이동 처리 필요
-    handleAutoSubmit();
   }
 
-  // 응시 페이지를 떠날 때 전체화면 해제 (제출 완료, 시간/상태 종료 )
-  const exitFullscreenIfActive = useCallback(async () => {
+  const exitFullscreenIfActive = async () => {
     if (document.fullscreenElement) {
       try {
         await document.exitFullscreen()
@@ -167,16 +126,16 @@ function QuizPage() {
         // ignore
       }
     }
-  }, [])
+  }
 
-  // 제출 데이터 생성
   const buildSubmitPayload = () => {
     if (!data?.questions) return null
-    const answerList = data.questions.map((q) => ({
-      question_id: q.questionId,
-      type: q.type,
-      submitted_answer: answers[q.questionId] ?? null,
-    }))
+    const answerList = data.questions.map((q) => {
+      const raw = answers[q.questionId]
+      const submitted_answer =
+        raw != null ? raw : ARRAY_ANSWER_TYPES.has(q.type) ? [] : ''
+      return { question_id: q.questionId, type: q.type, submitted_answer }
+    })
     return {
       deployment_id: deploymentIdNumber,
       started_at: new Date().toISOString(),
@@ -191,23 +150,45 @@ function QuizPage() {
     submissionMutation.mutate(payload, {
       onSuccess: (result) => {
         setSubmittedSubmissionId(result.submissionId)
-        setIsSubmitCompleteModalOpen(true)
+        setOpenModal('submitComplete')
       },
     })
   }
 
   const handleSubmitCompleteConfirm = () => {
-    setIsSubmitCompleteModalOpen(false)
-    const goTo = () => {
-      if (submittedSubmissionId !== null) {
-        navigate(`/quiz/result/${submittedSubmissionId}`)
-        setSubmittedSubmissionId(null)
-      } else {
-        navigate('/mypage/quiz')
-      }
-    }
-    exitFullscreenIfActive().then(goTo)
+    setOpenModal(null)
+    const sid = submittedSubmissionId
+    setSubmittedSubmissionId(null)
+    exitFullscreenIfActive().then(() => {
+      navigate(sid !== null ? `/quiz/result/${sid}` : '/mypage/quiz')
+    })
   }
+
+  const handleEndConfirm = () => {
+    exitFullscreenIfActive().then(() => navigate('/mypage/quiz'))
+  }
+
+  const handleTimeEndTest = () => {
+    setRemainingSeconds(0)
+    setIsEnded(true)
+    setEndReason('time')
+  }
+
+  const handleStatusEndTest = () => {
+    setIsEnded(true)
+    setEndReason('status')
+  }
+
+  const handleFullscreenRetry = async () => {
+    try {
+      await document.documentElement.requestFullscreen()
+      setOpenModal(null)
+    } catch {
+      // 전체화면 전환 실패 시 무시
+    }
+  }
+
+  const handleCloseSubmitCompleteModal = () => setOpenModal(null)
 
   useEffect(() => {
     if (isEnded) return
@@ -239,7 +220,7 @@ function QuizPage() {
     const handleFullscreenChange = () => {
       if (cheatingCount >= 3) return
       if (!document.fullscreenElement) {
-        setIsFullscreenModalOpen(true)
+        setOpenModal('fullscreen')
       }
     }
 
@@ -287,45 +268,23 @@ function QuizPage() {
   }, [statusData, isEnded])
 
   const minutes = Math.floor(remainingSeconds / 60)
-  const seconds = remainingSeconds % 60
-  const paddedSeconds = seconds.toString().padStart(2, '0')
-  const formattedRemaining = `${minutes} : ${paddedSeconds}`
+  const seconds = (remainingSeconds % 60).toString().padStart(2, '0')
+  const formattedRemaining = `${minutes} : ${seconds}`
   const showTimeEndModal = isEnded && endReason === 'time'
   const showQuizEndModal = isEnded && endReason === 'status'
 
-  // 시험 종료 시 전체화면 해제 후 쪽지시험 리스트로 이동
-  const handleEndConfirm = () => {
-    exitFullscreenIfActive().then(() => navigate('/mypage/quiz'))
-  }
-
-  // 상태 종료 시 QuizEndModal 표시 후 5초 뒤 쪽지시험 리스트로 이동
   useEffect(() => {
     if (!showQuizEndModal) return
     const timer = window.setTimeout(() => {
       exitFullscreenIfActive().then(() => navigate('/mypage/quiz'))
     }, 5000)
     return () => window.clearTimeout(timer)
-  }, [showQuizEndModal, navigate, exitFullscreenIfActive])
+  }, [showQuizEndModal])
 
-  const handleTimeEndTest = () => {
-    setRemainingSeconds(0)
-    setIsEnded(true)
-    setEndReason('time')
-  }
-
-  const handleStatusEndTest = () => {
-    setIsEnded(true)
-    setEndReason('status')
-  }
-
-  const handleFullscreenRetry = async () => {
-    try {
-      await document.documentElement.requestFullscreen()
-      setIsFullscreenModalOpen(false)
-    } catch {
-      //전체화면 해제 실패 시 무시
-    }
-  }
+  const warningLevel = Math.min(
+    Math.max(cheatingCount, 1),
+    3
+  ) as 1 | 2 | 3
 
   if (isLoading) {
     return <Loading />
@@ -391,14 +350,14 @@ function QuizPage() {
       </footer>
 
       <CheatingWarningModal
-        isOpen={isCheatingModalOpen}
+        isOpen={openModal === 'cheating'}
         onClose={handleCheatingClose}
-        warningLevel={Math.min(Math.max(cheatingCount, 1), 3) as 1 | 2 | 3}
+        warningLevel={warningLevel}
         onConfirm={handleCheatingClose}
         onTerminate={handleCheatingTerminate}
       />
 
-      <Modal isOpen={isFullscreenModalOpen} onClose={() => {}}>
+      <Modal isOpen={openModal === 'fullscreen'} onClose={() => {}}>
         <Modal.Body>
           <div className="flex min-w-[250px] flex-col items-center gap-4 py-4">
             <p className="text-center text-[16px] text-foreground-secondary">
@@ -456,8 +415,8 @@ function QuizPage() {
 
       {/* 제출하기 완료 모달 */}
       <QuizSubmitCompleteModal
-        isOpen={isSubmitCompleteModalOpen}
-        onClose={() => setIsSubmitCompleteModalOpen(false)}
+        isOpen={openModal === 'submitComplete'}
+        onClose={handleCloseSubmitCompleteModal}
         onConfirm={handleSubmitCompleteConfirm}
       />
     </div>
