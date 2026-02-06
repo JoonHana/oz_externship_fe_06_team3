@@ -80,6 +80,7 @@ export type UseEmailVerificationModalVMResult = {
     isMessageError: boolean
     isDefaultGuide: boolean
     hasMessage: boolean
+    showVerifyToast: boolean
   }
   actions: {
     resetAll: () => void
@@ -255,13 +256,24 @@ export function useEmailVerificationModalVM({
   )
 
   const rootError = errors.root?.message ?? null
+  const noticeForDisplay =
+    emailVerificationFlow.notice === messages.verifySuccess
+      ? null
+      : emailVerificationFlow.notice
   const messageUI = deriveVerificationMessageUI({
     error: rootError ?? emailVerificationFlow.error,
-    notice: emailVerificationFlow.notice,
+    notice: noticeForDisplay,
     defaultGuide: messages.defaultGuide,
     defaultGuideAfterSend: messages.defaultGuideAfterSend,
     codeSent: emailVerificationFlow.codeSent,
   })
+  const [showVerifyToast, setShowVerifyToast] = useState(false)
+  useEffect(() => {
+    if (emailVerificationFlow.notice !== messages.verifySuccess) return
+    setShowVerifyToast(true)
+    const timer = setTimeout(() => setShowVerifyToast(false), 3000)
+    return () => clearTimeout(timer)
+  }, [emailVerificationFlow.notice, messages.verifySuccess])
 
   const emailFieldState = deriveFieldState({
     hasError: !!errors.email?.message,
@@ -316,16 +328,22 @@ export function useEmailVerificationModalVM({
             isSubmitting,
           variant:
             !emailVerificationFlow.canSubmitToReset ||
-            emailVerificationFlow.sending ||
-            emailVerificationFlow.verifying ||
-            isSubmitting
+              emailVerificationFlow.sending ||
+              emailVerificationFlow.verifying ||
+              isSubmitting
               ? 'disabled'
               : 'primary',
         },
         onSubmit: methods.handleSubmit(onSubmit),
       },
     },
-    ui: messageUI,
+    ui: {
+      displayText: messageUI.displayText,
+      isMessageError: messageUI.isMessageError,
+      isDefaultGuide: messageUI.isDefaultGuide,
+      hasMessage: messageUI.hasMessage,
+      showVerifyToast,
+    },
     actions: {
       resetAll,
       onClose,
