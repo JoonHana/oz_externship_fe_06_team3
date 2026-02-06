@@ -7,11 +7,7 @@ import { Button } from '@/components/common/Button'
 const TABS = [
   { id: 'exam', label: '쪽지시험', image: '/LandingPage_img/main_exam.png' },
   { id: 'qna', label: '질의응답', image: '/LandingPage_img/main_qna.png' },
-  {
-    id: 'community',
-    label: '커뮤니티',
-    image: '/LandingPage_img/main_community.png',
-  },
+  {id: 'community',label: '커뮤니티',image: '/LandingPage_img/main_community.png'},
 ] as const
 
 type TabType = (typeof TABS)[number]['id']
@@ -33,6 +29,7 @@ function LandingPage() {
     setActiveTab(next)
     setIsFadingOut(true)
 
+    // 새 탭을 또 눌렀을 때 이전에 걸어둔 타이머가 아직 살아있으면 바로 취소
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
 
     timeoutRef.current = window.setTimeout(() => {
@@ -42,6 +39,7 @@ function LandingPage() {
   }
 
   useEffect(() => {
+    // 컴포넌트가 언마운트될 때 타이머 취소
     return () => {
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
     }

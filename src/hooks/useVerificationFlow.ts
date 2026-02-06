@@ -1,4 +1,4 @@
-// 회원가입용 인증 플로우 - 이메일/SMS send→verify→token (useEmailVerification, useSmsVerification에서 사용)
+// 이메일/SMS 인증의 공통 로직 (인증번호 전송 → 타이머 시작 → 인증번호 입력 → 검증 → 토큰 획득)
 import { useEffect, useMemo, useReducer, useCallback, useRef } from 'react'
 import type { Path } from 'react-hook-form'
 import type { SignupFormData } from '@/schemas/auth'
@@ -76,23 +76,18 @@ export function useVerificationFlow<TVerifyRes>({
     INITIAL_VERIFICATION_STATE as VerificationState
   )
 
-  const {
-    token,
-    verified,
-    codeSent,
-    sendStatus,
-    flowMessage,
-    verifyStatus,
-  } = state
+  const { token, verified, codeSent, sendStatus, flowMessage, verifyStatus } = state
 
   const previousIdentityRef = useRef(identity)
   const justSentRef = useRef(false)
 
+  // identity 변경 시 모든 상태 초기화 + 타이머 리셋
   const resetAll = useCallback(() => {
     dispatch({ type: 'IDENTITY_CHANGED' })
     resetTimer()
   }, [resetTimer])
 
+  // identity(이메일/전화번호) 변경 감지 → resetAll 호출 (justSent 직후는 제외)
   useEffect(() => {
     if (sendStatus === 'pending') return
     if (justSentRef.current) {
@@ -105,6 +100,7 @@ export function useVerificationFlow<TVerifyRes>({
     resetAll()
   }, [identity, resetAll, sendStatus])
 
+  // 인증번호 입력 비워지면 검증 에러/필드 에러 초기화
   useEffect(() => {
     if (!code?.trim()) {
       if (verifyStatus === 'error') {
@@ -114,10 +110,12 @@ export function useVerificationFlow<TVerifyRes>({
     }
   }, [code, verifyStatus, clearErrors, codeField])
 
+  // 검증 상태만 초기화 (verified, token, verifyStatus 리셋)
   const resetVerifyState = useCallback(() => {
     dispatch({ type: 'RESET_VERIFY_STATE' })
   }, [])
 
+  // identity 형식 검사 실패 시 identityFields에 에러 표시
   const applyValidationError = useCallback(
     (validationResult: ValidationResult) => {
       applyIdentityValidationError({
@@ -130,11 +128,13 @@ export function useVerificationFlow<TVerifyRes>({
     [text.identityInvalid, identityFields, setFieldError]
   )
 
+  // identity(이메일/전화번호) 형식 유효 여부
   const identityValid = useMemo(
     () => validateIdentity(identity).ok,
     [identity, validateIdentity]
   )
 
+  // canSend, canVerify, fieldState, codeFieldState 계산
   const ui = useMemo(
     () =>
       computeVerificationUI({
@@ -149,6 +149,7 @@ export function useVerificationFlow<TVerifyRes>({
     [verified, sendStatus, verifyStatus, codeSent, code, busy, identityValid]
   )
 
+  // 인증번호 전송 버튼 클릭 시: 형식 검사 → API 호출 → 타이머 시작
   const handleSendCode = useCallback(async () => {
     clearErrors([...identityFields, codeField])
 
@@ -204,6 +205,7 @@ export function useVerificationFlow<TVerifyRes>({
     text.resent,
   ])
 
+  // 인증번호 확인 버튼 클릭 시: 유효성 검사 → API 호출 → 토큰 저장
   const handleVerifyCode = useCallback(async () => {
     clearErrors(codeField)
 
@@ -258,6 +260,7 @@ export function useVerificationFlow<TVerifyRes>({
     resetTimer,
   ])
 
+  // 타이머 관련 값/함수 묶음 (remain, mmss, isRunning, start, reset)
   const timer = useMemo(
     () => ({
       remain,
