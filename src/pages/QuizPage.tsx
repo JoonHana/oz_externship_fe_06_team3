@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Button,
@@ -37,16 +38,23 @@ const ARRAY_ANSWER_TYPES = new Set<Question['type']>([
   'ordering',
 ])
 
+const CHEATING_DEBOUNCE_MS = 800
+const INITIAL_REMAINING_SECONDS = 30 * 60
+const STATUS_END_AUTO_NAVIGATE_MS = 5000
+
+// 문제풀이 후 "제출하기"로 답안 제출 → 자동 채점 → 결과 페이지 이동
+// 시간 초과 시: 푼 문항 제출, 미응답 0점 처리, 목록 응시완료 반영
+
 function QuizPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { deploymentId } = useParams<{ deploymentId: string }>()
   const deploymentIdNumber = deploymentId ? Number(deploymentId) : 0
   const [isEnded, setIsEnded] = useState(false)
   const [endReason, setEndReason] = useState<
     'time' | 'status' | 'cheating' | null
   >(null)
-  // 타이머: 실 API duration_time(분)으로 초기화됨. 로딩 전까지 30분 표시
-  const [remainingSeconds, setRemainingSeconds] = useState(30 * 60)
+  const [remainingSeconds, setRemainingSeconds] = useState(INITIAL_REMAINING_SECONDS)
   const [cheatingCount, setCheatingCount] = useState(0)
   const [openModal, setOpenModal] = useState<OpenModal | null>(null)
   const [submittedSubmissionId, setSubmittedSubmissionId] = useState<
@@ -54,6 +62,9 @@ function QuizPage() {
   >(null)
   const lastCheatingAtRef = useRef(0)
   const hasInitializedTimerFromApi = useRef(false)
+  const hasAutoSubmittedRef = useRef(false)
+  const submittedSubmissionIdRef = useRef<number | null>(null)
+  const submitAndEndByTimeRef = useRef<() => void>(() => {})
 
   const submissionMutation = useExamSubmissionMutation()
   const { data, isLoading } = useExamDeploymentDetailQuery(
@@ -68,20 +79,14 @@ function QuizPage() {
     Record<number, string | string[] | null>
   >({})
 
-  // 답변 변경 핸들러
+  // —— 답안 & 문제 렌더링 ——
   const handleAnswerChange = (questionId: number, answer: string | string[]) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }))
   }
 
   const renderQuestion = (question: Question) => {
-
-    // 문제에 대한 답변 처리
     const answer = answers[question.questionId] ?? null
-    // 문제에 대한 공통 속성 처리
-    const commonProps = {
-      question, // 문제 정보
-      onAnswerChange: handleAnswerChange, // 답변 변경 핸들러
-    }
+    const commonProps = { question, onAnswerChange: handleAnswerChange }
     switch (question.type) {
       case 'single_choice':
         return <SingleChoice {...commonProps} answer={answer as string | null} />
@@ -102,34 +107,41 @@ function QuizPage() {
     }
   }
 
+  // —— 부정행위 감지 ——
   const handleCheatingDetected = () => {
     if (isEnded) return
     const now = Date.now()
-    if (now - lastCheatingAtRef.current < 800) return
+    if (now - lastCheatingAtRef.current < CHEATING_DEBOUNCE_MS) return
     lastCheatingAtRef.current = now
-    setCheatingCount((prev) => {
-      const next = Math.min(prev + 1, 3)
-      setOpenModal('cheating')
-      return next
-    })
+    setCheatingCount((prev) => Math.min(prev + 1, 3))
+    setOpenModal('cheating')
   }
 
   const handleCheatingClose = () => setOpenModal(null)
-  const handleCheatingTerminate = () => {
-    setOpenModal(null)
-    // TODO: 3회 부정행위 감지 시 자동 제출 및 결과 페이지 이동 처리 필요
-  }
 
+  // —— 공통: 전체화면 해제, 제출 성공 반영, 결과/목록 이동 ——
   const exitFullscreenIfActive = async () => {
-    if (document.fullscreenElement) {
-      try {
-        await document.exitFullscreen()
-      } catch {
-        // ignore
-      }
+    if (!document.fullscreenElement) return
+    try {
+      await document.exitFullscreen()
+    } catch {
+      // ignore
     }
   }
 
+  const applySubmitSuccess = (result: { submissionId: number }) => {
+    setSubmittedSubmissionId(result.submissionId)
+    submittedSubmissionIdRef.current = result.submissionId
+    queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
+  }
+
+  const navigateToResultOrList = (submissionId: number | null) => {
+    exitFullscreenIfActive().then(() =>
+      navigate(submissionId != null ? `/quiz/result/${submissionId}` : '/mypage/quiz')
+    )
+  }
+
+  // 푼 문항은 제출값, 미응답은 '' 또는 []로 제출(서버에서 0점 처리)
   const buildSubmitPayload = () => {
     if (!data?.questions) return null
     const answerList = data.questions.map((q) => {
@@ -146,36 +158,80 @@ function QuizPage() {
     }
   }
 
+  // 3회 부정행위 감지 시: 시험 종료 처리 후 현재 답안 자동 제출 → 결과 페이지 이동, 목록 응시완료 반영
+  const handleCheatingTerminate = () => {
+    setOpenModal(null)
+    setIsEnded(true)
+    setEndReason('cheating')
+    const payload = buildSubmitPayload()
+    if (!payload) {
+      navigateToResultOrList(null)
+      return
+    }
+    submissionMutation.mutate(payload, {
+      onSuccess: (result) => {
+        applySubmitSuccess(result)
+        navigateToResultOrList(result.submissionId)
+      },
+      onError: () => {
+        queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
+        navigateToResultOrList(null)
+      },
+    })
+  }
+
   const handleSubmit = () => {
     const payload = buildSubmitPayload()
     if (!payload) return
     submissionMutation.mutate(payload, {
       onSuccess: (result) => {
-        setSubmittedSubmissionId(result.submissionId)
+        applySubmitSuccess(result)
         setOpenModal('submitComplete')
       },
     })
   }
 
   const handleSubmitCompleteConfirm = () => {
-    setOpenModal(null)
     const sid = submittedSubmissionId
+    setOpenModal(null)
     setSubmittedSubmissionId(null)
-    exitFullscreenIfActive().then(() => {
-      navigate(sid !== null ? `/quiz/result/${sid}` : '/mypage/quiz')
-    })
+    submittedSubmissionIdRef.current = null
+    navigateToResultOrList(sid)
   }
 
   const handleEndConfirm = () => {
-    exitFullscreenIfActive().then(() => navigate('/mypage/quiz'))
+    const sid = submittedSubmissionIdRef.current ?? submittedSubmissionId
+    setSubmittedSubmissionId(null)
+    submittedSubmissionIdRef.current = null
+    navigateToResultOrList(sid)
   }
 
-  const handleTimeEndTest = () => {
+  // —— 시간 종료 (버튼/실제 만료 공통) ——
+  const endQuizByTime = () => {
     setRemainingSeconds(0)
     setIsEnded(true)
     setEndReason('time')
   }
 
+  const submitAndEndByTime = () => {
+    if (hasAutoSubmittedRef.current) return
+    hasAutoSubmittedRef.current = true
+    const payload = buildSubmitPayload()
+    if (!payload) {
+      endQuizByTime()
+      return
+    }
+    submissionMutation.mutate(payload, {
+      onSuccess: applySubmitSuccess,
+      onError: () => {
+        queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
+      },
+    })
+    endQuizByTime()
+  }
+  submitAndEndByTimeRef.current = submitAndEndByTime
+
+  const handleTimeEndTest = () => submitAndEndByTime()
   const handleStatusEndTest = () => {
     setIsEnded(true)
     setEndReason('status')
@@ -192,6 +248,7 @@ function QuizPage() {
 
   const handleCloseSubmitCompleteModal = () => setOpenModal(null)
 
+  // —— 부수효과: 이벤트 리스너 & 타이머 ——
   useEffect(() => {
     if (isEnded) return
     const handleVisibilityChange = () => {
@@ -241,7 +298,6 @@ function QuizPage() {
     }
   }, [handleCheatingDetected, cheatingCount])
 
-  // 실 API duration_time(분), elapsed_time(분)으로 남은 시간 계산 후 타이머에 적용 (최초 1회)
   useEffect(() => {
     if (!data || hasInitializedTimerFromApi.current || isEnded) return
     hasInitializedTimerFromApi.current = true
@@ -257,14 +313,12 @@ function QuizPage() {
     const timer = setInterval(() => {
       setRemainingSeconds((prev) => {
         if (prev <= 1) {
-          setIsEnded(true)
-          setEndReason('time')
+          submitAndEndByTimeRef.current()
           return 0
         }
         return prev - 1
       })
     }, 1000)
-
     return () => clearInterval(timer)
   }, [isEnded])
 
@@ -289,10 +343,10 @@ function QuizPage() {
   useEffect(() => {
     if (!showQuizEndModal) return
     const timer = window.setTimeout(() => {
-      exitFullscreenIfActive().then(() => navigate('/mypage/quiz'))
-    }, 5000)
+      navigateToResultOrList(submittedSubmissionIdRef.current)
+    }, STATUS_END_AUTO_NAVIGATE_MS)
     return () => window.clearTimeout(timer)
-  }, [showQuizEndModal])
+  }, [showQuizEndModal, navigateToResultOrList])
 
   const warningLevel = Math.min(
     Math.max(cheatingCount, 1),
@@ -320,6 +374,7 @@ function QuizPage() {
             size="sm"
             rounded="default"
             onClick={handleTimeEndTest}
+            aria-label="시험 완료 처리, 작성한 문항 제출·미작성 0점 제출 후 결과 페이지 이동·목록 응시완료"
           >
             타이머 종료 테스트
           </Button>
@@ -342,7 +397,7 @@ function QuizPage() {
             </div>
           ) : (
             <div className="flex items-center justify-center py-20">
-              <NotFound detail="표시할 문제가 없습니다.." />
+              <NotFound detail="표시할 문제가 없습니다." />
             </div>
           )}
         </div>
@@ -356,6 +411,7 @@ function QuizPage() {
             rounded="default"
             onClick={handleSubmit}
             disabled={submissionMutation.isPending}
+            aria-label="문제풀이 답안 제출 후 채점 결과 확인 페이지로 이동"
           >
             {submissionMutation.isPending ? '제출 중...' : '제출하기'}
           </Button>
@@ -392,7 +448,7 @@ function QuizPage() {
         </Modal.Footer>
       </Modal>
 
-      {/* 시간 종료 모달 */}
+      {/* 시간 종료 모달: 자동 제출 후 확인 시 결과 페이지 또는 목록으로 */}
       <Modal isOpen={showTimeEndModal} onClose={handleEndConfirm}>
         <Modal.Body>
           <div className="flex min-w-[250px] flex-col items-center gap-6 py-4">
@@ -403,6 +459,8 @@ function QuizPage() {
             />
             <p className="text-center text-[16px] text-foreground-secondary">
               시험 시간이 종료되었습니다.
+              {submittedSubmissionId != null &&
+                ' 답안이 제출되었습니다. (풀지 못한 문항은 0점 처리됩니다)'}
             </p>
           </div>
         </Modal.Body>
@@ -413,8 +471,9 @@ function QuizPage() {
             rounded="default"
             className="w-full"
             onClick={handleEndConfirm}
+            disabled={submissionMutation.isPending}
           >
-            확인
+            {submissionMutation.isPending ? '제출 중...' : '확인'}
           </Button>
         </Modal.Footer>
       </Modal>
