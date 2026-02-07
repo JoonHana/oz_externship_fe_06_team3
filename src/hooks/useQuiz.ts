@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query'
 import {
   checkExamCode,
   fetchExamDeploymentDetail,
@@ -12,13 +12,32 @@ import {
 
 export const useExamDeploymentsQuery = (params: FetchExamDeploymentsParams, enabled = true) => {
   /**
-   * 쪽지시험 목록 쿼리
+   * 쪽지시험 목록 쿼리 (단일 페이지)
    * 사용 예:
    * const { data } = useExamDeploymentsQuery({ page: 1, status: 'all' })
    */
   return useQuery({
     queryKey: ['examDeployments', params.page ?? 1, params.status ?? 'all'],
     queryFn: () => fetchExamDeployments(params),
+    enabled,
+  })
+}
+
+export const useExamDeploymentsInfiniteQuery = (
+  status: FetchExamDeploymentsParams['status'] = 'all',
+  enabled = true
+) => {
+  /**
+   * 쪽지시험 목록 무한 스크롤 쿼리
+   * 사용 예:
+   * const { data, fetchNextPage, hasNextPage, ... } = useExamDeploymentsInfiniteQuery('all')
+   */
+  return useInfiniteQuery({
+    queryKey: ['examDeployments', 'infinite', status ?? 'all'],
+    queryFn: ({ pageParam }) =>
+      fetchExamDeployments({ page: pageParam as number, status: status ?? 'all' }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.hasNext ? last.page + 1 : undefined),
     enabled,
   })
 }
