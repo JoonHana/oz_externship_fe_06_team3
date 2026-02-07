@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { fetchExamDeployments } from '@/api/quiz'
+import { useExamDeploymentsInfiniteQuery } from '@/hooks/useQuiz'
 import QuizTabs, { Tabs } from '@/components/quiz/QuizTabs'
 import QuizContent from '@/components/quiz/QuizContent'
 
@@ -17,14 +16,7 @@ const MyPageQuiz = () => {
     [currentTab]
   )
 
-  // 무한 스크롤: 페이지 단위로 목록 조회, 스크롤 시 다음 페이지 자동 요청
-  const deploymentsQuery = useInfiniteQuery({
-    queryKey: ['examDeployments', 'infinite', currentStatus],
-    queryFn: ({ pageParam }) =>
-      fetchExamDeployments({ page: pageParam as number, status: currentStatus }),
-    initialPageParam: 1,
-    getNextPageParam: (last) => (last.hasNext ? last.page + 1 : undefined),
-  })
+  const deploymentsQuery = useExamDeploymentsInfiniteQuery(currentStatus)
   const quizzes = useMemo(
     () => deploymentsQuery.data?.pages.flatMap((p) => p.results) ?? [],
     [deploymentsQuery.data?.pages]
