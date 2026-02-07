@@ -35,46 +35,36 @@ import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 
 type Question = ExamDeploymentDetailResult['questions'][0]
 
+const DEFAULT_EXAM_NAME = '쪽지시험'
 
 function QuizPage() {
-  const { deploymentId } = useParams<{ deploymentId: string }>() // 쪽지시험 고유 ID
-  const deploymentIdNumber = deploymentId ? Number(deploymentId) : 0 // 쪽지시험 고유 ID 숫자
+  const { deploymentId } = useParams<{ deploymentId: string }>()
+  const deploymentIdNumber = deploymentId ? Number(deploymentId) : 0
 
-  const [isEnded, setIsEnded] = useState(false) // 시험 종료 여부
-  const [endReason, setEndReason] = useState< // 시험 종료 이유
-    'time' | 'status' | 'cheating' | null
-  >(null)
-  const [openModal, setOpenModal] = useState< // 모달 열림 상태
+  const [isEnded, setIsEnded] = useState(false)
+  const [endReason, setEndReason] = useState<'time' | 'status' | 'cheating' | null>(null)
+  const [openModal, setOpenModal] = useState<
     'cheating' | 'fullscreen' | 'submitComplete' | null
   >(null)
+  const [answers, setAnswers] = useState<Record<number, string | string[] | null>>({})
 
-  const { data, isLoading } = useExamDeploymentDetailQuery( // 쪽지시험 상세 조회
-    deploymentIdNumber,
-    !!deploymentId
-  )
-  const { data: statusData } = useExamDeploymentStatusQuery( // 쪽지시험 상태 조회
+  const { data, isLoading } = useExamDeploymentDetailQuery(deploymentIdNumber, !!deploymentId)
+  const { data: statusData } = useExamDeploymentStatusQuery(
     deploymentIdNumber,
     !!deploymentId && !isEnded
   )
 
-  const { isAccessAllowed } = useQuizAccessCheck(deploymentId, deploymentIdNumber) // 쪽지시험 접근 가능 여부
+  const { isAccessAllowed } = useQuizAccessCheck(deploymentId, deploymentIdNumber)
+  const { cheatingCount, handleCheatingClose } = useCheatingDetection(isEnded, setOpenModal)
 
-  const { cheatingCount, handleCheatingClose } = // 부정행위 감지 핸들러
-    useCheatingDetection(isEnded, setOpenModal)
+  const submitAndEndByTimeRef = useRef<() => void>(() => {})
+  const { setRemainingSeconds, formattedRemaining } = useQuizTimer(
+    data,
+    isEnded,
+    submitAndEndByTimeRef
+  )
 
-  const [answersState, setAnswersState] = useState< // 답안 상태 관리
-    Record<number, string | string[] | null>
-  >({})
-
-  const submitAndEndByTimeRef = useRef<() => void>(() => {}) // 타이머 종료 핸들러
-
-  const { setRemainingSeconds, formattedRemaining } = useQuizTimer( // 타이머 상태 관리
-      data,
-      isEnded,
-      submitAndEndByTimeRef
-    )
-
-  const { // 쪽지시험 제출 처리
+  const {
     submissionMutation,
     submittedSubmissionId,
     submittedSubmissionIdRef,
@@ -87,7 +77,7 @@ function QuizPage() {
   } = useQuizSubmissionFlow({
     deploymentIdNumber,
     data,
-    answers: answersState,
+    answers,
     cheatingCount,
     setOpenModal,
     setIsEnded,
@@ -95,22 +85,16 @@ function QuizPage() {
     setRemainingSeconds,
   })
 
-  submitAndEndByTimeRef.current = submitAndEndByTime // 타이머 종료 핸들러
+  submitAndEndByTimeRef.current = submitAndEndByTime
+  useAdminStatusPolling(statusData, isEnded, setIsEnded, setEndReason)
 
-  useAdminStatusPolling( // 쪽지시험 상태 폴링
-    statusData,
-    isEnded,
-    setIsEnded,
-    setEndReason
-  )
-
-  const handleAnswerChange = (questionId: number, answer: string | string[]) => { // 답안 변경 핸들러
-    setAnswersState((prev) => ({ ...prev, [questionId]: answer })) // 답안 상태 업데이트
+  const handleAnswerChange = (questionId: number, value: string | string[]) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
 
-  const renderQuestion = (question: Question) => { // 문제 렌더링
-    const answer = answersState[question.questionId] ?? null
-    const commonProps = { question, onAnswerChange: handleAnswerChange } 
+  const renderQuestion = (question: Question) => {
+    const answer = answers[question.questionId] ?? null
+    const commonProps = { question, onAnswerChange: handleAnswerChange }
     switch (question.type) {
       case 'single_choice':
         return <SingleChoice {...commonProps} answer={answer as string | null} />
@@ -131,10 +115,9 @@ function QuizPage() {
     }
   }
 
-  const showTimeEndModal = isEnded && endReason === 'time' // 시험 시간 종료 모달 표시 여부
-  const showQuizEndModal = isEnded && endReason === 'status' // 시험 종료 모달 표시 여부
+  const showTimeEndModal = isEnded && endReason === 'time'
+  const showQuizEndModal = isEnded && endReason === 'status'
 
-  // clearVerificationAndNavigate를 의존성에서 제외해 매 렌더마다 타이머가 리셋되는 버그 방지
   const clearAndNavigateRef = useRef(clearVerificationAndNavigate)
   clearAndNavigateRef.current = clearVerificationAndNavigate
   useEffect(() => {
@@ -145,18 +128,20 @@ function QuizPage() {
     return () => window.clearTimeout(timer)
   }, [showQuizEndModal])
 
-  const warningLevel = Math.min( // 부정행위
-    Math.max(cheatingCount, 1),
-    3
-  ) as 1 | 2 | 3
+  const warningLevel = Math.min(Math.max(cheatingCount, 1), 3) as 1 | 2 | 3
 
-  const handleFullscreenRetry = async () => { // 전체화면 전환
+  const handleFullscreenRetry = async () => {
     try {
       await document.documentElement.requestFullscreen()
       setOpenModal(null)
     } catch {
       // 전체화면 전환 실패 시 무시
     }
+  }
+
+  const handleStatusEndTest = () => {
+    setIsEnded(true)
+    setEndReason('status')
   }
 
   if (isAccessAllowed !== true || isLoading) {
@@ -166,7 +151,7 @@ function QuizPage() {
   return (
     <div>
       <QuizHeader
-        subjectName={data?.examName || '쪽지시험'}
+        subjectName={data?.examName ?? DEFAULT_EXAM_NAME}
         timeRemaining={formattedRemaining}
         timeRemainingSuffix="남음"
         cheatingCount={cheatingCount}
@@ -188,10 +173,7 @@ function QuizPage() {
             variant="secondary"
             size="sm"
             rounded="default"
-            onClick={() => {
-              setIsEnded(true)
-              setEndReason('status')
-            }}
+            onClick={handleStatusEndTest}
           >
             상태 종료 테스트
           </Button>
