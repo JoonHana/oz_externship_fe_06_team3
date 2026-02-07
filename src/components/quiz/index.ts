@@ -1,4 +1,5 @@
 export { default as QuizCard } from './QuizCard'
+export { default as ResultQuestionItem } from './ResultQuestionItem'
 export { default as SingleChoice } from './SingleChoice'
 export { default as MultipleChoice } from './MultipleChoice'
 export { default as OX } from './OX'
