@@ -18,14 +18,14 @@ import {
   useRootErrorBridge,
   useVerificationFieldBridge,
 } from '@/hooks/vm/useVerificationFieldHelpers'
-import { buildVerificationVerifySection } from '@/hooks/vm/verificationModalSection'
+import { buildVerificationVerifySection } from '@/components/common/Modal/auth/verificationModalSection'
 import { Button } from '@/components/common/Button'
 import { Modal } from '@/components/common/Modal'
 import { EmailVerificationToast } from '@/components/common/Toast'
 import {
   VerificationMessageDisplay,
   VerificationInputWithButton,
-} from './verificationModalHelpers'
+} from '@/components/common/Modal/auth/verificationModalHelpers'
 
 export type EmailVerificationVerifiedPayload = {
   email: string
@@ -181,7 +181,10 @@ function useVerifySuccessToast(
 ): boolean {
   const [showVerifyToast, setShowVerifyToast] = useState(false)
   useEffect(() => {
-    if (notice !== verifySuccessNotice) return
+    if (notice !== verifySuccessNotice) {
+      setShowVerifyToast(false)
+      return
+    }
     setShowVerifyToast(true)
     const timer = setTimeout(
       () => setShowVerifyToast(false),
@@ -470,41 +473,49 @@ function EmailVerificationModalView({
   )
 
   // 이메일 인증 입력 섹션
-  const identitySection = (
+  const emailInput = (
+    <VerificationInputWithButton<FindPasswordFormData>
+      input={{
+        name: sections.identity.emailInput.name,
+        placeholder: sections.identity.emailInput.placeholder,
+        state: sections.identity.emailInput.state,
+        helperVisibility: sections.identity.emailInput.helperVisibility,
+        width: sections.identity.emailInput.width,
+      }}
+      button={{
+        onClick: sections.verify.sendButton.onClick,
+        disabled: sections.verify.sendButton.disabled,
+        isLoading: sections.verify.sendButton.isLoading,
+        label: sections.verify.sendButton.label,
+      }}
+    />
+  )
+
+  const codeVerifyInput = (
+    <VerificationInputWithButton<FindPasswordFormData>
+      input={{
+        name: sections.verify.codeInput.name,
+        placeholder: sections.verify.codeInput.placeholder,
+        state: sections.verify.codeInput.state,
+        helperVisibility: sections.verify.codeInput.helperVisibility,
+        width: sections.verify.codeInput.width,
+        rightSlot: sections.verify.codeInput.rightSlot,
+        disabled: sections.verify.codeInput.disabled,
+      }}
+      button={{
+        onClick: sections.verify.verifyButton.onClick,
+        disabled: sections.verify.verifyButton.disabled,
+        isLoading: sections.verify.verifyButton.isLoading,
+        label: sections.verify.verifyButton.label,
+      }}
+    />
+  )
+
+  const verificationFormSection = (
     <Modal.InputRow label="이메일" required>
       <div className="flex flex-col gap-4">
-        <VerificationInputWithButton<FindPasswordFormData>
-          input={{
-            name: sections.identity.emailInput.name,
-            placeholder: sections.identity.emailInput.placeholder,
-            state: sections.identity.emailInput.state,
-            helperVisibility: sections.identity.emailInput.helperVisibility,
-            width: sections.identity.emailInput.width,
-          }}
-          button={{
-            onClick: sections.verify.sendButton.onClick,
-            disabled: sections.verify.sendButton.disabled,
-            isLoading: sections.verify.sendButton.isLoading,
-            label: sections.verify.sendButton.label,
-          }}
-        />
-        <VerificationInputWithButton<FindPasswordFormData>
-          input={{
-            name: sections.verify.codeInput.name,
-            placeholder: sections.verify.codeInput.placeholder,
-            state: sections.verify.codeInput.state,
-            helperVisibility: sections.verify.codeInput.helperVisibility,
-            width: sections.verify.codeInput.width,
-            rightSlot: sections.verify.codeInput.rightSlot,
-            disabled: sections.verify.codeInput.disabled,
-          }}
-          button={{
-            onClick: sections.verify.verifyButton.onClick,
-            disabled: sections.verify.verifyButton.disabled,
-            isLoading: sections.verify.verifyButton.isLoading,
-            label: sections.verify.verifyButton.label,
-          }}
-        />
+        {emailInput}
+        {codeVerifyInput}
       </div>
     </Modal.InputRow>
   )
@@ -539,7 +550,7 @@ function EmailVerificationModalView({
             onSubmit={sections.submit.onSubmit}
             className="flex w-full max-w-[360px] flex-col gap-4"
           >
-            {identitySection}
+            {verificationFormSection}
             {submitSection}
           </form>
         </FormProvider>

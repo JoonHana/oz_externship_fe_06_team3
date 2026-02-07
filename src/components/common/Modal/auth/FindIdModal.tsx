@@ -15,12 +15,12 @@ import {
   useRootErrorBridge,
   useVerificationFieldBridge,
 } from '@/hooks/vm/useVerificationFieldHelpers'
-import { buildVerificationVerifySection } from '@/hooks/vm/verificationModalSection'
+import { buildVerificationVerifySection } from '@/components/common/Modal/auth/verificationModalSection'
 import { useFindIdFlow } from '@/hooks/flow'
 import {
   VerificationMessageDisplay,
   VerificationInputWithButton,
-} from './verificationModalHelpers'
+} from '@/components/common/Modal/auth/verificationModalHelpers'
 
 export interface FindIdModalProps {
   isOpen: boolean
