@@ -12,9 +12,9 @@ import {
   deriveVerificationMessageUI,
 } from '@/utils/formMessage'
 import {
-  useRootErrorBridge,
   useVerificationFieldBridge,
-} from '@/hooks/vm/useVerificationFieldHelpers'
+} from '@/hooks/verification/useVerificationFieldBridge'
+import { useRootErrorBridge } from '@/hooks/form/useRootErrorBridge'
 import { buildVerificationVerifySection } from '@/components/common/Modal/auth/verificationModalSection'
 import { useFindIdFlow } from '@/hooks/flow'
 import {

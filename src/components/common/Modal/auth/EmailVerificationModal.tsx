@@ -15,9 +15,9 @@ import {
 import { parseAxiosError, resolveMessage } from '@/utils/error/axiosErrorParser'
 import { useFindPasswordFlow } from '@/hooks/flow'
 import {
-  useRootErrorBridge,
   useVerificationFieldBridge,
-} from '@/hooks/vm/useVerificationFieldHelpers'
+} from '@/hooks/verification/useVerificationFieldBridge'
+import { useRootErrorBridge } from '@/hooks/form/useRootErrorBridge'
 import { buildVerificationVerifySection } from '@/components/common/Modal/auth/verificationModalSection'
 import { Button } from '@/components/common/Button'
 import { Modal } from '@/components/common/Modal'
