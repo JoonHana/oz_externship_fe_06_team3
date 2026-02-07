@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   Button,
   CheatingWarningModal,
+  InvalidAccessModal,
   Loading,
   Modal,
   NotFound,
@@ -30,7 +31,11 @@ import {
   Ordering,
   ShortAnswer,
 } from '@/components/quiz'
-import { STATUS_END_AUTO_NAVIGATE_MS } from '@/constants/quiz'
+import {
+  INVALID_ACCESS_AUTO_REDIRECT_MS,
+  QUIZ_LIST_PATH,
+  STATUS_END_AUTO_NAVIGATE_MS,
+} from '@/constants/quiz'
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 
 type Question = ExamDeploymentDetailResult['questions'][0]
@@ -54,7 +59,11 @@ function QuizPage() {
     !!deploymentId && !isEnded
   )
 
-  const { isAccessAllowed } = useQuizAccessCheck(deploymentId, deploymentIdNumber)
+  const navigate = useNavigate()
+  const { isAccessAllowed, showInvalidAccessModal } = useQuizAccessCheck(
+    deploymentId,
+    deploymentIdNumber
+  )
   const { cheatingCount, handleCheatingClose } = useCheatingDetection(isEnded, setOpenModal)
 
   const submitAndEndByTimeRef = useRef<() => void>(() => {})
@@ -142,6 +151,16 @@ function QuizPage() {
   const handleStatusEndTest = () => {
     setIsEnded(true)
     setEndReason('status')
+  }
+
+  if (showInvalidAccessModal) {
+    return (
+      <InvalidAccessModal
+        isOpen
+        onConfirm={() => navigate(QUIZ_LIST_PATH, { replace: true })}
+        autoRedirectMs={INVALID_ACCESS_AUTO_REDIRECT_MS}
+      />
+    )
   }
 
   if (isAccessAllowed !== true || isLoading) {
