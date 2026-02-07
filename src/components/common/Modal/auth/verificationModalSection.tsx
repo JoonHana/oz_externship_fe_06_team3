@@ -1,4 +1,4 @@
-// FindId/FindPassword 인증 섹션 UI 빌드 - buildVerificationVerifySection
+// FindId/FindPassword 인증 섹션 UI 빌드
 import React, { type ReactNode } from 'react'
 import type { FieldState } from '@/components/common/CommonInput'
 import {
