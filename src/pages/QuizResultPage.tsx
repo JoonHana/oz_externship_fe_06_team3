@@ -1,19 +1,10 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Loading } from '@/components/common'
+import { QUIZ_LIST_PATH } from '@/constants/quiz'
 import QuizHeader from '@/components/quiz/QuizHeader'
 import QuizResultTop from '@/components/quiz/QuizResultTop'
 import { useExamSubmissionResultQuery } from '@/hooks/useQuiz'
-import {
-  SingleChoice,
-  MultipleChoice,
-  OX,
-  FillBlank,
-  Ordering,
-  ShortAnswer,
-} from '@/components/quiz'
-import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
-
-type QuizQuestion = ExamDeploymentDetailResult['questions'][0]
+import { ResultQuestionItem } from '@/components/quiz'
 
 function QuizResultPage() {
   const navigate = useNavigate()
@@ -26,7 +17,7 @@ function QuizResultPage() {
   )
 
   const handleSubmit = () => {
-    navigate('/mypage/quiz')
+    navigate(QUIZ_LIST_PATH)
   }
 
   if (isLoading) {
@@ -54,101 +45,6 @@ function QuizResultPage() {
     0
   const totalScore = data?.totalScore ?? 0
 
-  const renderQuestion = (
-    question: NonNullable<typeof data>['questions'][0],
-    index: number
-  ) => {
-    const mapped: QuizQuestion = {
-      questionId: question.id,
-      number: index + 1,
-      type: question.type as QuizQuestion['type'],
-      question: question.question,
-      point: question.point,
-      prompt: question.prompt,
-      blankCount: question.blankCount,
-      options: question.options,
-      answerInput: null,
-    }
-
-    const submitted = question.submittedAnswer
-
-    switch (question.type) {
-      case 'single_choice':
-        return (
-          <SingleChoice
-            question={mapped}
-            answer={(submitted?.[0] ?? null) as string | null}
-            onAnswerChange={() => {}}
-            isResult
-            correctAnswer={(question.answer?.[0] ?? null) as string | null}
-            isCorrect={question.isCorrect}
-            explanation={question.explanation}
-          />
-        )
-      case 'multiple_choice':
-        return (
-          <MultipleChoice
-            question={mapped}
-            answer={(submitted ?? null) as string[] | null}
-            onAnswerChange={() => {}}
-            isResult
-            correctAnswer={(question.answer ?? null) as string[] | null}
-            isCorrect={question.isCorrect}
-            explanation={question.explanation}
-          />
-        )
-      case 'short_answer':
-        return (
-          <ShortAnswer
-            question={mapped}
-            answer={(submitted?.[0] ?? '') as string}
-            onAnswerChange={() => {}}
-            isResult
-            isCorrect={question.isCorrect}
-            explanation={question.explanation}
-          />
-        )
-      case 'ox':
-        return (
-          <OX
-            question={mapped}
-            answer={(submitted?.[0] ?? null) as string | null}
-            onAnswerChange={() => {}}
-            isResult
-            correctAnswer={(question.answer?.[0] ?? null) as string | null}
-            isCorrect={question.isCorrect}
-            explanation={question.explanation}
-          />
-        )
-      case 'fill_blank':
-        return (
-          <FillBlank
-            question={mapped}
-            answer={(submitted ?? null) as string[] | null}
-            onAnswerChange={() => {}}
-            isResult
-            correctAnswer={(question.answer ?? null) as string[] | null}
-            isCorrect={question.isCorrect}
-            explanation={question.explanation}
-          />
-        )
-      case 'ordering':
-        return (
-          <Ordering
-            question={mapped}
-            answer={(submitted ?? null) as string[] | null}
-            onAnswerChange={() => {}}
-            isResult
-            correctAnswer={(question.answer ?? null) as string[] | null}
-            isCorrect={question.isCorrect}
-            explanation={question.explanation}
-          />
-        )
-      default:
-        return null
-    }
-  }
-
   return (
     <div>
       <QuizHeader
@@ -163,7 +59,7 @@ function QuizResultPage() {
           <div className="w-[1290px] space-y-6 py-10 pt-16">
             {data?.questions?.map((question, index) => (
               <div key={question.id} className="space-y-4">
-                {renderQuestion(question, index)}
+                <ResultQuestionItem question={question} index={index} />
               </div>
             ))}
           </div>
