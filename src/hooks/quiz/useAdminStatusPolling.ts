@@ -10,15 +10,14 @@ export function useAdminStatusPolling(
   setIsEnded: (ended: boolean) => void,
   setEndReason: (reason: EndReason) => void
 ) {
+  const isAdminEndedStatus =
+    statusData?.forceSubmit === true ||
+    statusData?.examStatus === 'closed' ||
+    statusData?.examStatus === 'private'
+
   useEffect(() => {
-    if (isEnded) return
-    if (
-      statusData?.examStatus === 'closed' ||
-      statusData?.examStatus === 'private' ||
-      statusData?.forceSubmit
-    ) {
-      setIsEnded(true)
-      setEndReason('status')
-    }
-  }, [statusData, isEnded, setIsEnded, setEndReason])
+    if (isEnded || !isAdminEndedStatus) return
+    setIsEnded(true)
+    setEndReason('status')
+  }, [isAdminEndedStatus, isEnded, setIsEnded, setEndReason])
 }
