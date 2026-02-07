@@ -34,7 +34,7 @@ import {
   executeSignupAndLogin,
 } from '@/hooks/signup/signupSubmitHelpers'
 import { deriveFieldState } from '@/utils/formMessage'
-import { useRootErrorBridge } from '@/hooks/vm/useVerificationFieldHelpers'
+import { useRootErrorBridge } from '@/hooks/form/useRootErrorBridge'
 
 type BusyAction = 'nickname' | 'email' | 'sms' | 'submit' | null
 

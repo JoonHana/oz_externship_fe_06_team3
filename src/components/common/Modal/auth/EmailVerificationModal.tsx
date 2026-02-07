@@ -104,11 +104,11 @@ const RESTORE_MESSAGES: EmailVerificationModeConfig['messages'] = {
   defaultGuide: '입력하신 이메일로 인증번호를 보내드릴게요.',
   defaultGuideAfterSend:
     '입력하신 이메일로 인증번호를 전송했어요. 인증번호를 입력해 주세요.',
-  sendSuccess: '* 인증번호를 전송했습니다.',
-  verifySuccess: '* 인증이 완료되었습니다.',
-  expired: '* 인증 시간이 만료되었습니다. 인증번호를 다시 요청해주세요.',
-  verifyRequired: '* 이메일 인증을 완료해주세요.',
-  failed: '* 계정 복구에 실패했습니다. 다시 시도해주세요.',
+  sendSuccess: '인증번호를 전송했습니다.',
+  verifySuccess: '인증이 완료되었습니다.',
+  expired: '인증 시간이 만료되었습니다. 인증번호를 다시 요청해주세요.',
+  verifyRequired: '이메일 인증을 완료해주세요.',
+  failed: '계정 복구에 실패했습니다. 다시 시도해주세요.',
 }
 
 const RESTORE_BUTTONS: EmailVerificationModeConfig['buttonLabels'] = {

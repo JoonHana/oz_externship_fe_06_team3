@@ -33,6 +33,7 @@ export function useSmsVerification({
   clearErrors,
   setFieldError,
 }: UseSmsVerificationArgs) {
+  // 공통 인증 플로우로 위임
   return useVerificationFlow({
     identity: phoneNumber,
     code: phoneVerificationCode,

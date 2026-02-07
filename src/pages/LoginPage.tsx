@@ -8,15 +8,13 @@ import { Button } from '@/components/common/Button'
 import { FormErrorDisplay } from '@/components/common/FormErrorDisplay'
 import SocialLoginSection from '@/components/auth/SocialLoginSection'
 import {
+  FindIdModal,
   FindIdResultModal,
+  EmailVerificationModal,
   ResetPasswordModal,
   RestoreAccountResultModal,
   WithdrawnMemberModal,
-} from '@/components/common/Modal'
-import {
-  FindIdModal,
-  EmailVerificationModal,
-} from '@/components/common/Modal/variants'
+} from '@/components/common/Modal/auth'
 import type { SocialProviderId } from '@/types/social'
 import type { LoginFormData } from '@/schemas/auth'
 
@@ -45,20 +43,22 @@ export default function LoginPage() {
 
   // 로그인 제출 플로우
   const handleLoginSubmit = handleSubmit(async (formData) => {
+    // 이전 에러 초기화
     clearErrors('root')
 
     try {
       await login(formData)
+      // 로그인 성공 시 원래 가려던 페이지로 이동
       navigate(redirectPath, { replace: true })
     } catch (error) {
+      // 탈퇴한 회원(403)인 경우 탈퇴회원 복구 플로우 시작
       const parsedError = parseAxiosError(error)
       const isWithdrawnMemberError = parsedError.status === 403
-
       if (isWithdrawnMemberError) {
         withdrawnMemberFlow.actions.openWithdrawnModal()
         return
       }
-
+      // 일반 에러인 경우
       const mappedError = mapLoginError(error)
       setError('root', {
         type: 'server',
@@ -113,7 +113,7 @@ export default function LoginPage() {
                       width="100%"
                       placeholderVariant="a"
                       state="default"
-                      stateOverride="default"
+                      stateOverride={rootError ? 'error' : undefined}
                       helperVisibility="focus"
                       helperTextByState={{ default: null }}
                     />
@@ -124,7 +124,7 @@ export default function LoginPage() {
                         width="100%"
                         placeholderVariant="a"
                         state="default"
-                        stateOverride="default"
+                        stateOverride={rootError ? 'error' : undefined}
                         helperVisibility="never"
                         showDefaultHelper={false}
                       />

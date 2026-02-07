@@ -32,6 +32,7 @@ export function useAccountRecoveryModals() {
     setIsFindPasswordOpen(true)
   }
 
+  // 인증 완료 토큰 전달 → 재설정 모달 오픈
   const openResetPasswordWithToken = (payload: FindPasswordVerifiedPayload) => {
     setIsFindPasswordOpen(false)
     setEmailToken(payload.emailToken)
