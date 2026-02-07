@@ -9,7 +9,7 @@
       "subject": {
         "id": 10,
         "title": "HTML",
-        "thumbnail_img_url": "https://cdn.ozcoding/html.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 10,
@@ -32,7 +32,7 @@
       "subject": {
         "id": 11,
         "title": "CSS",
-        "thumbnail_img_url": "https://cdn.ozcoding/css.png"
+        "thumbnail_img_url": "/icons/Course/css.svg"
       }
     },
     "question_count": 12,
@@ -55,7 +55,7 @@
       "subject": {
         "id": 12,
         "title": "JavaScript",
-        "thumbnail_img_url": "https://cdn.ozcoding/js.png"
+        "thumbnail_img_url": "/icons/Course/JavaScript.svg"
       }
     },
     "question_count": 15,
@@ -78,7 +78,7 @@
       "subject": {
         "id": 13,
         "title": "React",
-        "thumbnail_img_url": "https://cdn.ozcoding/react.png"
+        "thumbnail_img_url": "/icons/Course/React.svg"
       }
     },
     "question_count": 8,
@@ -101,7 +101,7 @@
       "subject": {
         "id": 14,
         "title": "TypeScript",
-        "thumbnail_img_url": "https://cdn.ozcoding/ts.png"
+        "thumbnail_img_url": "/icons/Course/typescript.svg"
       }
     },
     "question_count": 14,
@@ -124,7 +124,7 @@
       "subject": {
         "id": 15,
         "title": "네트워크",
-        "thumbnail_img_url": "https://cdn.ozcoding/network.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 9,
@@ -147,7 +147,7 @@
       "subject": {
         "id": 16,
         "title": "Node.js",
-        "thumbnail_img_url": "https://cdn.ozcoding/node.png"
+        "thumbnail_img_url": "/icons/Course/nodejs.svg"
       }
     },
     "question_count": 11,
@@ -170,7 +170,7 @@
       "subject": {
         "id": 17,
         "title": "웹",
-        "thumbnail_img_url": "https://cdn.ozcoding/web.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 7,
@@ -193,7 +193,7 @@
       "subject": {
         "id": 18,
         "title": "DB",
-        "thumbnail_img_url": "https://cdn.ozcoding/db.png"
+        "thumbnail_img_url": "/icons/Course/DB.svg"
       }
     },
     "question_count": 16,
@@ -216,7 +216,7 @@
       "subject": {
         "id": 19,
         "title": "Git",
-        "thumbnail_img_url": "https://cdn.ozcoding/git.png"
+        "thumbnail_img_url": "/icons/Course/github.svg"
       }
     },
     "question_count": 10,
@@ -239,7 +239,7 @@
       "subject": {
         "id": 20,
         "title": "알고리즘",
-        "thumbnail_img_url": "https://cdn.ozcoding/algo.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 13,
@@ -262,7 +262,7 @@
       "subject": {
         "id": 21,
         "title": "OS",
-        "thumbnail_img_url": "https://cdn.ozcoding/os.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 9,
@@ -285,7 +285,7 @@
       "subject": {
         "id": 22,
         "title": "CS",
-        "thumbnail_img_url": "https://cdn.ozcoding/cs.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 12,
@@ -308,7 +308,7 @@
       "subject": {
         "id": 23,
         "title": "네트워크",
-        "thumbnail_img_url": "https://cdn.ozcoding/network.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 11,
@@ -331,7 +331,7 @@
       "subject": {
         "id": 24,
         "title": "테스트",
-        "thumbnail_img_url": "https://cdn.ozcoding/test.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 10,
@@ -354,7 +354,7 @@
       "subject": {
         "id": 25,
         "title": "보안",
-        "thumbnail_img_url": "https://cdn.ozcoding/security.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 8,
@@ -377,7 +377,7 @@
       "subject": {
         "id": 26,
         "title": "디자인",
-        "thumbnail_img_url": "https://cdn.ozcoding/design.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 14,
@@ -400,7 +400,7 @@
       "subject": {
         "id": 27,
         "title": "웹",
-        "thumbnail_img_url": "https://cdn.ozcoding/web.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 9,
@@ -423,7 +423,7 @@
       "subject": {
         "id": 28,
         "title": "프론트엔드",
-        "thumbnail_img_url": "https://cdn.ozcoding/fe.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 10,
@@ -446,7 +446,7 @@
       "subject": {
         "id": 29,
         "title": "JavaScript",
-        "thumbnail_img_url": "https://cdn.ozcoding/js.png"
+        "thumbnail_img_url": "/icons/Course/JavaScript.svg"
       }
     },
     "question_count": 12,
@@ -469,7 +469,7 @@
       "subject": {
         "id": 30,
         "title": "브라우저",
-        "thumbnail_img_url": "https://cdn.ozcoding/browser.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 11,
@@ -492,7 +492,7 @@
       "subject": {
         "id": 31,
         "title": "웹",
-        "thumbnail_img_url": "https://cdn.ozcoding/web.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 13,
@@ -515,7 +515,7 @@
       "subject": {
         "id": 32,
         "title": "배포",
-        "thumbnail_img_url": "https://cdn.ozcoding/deploy.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 10,
@@ -538,7 +538,7 @@
       "subject": {
         "id": 33,
         "title": "웹",
-        "thumbnail_img_url": "https://cdn.ozcoding/web.png"
+        "thumbnail_img_url": "/icons/Course/html.svg"
       }
     },
     "question_count": 9,
@@ -561,7 +561,7 @@
       "subject": {
         "id": 34,
         "title": "React",
-        "thumbnail_img_url": "https://cdn.ozcoding/react.png"
+        "thumbnail_img_url": "/icons/Course/React.svg"
       }
     },
     "question_count": 12,
