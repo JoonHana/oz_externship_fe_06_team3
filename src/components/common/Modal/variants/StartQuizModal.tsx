@@ -7,6 +7,7 @@ import { CommonInputField } from '@/components/common/CommonInputField'
 import { Modal } from '@/components/common/Modal'
 import { useCheckExamCodeMutation } from '@/hooks/useQuiz'
 import { startQuizSchema, type StartQuizFormData } from '@/schemas/modalSchemas'
+import { getQuizVerifiedKey } from '@/constants/quiz'
 import { parseAxiosError, resolveMessage } from '@/utils/error/axiosErrorParser'
 
 interface StartQuizModalProps {
@@ -66,20 +67,13 @@ export function StartQuizModal({
 
   const onSubmit = async (data: StartQuizFormData) => {
     setIsSubmitting(true)
-
-    // 디버깅: 전달되는 값 확인
-    console.log('[StartQuizModal] API 호출:', {
-      deploymentId,
-      code: data.code,
-      url: `/api/v1/exams/deployments/${deploymentId}/check-code`,
-    })
-
     try {
       await checkCodeMutation.mutateAsync({
         deploymentId,
         code: data.code,
       })
 
+      sessionStorage.setItem(getQuizVerifiedKey(deploymentId), '1')
       onSuccess?.(data)
       onClose()
       await requestFullscreen()
