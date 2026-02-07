@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { INITIAL_REMAINING_SECONDS } from '@/constants/quiz'
+import {
+  INITIAL_REMAINING_SECONDS,
+  QUIZ_TIMER_INTERVAL_MS,
+  SECONDS_PER_MINUTE,
+} from '@/constants/quiz'
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 
 /**
@@ -17,8 +21,8 @@ export function useQuizTimer(
     if (!data || hasInitializedTimerFromApi.current || isEnded) return
     hasInitializedTimerFromApi.current = true
     const durationMinutes = data.durationTime
-    const totalSeconds = durationMinutes * 60
-    const elapsedSeconds = (data.elapsedTime ?? 0) * 60
+    const totalSeconds = durationMinutes * SECONDS_PER_MINUTE
+    const elapsedSeconds = (data.elapsedTime ?? 0) * SECONDS_PER_MINUTE
     const remaining = Math.max(0, totalSeconds - elapsedSeconds)
     setRemainingSeconds(remaining > 0 ? remaining : totalSeconds)
   }, [data, isEnded])
@@ -33,7 +37,7 @@ export function useQuizTimer(
         }
         return prev - 1
       })
-    }, 1000)
+    }, QUIZ_TIMER_INTERVAL_MS)//타이머 간격 1초 간격으로 설정
     return () => clearInterval(timer)
   }, [isEnded, submitAndEndByTimeRef])
 
