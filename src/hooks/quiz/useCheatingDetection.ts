@@ -6,6 +6,7 @@ export type QuizOpenModal = 'cheating' | 'fullscreen' | 'submitComplete'
 /**
  * 부정행위 감지: visibilitychange, blur, fullscreen 해제, Escape/F11.
  * 디바운스 적용, 최대 3회까지 카운트.
+ * (handleCheatingDetected를 ref에 넣어 effect 의존성에서 제외 → 매 렌더마다 리스너 재등록 방지)
  */
 export function useCheatingDetection(
   isEnded: boolean,
@@ -13,6 +14,7 @@ export function useCheatingDetection(
 ) {
   const [cheatingCount, setCheatingCount] = useState(0)
   const lastCheatingAtRef = useRef(0)
+  const handlerRef = useRef<() => void>(() => {})
 
   const handleCheatingDetected = () => {
     if (isEnded) return
@@ -22,15 +24,16 @@ export function useCheatingDetection(
     setCheatingCount((prev) => Math.min(prev + 1, 3))
     setOpenModal('cheating')
   }
+  handlerRef.current = handleCheatingDetected
 
   useEffect(() => {
     if (isEnded) return
     const onVisibilityChange = () => {
-      if (document.hidden) handleCheatingDetected()
+      if (document.hidden) handlerRef.current()
     }
-    const onWindowBlur = () => handleCheatingDetected()
+    const onWindowBlur = () => handlerRef.current()
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      handleCheatingDetected()
+      handlerRef.current()
       e.preventDefault()
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
@@ -41,7 +44,7 @@ export function useCheatingDetection(
       window.removeEventListener('blur', onWindowBlur)
       window.removeEventListener('beforeunload', onBeforeUnload)
     }
-  }, [isEnded, handleCheatingDetected])
+  }, [isEnded])
 
   useEffect(() => {
     if (isEnded) return
@@ -52,7 +55,7 @@ export function useCheatingDetection(
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'F11') {
         e.preventDefault()
-        handleCheatingDetected()
+        handlerRef.current()
       }
     }
     document.addEventListener('fullscreenchange', onFullscreenChange)
@@ -61,7 +64,7 @@ export function useCheatingDetection(
       document.removeEventListener('fullscreenchange', onFullscreenChange)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [isEnded, cheatingCount, setOpenModal, handleCheatingDetected])
+  }, [isEnded, cheatingCount, setOpenModal])
 
   const handleCheatingClose = () => setOpenModal(null)
 
