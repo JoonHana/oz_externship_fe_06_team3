@@ -32,6 +32,8 @@ import {
   ShortAnswer,
 } from '@/components/quiz'
 import {
+  CHEATING_WARNING_LEVEL_MAX,
+  CHEATING_WARNING_LEVEL_MIN,
   INVALID_ACCESS_AUTO_REDIRECT_MS,
   QUIZ_LIST_PATH,
   STATUS_END_AUTO_NAVIGATE_MS,
@@ -126,6 +128,10 @@ function QuizPage() {
 
   const showTimeEndModal = isEnded && endReason === 'time'
   const showQuizEndModal = isEnded && endReason === 'status'
+  const warningLevel = Math.min(
+    Math.max(cheatingCount, CHEATING_WARNING_LEVEL_MIN),
+    CHEATING_WARNING_LEVEL_MAX
+  ) as 1 | 2 | 3
 
   const clearAndNavigateRef = useRef(clearVerificationAndNavigate)
   clearAndNavigateRef.current = clearVerificationAndNavigate
@@ -136,8 +142,6 @@ function QuizPage() {
     }, STATUS_END_AUTO_NAVIGATE_MS)
     return () => window.clearTimeout(timer)
   }, [showQuizEndModal])
-
-  const warningLevel = Math.min(Math.max(cheatingCount, 1), 3) as 1 | 2 | 3
 
   const handleFullscreenRetry = async () => {
     try {
@@ -268,8 +272,9 @@ function QuizPage() {
             />
             <p className="text-center text-[16px] text-foreground-secondary">
               시험 시간이 종료되었습니다.
-              {submittedSubmissionId != null &&
-                ' 답안이 제출되었습니다. (풀지 못한 문항은 0점 처리됩니다)'}
+              {submittedSubmissionId != null
+                ? ' 답안이 제출되었습니다. (풀지 못한 문항은 0점 처리됩니다)'
+                : ''}
             </p>
           </div>
         </Modal.Body>
