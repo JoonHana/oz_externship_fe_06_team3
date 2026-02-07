@@ -6,6 +6,15 @@ import QuizResultTop from '@/components/quiz/QuizResultTop'
 import { useExamSubmissionResultQuery } from '@/hooks/useQuiz'
 import { ResultQuestionItem } from '@/components/quiz'
 
+const MS_PER_MINUTE = 60_000
+
+function getElapsedMinutes(startedAt: string | undefined, submittedAt: string | undefined, fallback: number): number {
+  if (!startedAt || !submittedAt) return fallback
+  const started = new Date(startedAt).getTime()
+  const submitted = new Date(submittedAt).getTime()
+  return Math.max(0, Math.floor((submitted - started) / MS_PER_MINUTE))
+}
+
 function QuizResultPage() {
   const navigate = useNavigate()
   const { submissionId } = useParams<{ submissionId: string }>()
@@ -16,9 +25,7 @@ function QuizResultPage() {
     !!submissionId
   )
 
-  const handleSubmit = () => {
-    navigate(QUIZ_LIST_PATH)
-  }
+  const goToList = () => navigate(QUIZ_LIST_PATH)
 
   if (isLoading) {
     return (
@@ -30,26 +37,21 @@ function QuizResultPage() {
 
   const questionCount = data?.questions.length ?? 0
   const cheatingCount = data?.cheatingCount ?? 0
-
-  // startedAt / submittedAt 기준 실제 응시 시간 (분 단위, 초는 버림)
-  let elapsedMinutes = data?.elapsedTime ?? 0
-  if (data?.startedAt && data?.submittedAt) {
-    const started = new Date(data.startedAt)
-    const submitted = new Date(data.submittedAt)
-    const diffMs = submitted.getTime() - started.getTime()
-    elapsedMinutes = Math.max(0, Math.floor(diffMs / 60000))
-  }
-
+  const elapsedMinutes = getElapsedMinutes(
+    data?.startedAt,
+    data?.submittedAt,
+    data?.elapsedTime ?? 0
+  )
   const maxScore =
-    data?.questions.reduce((sum, question) => sum + (question.point ?? 0), 0) ??
-    0
+    data?.questions.reduce((sum, q) => sum + (q.point ?? 0), 0) ?? 0
   const totalScore = data?.totalScore ?? 0
+  const headerMessage = `총 문항 수: ${questionCount} ㆍ 부정행위: ${cheatingCount}회 ㆍ 응시시간: ${elapsedMinutes}분 ㆍ 응시 결과 점수: ${totalScore}점/${maxScore}점`
 
   return (
     <div>
       <QuizHeader
         subjectName={data?.exam.title}
-        message={`총 문항 수: ${questionCount} ㆍ 부정행위: ${cheatingCount}회 ㆍ 응시시간: ${elapsedMinutes}분 ㆍ 응시 결과 점수: ${totalScore}점/${maxScore}점`}
+        message={headerMessage}
         showExamStatus={false}
       />
 
@@ -72,7 +74,7 @@ function QuizResultPage() {
             variant="primary"
             size="xs"
             rounded="default"
-            onClick={handleSubmit}
+            onClick={goToList}
           >
             완료
           </Button>
