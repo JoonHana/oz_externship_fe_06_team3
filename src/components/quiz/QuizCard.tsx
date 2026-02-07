@@ -79,10 +79,6 @@ export default function QuizCard({ quiz, skeleton = false }: QuizCardProps) {
   const handleImageError = () => setImageError(true)
   const handleFallbackImageError = () => setFallbackImageError(true)
   const handleButtonClick = () => {
-    // 디버깅: quiz 객체 전체 확인
-    console.log('[QuizCard] quiz 객체 전체:', JSON.stringify(quiz, null, 2))
-    console.log('[QuizCard] quiz.id (deploymentId로 사용될 값):', quiz.id)
-    
     if (isDone && quiz.submissionId) {
       navigate(`/quiz/result/${quiz.submissionId}`)
     } else {
@@ -91,24 +87,19 @@ export default function QuizCard({ quiz, skeleton = false }: QuizCardProps) {
   }
   const handleModalClose = () => setIsModalOpen(false)
 
-  // 아이콘 렌더링: 썸네일 → 과목 폴백 → 첫 글자
-  const renderIcon = () => {
-    if (imageUrl && !imageError) {
-      return <img src={imageUrl} onError={handleImageError} alt="" />
-    }
-    if (!fallbackImageError) {
-      return (
-        <img src={fallbackImageUrl} onError={handleFallbackImageError} alt="" />
-      )
-    }
-    return (
-      <div className={FALLBACK_ICON_CLASS}>{subjectName.charAt(0)}</div>
-    )
-  }
+  const showPrimaryImage = imageUrl && !imageError
+  const showFallbackImage = !fallbackImageError
+  const cardIcon = showPrimaryImage ? (
+    <img src={imageUrl} onError={handleImageError} alt="" />
+  ) : showFallbackImage ? (
+    <img src={fallbackImageUrl} onError={handleFallbackImageError} alt="" />
+  ) : (
+    <div className={FALLBACK_ICON_CLASS}>{subjectName.charAt(0)}</div>
+  )
 
   return (
     <div className={CARD_CLASS}>
-      <div className={ICON_CONTAINER_CLASS}>{renderIcon()}</div>
+      <div className={ICON_CONTAINER_CLASS}>{cardIcon}</div>
 
       <div className={INFO_CONTAINER_CLASS}>
         <div className={TITLE_CONTAINER_CLASS}>
@@ -128,15 +119,15 @@ export default function QuizCard({ quiz, skeleton = false }: QuizCardProps) {
 
       {!isDone && (
         <StartQuizModal
-  isOpen={isModalOpen}
-  onClose={handleModalClose}
-  deploymentId={quiz.id}          // ✅ 다시 목록에서 받은 id 사용
-  imageUrl={imageUrl || fallbackImageUrl}
-  subjectName={quiz.exam.subject.title}
-  quizName={quiz.exam.title}
-  questionCount={quiz.questionCount}
-  timeLimit={quiz.durationTime}
-/>
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          deploymentId={quiz.id}
+          imageUrl={imageUrl || fallbackImageUrl}
+          subjectName={quiz.exam.subject.title}
+          quizName={quiz.exam.title}
+          questionCount={quiz.questionCount}
+          timeLimit={quiz.durationTime}
+        />
       )}
     </div>
   )
