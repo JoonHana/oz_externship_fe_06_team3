@@ -1,12 +1,20 @@
 // 비밀번호 재설정 모달 - 새 비밀번호 입력, emailToken 1회 사용 후 토스트
-import { FormProvider } from 'react-hook-form'
+import React, { useCallback, useEffect, useState } from 'react'
+import { FormProvider, useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
+import { zodResolver } from '@hookform/resolvers/zod'
 import cn from '@/lib/cn'
-import type { ResetPasswordFormData } from '@/schemas/modalSchemas'
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormData,
+} from '@/schemas/modalSchemas'
+import { AUTH_MESSAGES } from '@/constants/authMessages'
+import { pickVisibleMessage, toMessageDisplay } from '@/utils/formMessage'
+import { useResetPasswordFlow } from '@/hooks/flow'
 import { Button } from '@/components/common/Button'
 import { Modal } from '@/components/common/Modal'
 import { PasswordField } from '@/components/common/PasswordField'
 import { ResetPasswordToast } from '@/components/common/Toast'
-import { useResetPasswordModalVM } from '@/hooks/vm/useResetPasswordModalVM'
 
 interface ResetPasswordModalProps {
   isOpen: boolean
@@ -15,29 +23,212 @@ interface ResetPasswordModalProps {
   initialToken: string | null
 }
 
-export function ResetPasswordModal({
+const RESET_PASSWORD_SUCCESS_TOAST_DURATION_MS = 2500
+
+type ResetPasswordModalState = {
+  methods: ReturnType<typeof useForm<ResetPasswordFormData>>
+  sections: {
+    password: {
+      newPasswordInput: {
+        name: 'newPassword'
+        placeholder: string
+        helperVisibility: 'always'
+        width: string
+      }
+      confirmPasswordInput: {
+        name: 'confirmPassword'
+        placeholder: string
+        helperVisibility: 'always'
+        width: string
+        autoState: boolean
+        showStatusIcon: boolean
+        showVisibilityToggle: false
+      }
+    }
+    submit: {
+      button: {
+        label: string
+        disabled: boolean
+        variant: 'primary' | 'disabled'
+      }
+      onSubmit: (e?: React.BaseSyntheticEvent) => void
+    }
+  }
+  ui: {
+    visibleMessage: string | null
+    isMessageError: boolean
+    messageDisplay: string
+    hasMessage: boolean
+    newPasswordLabel: React.ReactNode
+  }
+  onClose: () => void
+  showToast: boolean
+}
+
+function useResetPasswordModalState({
   isOpen,
   onClose,
   initialToken,
-}: ResetPasswordModalProps) {
-  // 모달 VM
-  const vm = useResetPasswordModalVM({
-    isOpen,
-    onClose,
-    initialToken,
+}: ResetPasswordModalProps): ResetPasswordModalState {
+  const navigate = useNavigate()
+  const [showToast, setShowToast] = useState(false)
+
+  // 폼 설정
+  const methods = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    mode: 'onChange',
+    defaultValues: {
+      newPassword: '',
+      confirmPassword: '',
+    },
   })
 
-  const { methods, sections, ui, actions } = vm
+  const { setError, clearErrors, formState } = methods
+
+  // 루트 에러 브릿지
+  const setRootError = useCallback(
+    (message: string | null) => {
+      if (message) setError('root', { type: 'server', message })
+      else clearErrors('root')
+    },
+    [setError, clearErrors]
+  )
+
+  const resetPasswordFlow = useResetPasswordFlow({
+    initialToken,
+    setRootError,
+  })
+
+  // 모달 닫힘 시 초기화
+  const resetForm = methods.reset
+  const flowResetAll = resetPasswordFlow.resetAll
+  useEffect(() => {
+    if (!isOpen) {
+      setShowToast(false)
+      resetForm()
+      flowResetAll()
+    }
+  }, [isOpen, resetForm, flowResetAll])
+
+  // 완료 토스트 표시
+  useEffect(() => {
+    if (!showToast) return
+    const id = setTimeout(() => {
+      setShowToast(false)
+      onClose()
+      navigate('/login')
+    }, RESET_PASSWORD_SUCCESS_TOAST_DURATION_MS)
+    return () => clearTimeout(id)
+  }, [showToast, onClose, navigate])
+
+  // 제출 처리
+  const onSubmit = useCallback(
+    async (data: ResetPasswordFormData) => {
+      if (!resetPasswordFlow.canSubmit) return
+      clearErrors('root')
+      const success = await resetPasswordFlow.submitPassword(data.newPassword)
+      if (success) {
+        setShowToast(true)
+      }
+    },
+    [resetPasswordFlow, clearErrors]
+  )
+
+  // 메시지/UI 상태
+  const formMessages = {
+    formError:
+      methods.formState.errors.root?.message ??
+      (!initialToken && resetPasswordFlow.step === 'done'
+        ? AUTH_MESSAGES.resetPassword.noTokenMessage
+        : null),
+    fieldErrors: {},
+    notice: null,
+  }
+  const visibleMessage = pickVisibleMessage(formMessages)
+  const isMessageError = !!formMessages.formError
+  const messageDisplay = toMessageDisplay(visibleMessage)
+  const hasMessage = !!visibleMessage?.trim()
+
+  // 제출 버튼 상태
+  const canSubmit =
+    resetPasswordFlow.canSubmit &&
+    formState.isValid &&
+    !resetPasswordFlow.isSubmitting
+  const submitLabel = resetPasswordFlow.isSubmitting
+    ? AUTH_MESSAGES.common.submitBusy
+    : AUTH_MESSAGES.resetPassword.submitLabel
+  const submitVariant: 'primary' | 'disabled' = canSubmit
+    ? 'primary'
+    : 'disabled'
+
+  return {
+    methods,
+    sections: {
+      password: {
+        newPasswordInput: {
+          name: 'newPassword' as const,
+          placeholder: '비밀번호를 입력해주세요',
+          helperVisibility: 'always' as const,
+          width: '100%',
+        },
+        confirmPasswordInput: {
+          name: 'confirmPassword' as const,
+          placeholder: '비밀번호를 다시 입력해주세요',
+          helperVisibility: 'always' as const,
+          width: '100%',
+          autoState: true,
+          showStatusIcon: true,
+          showVisibilityToggle: false as const,
+        },
+      },
+      submit: {
+        button: {
+          label: submitLabel,
+          disabled: !canSubmit,
+          variant: submitVariant,
+        },
+        onSubmit: methods.handleSubmit(onSubmit),
+      },
+    },
+    ui: {
+      visibleMessage,
+      isMessageError,
+      messageDisplay,
+      hasMessage,
+      newPasswordLabel: React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(
+          'span',
+          null,
+          '새 비밀번호',
+          React.createElement('span', { className: 'text-error' }, '*')
+        ),
+        React.createElement(
+          'span',
+          { className: 'text-primary text-[14px] font-semibold' },
+          AUTH_MESSAGES.password.formatHint
+        )
+      ),
+    },
+    onClose,
+    showToast,
+  }
+}
+
+export function ResetPasswordModal(props: ResetPasswordModalProps) {
+  const modalState = useResetPasswordModalState(props)
+  const { methods, sections, ui, onClose } = modalState
 
   // 토스트 표시 시 입력 폼 숨김
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={actions.onClose}
+      isOpen={props.isOpen}
+      onClose={onClose}
       toastPosition="center"
-      toast={vm.showToast ? <ResetPasswordToast /> : undefined}
+      toast={modalState.showToast ? <ResetPasswordToast /> : undefined}
     >
-      {!vm.showToast && (
+      {!modalState.showToast && (
         <>
           <Modal.Header className="pb-0">
             <div className="flex flex-col items-center gap-2">
