@@ -35,45 +35,46 @@ import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 
 type Question = ExamDeploymentDetailResult['questions'][0]
 
-function QuizPage() {
-  const { deploymentId } = useParams<{ deploymentId: string }>()
-  const deploymentIdNumber = deploymentId ? Number(deploymentId) : 0
 
-  const [isEnded, setIsEnded] = useState(false)
-  const [endReason, setEndReason] = useState<
+function QuizPage() {
+  const { deploymentId } = useParams<{ deploymentId: string }>() // 쪽지시험 고유 ID
+  const deploymentIdNumber = deploymentId ? Number(deploymentId) : 0 // 쪽지시험 고유 ID 숫자
+
+  const [isEnded, setIsEnded] = useState(false) // 시험 종료 여부
+  const [endReason, setEndReason] = useState< // 시험 종료 이유
     'time' | 'status' | 'cheating' | null
   >(null)
-  const [openModal, setOpenModal] = useState<
+  const [openModal, setOpenModal] = useState< // 모달 열림 상태
     'cheating' | 'fullscreen' | 'submitComplete' | null
   >(null)
 
-  const { data, isLoading } = useExamDeploymentDetailQuery(
+  const { data, isLoading } = useExamDeploymentDetailQuery( // 쪽지시험 상세 조회
     deploymentIdNumber,
     !!deploymentId
   )
-  const { data: statusData } = useExamDeploymentStatusQuery(
+  const { data: statusData } = useExamDeploymentStatusQuery( // 쪽지시험 상태 조회
     deploymentIdNumber,
     !!deploymentId && !isEnded
   )
 
-  const { isAccessAllowed } = useQuizAccessCheck(deploymentId, deploymentIdNumber)
+  const { isAccessAllowed } = useQuizAccessCheck(deploymentId, deploymentIdNumber) // 쪽지시험 접근 가능 여부
 
-  const { cheatingCount, handleCheatingClose } =
+  const { cheatingCount, handleCheatingClose } = // 부정행위 감지 핸들러
     useCheatingDetection(isEnded, setOpenModal)
 
-  const [answersState, setAnswersState] = useState<
+  const [answersState, setAnswersState] = useState< // 답안 상태 관리
     Record<number, string | string[] | null>
   >({})
 
-  const submitAndEndByTimeRef = useRef<() => void>(() => {})
+  const submitAndEndByTimeRef = useRef<() => void>(() => {}) // 타이머 종료 핸들러
 
-  const { setRemainingSeconds, formattedRemaining } = useQuizTimer(
+  const { setRemainingSeconds, formattedRemaining } = useQuizTimer( // 타이머 상태 관리
       data,
       isEnded,
       submitAndEndByTimeRef
     )
 
-  const {
+  const { // 쪽지시험 제출 처리
     submissionMutation,
     submittedSubmissionId,
     submittedSubmissionIdRef,
@@ -94,22 +95,22 @@ function QuizPage() {
     setRemainingSeconds,
   })
 
-  submitAndEndByTimeRef.current = submitAndEndByTime
+  submitAndEndByTimeRef.current = submitAndEndByTime // 타이머 종료 핸들러
 
-  useAdminStatusPolling(
+  useAdminStatusPolling( // 쪽지시험 상태 폴링
     statusData,
     isEnded,
     setIsEnded,
     setEndReason
   )
 
-  const handleAnswerChange = (questionId: number, answer: string | string[]) => {
-    setAnswersState((prev) => ({ ...prev, [questionId]: answer }))
+  const handleAnswerChange = (questionId: number, answer: string | string[]) => { // 답안 변경 핸들러
+    setAnswersState((prev) => ({ ...prev, [questionId]: answer })) // 답안 상태 업데이트
   }
 
-  const renderQuestion = (question: Question) => {
+  const renderQuestion = (question: Question) => { // 문제 렌더링
     const answer = answersState[question.questionId] ?? null
-    const commonProps = { question, onAnswerChange: handleAnswerChange }
+    const commonProps = { question, onAnswerChange: handleAnswerChange } 
     switch (question.type) {
       case 'single_choice':
         return <SingleChoice {...commonProps} answer={answer as string | null} />
@@ -130,23 +131,26 @@ function QuizPage() {
     }
   }
 
-  const showTimeEndModal = isEnded && endReason === 'time'
-  const showQuizEndModal = isEnded && endReason === 'status'
+  const showTimeEndModal = isEnded && endReason === 'time' // 시험 시간 종료 모달 표시 여부
+  const showQuizEndModal = isEnded && endReason === 'status' // 시험 종료 모달 표시 여부
 
+  // clearVerificationAndNavigate를 의존성에서 제외해 매 렌더마다 타이머가 리셋되는 버그 방지
+  const clearAndNavigateRef = useRef(clearVerificationAndNavigate)
+  clearAndNavigateRef.current = clearVerificationAndNavigate
   useEffect(() => {
     if (!showQuizEndModal) return
     const timer = window.setTimeout(() => {
-      clearVerificationAndNavigate(submittedSubmissionIdRef.current)
+      clearAndNavigateRef.current(submittedSubmissionIdRef.current)
     }, STATUS_END_AUTO_NAVIGATE_MS)
     return () => window.clearTimeout(timer)
-  }, [showQuizEndModal, clearVerificationAndNavigate])
+  }, [showQuizEndModal])
 
-  const warningLevel = Math.min(
+  const warningLevel = Math.min( // 부정행위
     Math.max(cheatingCount, 1),
     3
   ) as 1 | 2 | 3
 
-  const handleFullscreenRetry = async () => {
+  const handleFullscreenRetry = async () => { // 전체화면 전환
     try {
       await document.documentElement.requestFullscreen()
       setOpenModal(null)
