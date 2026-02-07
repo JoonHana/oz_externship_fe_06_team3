@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useExamDeploymentsInfiniteQuery } from '@/hooks/useQuiz'
 import QuizTabs, { Tabs } from '@/components/quiz/QuizTabs'
 import QuizContent from '@/components/quiz/QuizContent'
@@ -16,13 +16,10 @@ function getStatusFromTab(tab: TabKey): 'all' | 'done' | 'pending' {
 
 function MyPageQuiz() {
   const [currentTab, setCurrentTab] = useState<TabKey>(INITIAL_TAB)
-  const currentStatus = useMemo(() => getStatusFromTab(currentTab), [currentTab])
+  const currentStatus = getStatusFromTab(currentTab)
 
   const deploymentsQuery = useExamDeploymentsInfiniteQuery(currentStatus)
-  const quizList = useMemo(
-    () => deploymentsQuery.data?.pages.flatMap((p) => p.results) ?? [],
-    [deploymentsQuery.data?.pages]
-  )
+  const quizList = deploymentsQuery.data?.pages.flatMap((p) => p.results) ?? []
 
   return (
     <div className={CONTAINER_CLASS}>
