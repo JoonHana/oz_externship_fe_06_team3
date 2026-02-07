@@ -48,25 +48,29 @@ export function useQuizSubmissionFlow({
     }
   }
 
+  // 결과 또는 목록 이동
   const navigateToResultOrList = (submissionId: number | null) => {
     exitFullscreenIfActive().then(() =>
-      navigate(
+      navigate(// submissionId가 null이 아니면 제출 결과 페이지로 이동, 아니면 목록 페이지로 이동
         submissionId != null ? `/quiz/result/${submissionId}` : QUIZ_LIST_PATH
       )
     )
   }
 
+  // 검증 제거·결과/목록 이동
   const clearVerificationAndNavigate = (submissionId: number | null) => {
     sessionStorage.removeItem(getQuizVerifiedKey(deploymentIdNumber))
     navigateToResultOrList(submissionId)
   }
 
+  // 제출 성공 처리
   const applySubmitSuccess = (result: { submissionId: number }) => {
     setSubmittedSubmissionId(result.submissionId)
     submittedSubmissionIdRef.current = result.submissionId
     queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
   }
 
+  // 제출 요청 데이터 생성
   const buildSubmitPayload = () => {
     if (!data?.questions) return null
     const answerList = data.questions.map((q) => {
@@ -80,6 +84,7 @@ export function useQuizSubmissionFlow({
             ? []
             : ''
       return { question_id: q.questionId, type: q.type, submitted_answer }
+      // 문제 ID, 문제 유형, 제출 답안 반환
     })
     return {
       deployment_id: deploymentIdNumber,
@@ -138,22 +143,23 @@ export function useQuizSubmissionFlow({
     clearVerificationAndNavigate(sid)
   }
 
+  // 부정행위 감지 시 시험 종료 처리
   const handleCheatingTerminate = () => {
-    setOpenModal(null)
-    setIsEnded(true)
-    setEndReason('cheating')
+    setOpenModal(null) // 모달 닫기
+    setIsEnded(true) // 시험 종료 상태 true로 설정
+    setEndReason('cheating') // 시험 종료 이유 'cheating'으로 설정
     const payload = buildSubmitPayload()
-    if (!payload) {
+    if (!payload) { // 제출 요청 데이터가 없으면 종료
       clearVerificationAndNavigate(null)
       return
     }
-    submissionMutation.mutate(payload, {
+    submissionMutation.mutate(payload, { // 제출 요청
       onSuccess: (result) => {
-        applySubmitSuccess(result)
+        applySubmitSuccess(result) // 제출 성공 처리
         clearVerificationAndNavigate(result.submissionId)
       },
       onError: () => {
-        queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
+        queryClient.invalidateQueries({ queryKey: ['examDeployments'] }) 
         clearVerificationAndNavigate(null)
       },
     })
@@ -163,9 +169,7 @@ export function useQuizSubmissionFlow({
     submissionMutation,
     submittedSubmissionId,
     submittedSubmissionIdRef,
-    applySubmitSuccess,
     clearVerificationAndNavigate,
-    buildSubmitPayload,
     handleSubmit,
     handleSubmitCompleteConfirm,
     handleEndConfirm,
