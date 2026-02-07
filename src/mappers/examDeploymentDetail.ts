@@ -48,16 +48,44 @@ export interface ExamDeploymentDetailResult {
   }>
 }
 
+type ExamDeploymentDetailRaw = ExamDeploymentDetailResponse & {
+  exam?: { duration_time?: number; elapsed_time?: number }
+  deployment?: { duration_time?: number; elapsed_time?: number }
+  durationTime?: number
+  elapsedTime?: number
+}
+
+const toMinutes = (v: unknown): number => {
+  if (v === undefined || v === null) return 30
+  const n = typeof v === 'number' ? v : Number(v)
+  return Number.isFinite(n) ? n : 30
+}
+
 export const mapExamDeploymentDetail = (
-  response: ExamDeploymentDetailResponse
+  response: ExamDeploymentDetailRaw
 ): ExamDeploymentDetailResult => {
+  const rawDuration =
+    response.duration_time ??
+    response.durationTime ??
+    response.exam?.duration_time ??
+    response.deployment?.duration_time ??
+    30
+  const durationTime = toMinutes(rawDuration)
+  const rawElapsed =
+    response.elapsed_time ??
+    response.elapsedTime ??
+    response.exam?.elapsed_time ??
+    response.deployment?.elapsed_time ??
+    0
+  const elapsedTime = Math.max(0, Number(rawElapsed) || 0)
+  const questions = response.questions ?? []
   return {
     examId: response.exam_id,                             // 시험 배포 ID
     examName: response.exam_name,                         // 시험 이름
-    durationTime: response.duration_time,                 // 시험 시간(분)
-    elapsedTime: response.elapsed_time,                   // 경과 시간(분)
+    durationTime,                                         // 시험 시간(분), 실 API에서 오는 값 사용
+    elapsedTime,                                          // 경과 시간(분)
     cheatingCount: response.cheating_count,               // 부정행위 카운트
-    questions: response.questions.map((question) => ({    // 문제 목록
+    questions: questions.map((question) => ({    // 문제 목록
       questionId: question.question_id,                     // 문제 ID
       number: question.number,                              // 문제 번호
       type: question.type,                                  // 문제 유형(문제 타입)

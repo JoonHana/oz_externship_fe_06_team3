@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import '@/App.css'
 import LandingPage from '@/pages/LandingPage'
 import TestPage from '@/pages/TestPage'
+import QuizInvalidAccessPage from '@/pages/QuizInvalidAccessPage'
 import LoginPage from '@/pages/LoginPage'
 import SignupPage from '@/pages/SignupPage'
 import SignupEmailPage from '@/pages/SignupEmailPage'
@@ -39,6 +40,7 @@ function App() {
           <Route element={<RequireAuth />}>
             <Route path="/mypage" element={<MyPage />}>
               <Route path="quiz" element={<MyPageQuiz />} />
+              <Route path="quiz/:deploymentId" element={<QuizInvalidAccessPage />} />
               <Route path="profile" element={<MyInfo />} />
               <Route path="password" element={<PasswordChange />} />
             </Route>
