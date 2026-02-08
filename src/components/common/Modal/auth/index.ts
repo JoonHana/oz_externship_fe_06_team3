@@ -4,6 +4,5 @@ export { FindIdResultModal } from '@/components/common/Modal/auth/FindIdResultMo
 export { EmailVerificationModal } from '@/components/common/Modal/auth/EmailVerificationModal'
 export { ResetPasswordModal } from '@/components/common/Modal/auth/ResetPasswordModal'
 export { WithdrawnMemberModal } from '@/components/common/Modal/auth/WithdrawnMemberModal'
-export { RestoreAccountModal } from '@/components/common/Modal/auth/RestoreAccountModal'
 export { RestoreAccountResultModal } from '@/components/common/Modal/auth/RestoreAccountResultModal'
 export { WithdrawalReasonModal } from '@/components/common/Modal/auth/WithdrawalReasonModal'
