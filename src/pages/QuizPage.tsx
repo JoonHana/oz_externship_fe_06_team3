@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Button,
   CheatingWarningModal,
+  InvalidAccessModal,
   Loading,
   Modal,
   NotFound,
@@ -15,8 +15,14 @@ import QuizWarningBox from '@/components/QuizWarningBox'
 import {
   useExamDeploymentDetailQuery,
   useExamDeploymentStatusQuery,
-  useExamSubmissionMutation,
 } from '@/hooks/useQuiz'
+import {
+  useQuizAccessCheck,
+  useCheatingDetection,
+  useQuizSubmissionFlow,
+  useQuizTimer,
+  useAdminStatusPolling,
+} from '@/hooks/quiz'
 import {
   SingleChoice,
   MultipleChoice,
@@ -25,65 +31,76 @@ import {
   Ordering,
   ShortAnswer,
 } from '@/components/quiz'
-import { QUIZ_LIST_PATH, getQuizVerifiedKey } from '@/constants/quiz'
+import {
+  CHEATING_WARNING_LEVEL_MAX,
+  CHEATING_WARNING_LEVEL_MIN,
+  INVALID_ACCESS_AUTO_REDIRECT_MS,
+  QUIZ_LIST_PATH,
+  STATUS_END_AUTO_NAVIGATE_MS,
+} from '@/constants/quiz'
 import type { ExamDeploymentDetailResult } from '@/mappers/examDeploymentDetail'
 
 type Question = ExamDeploymentDetailResult['questions'][0]
 
-/** 열린 모달: cheating=부정행위 안내(1차·2차 경고 → 3차 시 종료), fullscreen=전체화면 해제 안내, submitComplete=제출 완료 */
-type OpenModal = 'cheating' | 'fullscreen' | 'submitComplete'
-
-const ARRAY_ANSWER_TYPES = new Set<Question['type']>([
-  'multiple_choice',
-  'fill_blank',
-  'ordering',
-])
-
-const CHEATING_DEBOUNCE_MS = 800
-const INITIAL_REMAINING_SECONDS = 30 * 60
-const STATUS_END_AUTO_NAVIGATE_MS = 5000
-
-// 문제풀이 후 "제출하기"로 답안 제출 → 자동 채점 → 결과 페이지 이동
-// 시간 초과 시: 푼 문항 제출, 미응답 0점 처리, 목록 응시완료 반영
+const DEFAULT_EXAM_NAME = '쪽지시험'
 
 function QuizPage() {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const { deploymentId } = useParams<{ deploymentId: string }>()
   const deploymentIdNumber = deploymentId ? Number(deploymentId) : 0
-  const [isAccessAllowed, setIsAccessAllowed] = useState<boolean | null>(null)
-  const [isEnded, setIsEnded] = useState(false)
-  const [endReason, setEndReason] = useState<
-    'time' | 'status' | 'cheating' | null
-  >(null)
-  const [remainingSeconds, setRemainingSeconds] = useState(INITIAL_REMAINING_SECONDS)
-  const [cheatingCount, setCheatingCount] = useState(0)
-  const [openModal, setOpenModal] = useState<OpenModal | null>(null)
-  const [submittedSubmissionId, setSubmittedSubmissionId] = useState<
-    number | null
-  >(null)
-  const lastCheatingAtRef = useRef(0)
-  const hasInitializedTimerFromApi = useRef(false)
-  const hasAutoSubmittedRef = useRef(false)
-  const submittedSubmissionIdRef = useRef<number | null>(null)
-  const submitAndEndByTimeRef = useRef<() => void>(() => {})
 
-  const submissionMutation = useExamSubmissionMutation()
-  const { data, isLoading } = useExamDeploymentDetailQuery(
-    deploymentIdNumber,
-    !!deploymentId
-  )
+  const [isEnded, setIsEnded] = useState(false)
+  const [endReason, setEndReason] = useState<'time' | 'status' | 'cheating' | null>(null)
+  const [openModal, setOpenModal] = useState<
+    'cheating' | 'fullscreen' | 'submitComplete' | null
+  >(null)
+  const [answers, setAnswers] = useState<Record<number, string | string[] | null>>({})
+
+  const { data, isLoading } = useExamDeploymentDetailQuery(deploymentIdNumber, !!deploymentId)
   const { data: statusData } = useExamDeploymentStatusQuery(
     deploymentIdNumber,
     !!deploymentId && !isEnded
   )
-  const [answers, setAnswers] = useState<
-    Record<number, string | string[] | null>
-  >({})
 
-  // —— 답안 & 문제 렌더링 ——
-  const handleAnswerChange = (questionId: number, answer: string | string[]) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answer }))
+  const navigate = useNavigate()
+  const { isAccessAllowed, showInvalidAccessModal } = useQuizAccessCheck(
+    deploymentId,
+    deploymentIdNumber
+  )
+  const { cheatingCount, handleCheatingClose } = useCheatingDetection(isEnded, setOpenModal)
+
+  const submitAndEndByTimeRef = useRef<() => void>(() => {})
+  const { setRemainingSeconds, formattedRemaining } = useQuizTimer(
+    data,
+    isEnded,
+    submitAndEndByTimeRef
+  )
+
+  const {
+    submissionMutation,
+    submittedSubmissionId,
+    submittedSubmissionIdRef,
+    clearVerificationAndNavigate,
+    handleSubmit,
+    handleSubmitCompleteConfirm,
+    handleEndConfirm,
+    handleCheatingTerminate,
+    submitAndEndByTime,
+  } = useQuizSubmissionFlow({
+    deploymentIdNumber,
+    data,
+    answers,
+    cheatingCount,
+    setOpenModal,
+    setIsEnded,
+    setEndReason,
+    setRemainingSeconds,
+  })
+
+  submitAndEndByTimeRef.current = submitAndEndByTime
+  useAdminStatusPolling(statusData, isEnded, setIsEnded, setEndReason)
+
+  const handleAnswerChange = (questionId: number, value: string | string[]) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }))
   }
 
   const renderQuestion = (question: Question) => {
@@ -109,142 +126,22 @@ function QuizPage() {
     }
   }
 
-  // —— 부정행위 감지 ——
-  const handleCheatingDetected = () => {
-    if (isEnded) return
-    const now = Date.now()
-    if (now - lastCheatingAtRef.current < CHEATING_DEBOUNCE_MS) return
-    lastCheatingAtRef.current = now
-    setCheatingCount((prev) => Math.min(prev + 1, 3))
-    setOpenModal('cheating')
-  }
+  const showTimeEndModal = isEnded && endReason === 'time'
+  const showQuizEndModal = isEnded && endReason === 'status'
+  const warningLevel = Math.min(
+    Math.max(cheatingCount, CHEATING_WARNING_LEVEL_MIN),
+    CHEATING_WARNING_LEVEL_MAX
+  ) as 1 | 2 | 3
 
-  const handleCheatingClose = () => setOpenModal(null)
-
-  // —— 공통: 전체화면 해제, 제출 성공 반영, 결과/목록 이동 ——
-  const exitFullscreenIfActive = async () => {
-    if (!document.fullscreenElement) return
-    try {
-      await document.exitFullscreen()
-    } catch {
-      // ignore
-    }
-  }
-
-  const applySubmitSuccess = (result: { submissionId: number }) => {
-    setSubmittedSubmissionId(result.submissionId)
-    submittedSubmissionIdRef.current = result.submissionId
-    queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
-  }
-
-  const navigateToResultOrList = (submissionId: number | null) => {
-    exitFullscreenIfActive().then(() =>
-      navigate(
-        submissionId != null ? `/quiz/result/${submissionId}` : QUIZ_LIST_PATH
-      )
-    )
-  }
-
-  const clearVerificationAndNavigate = (submissionId: number | null) => {
-    sessionStorage.removeItem(getQuizVerifiedKey(deploymentIdNumber))
-    navigateToResultOrList(submissionId)
-  }
-
-  // 푼 문항은 제출값, 미응답은 '' 또는 []로 제출(서버에서 0점 처리)
-  const buildSubmitPayload = () => {
-    if (!data?.questions) return null
-    const answerList = data.questions.map((q) => {
-      const raw = answers[q.questionId]
-      const submitted_answer =
-        raw != null ? raw : ARRAY_ANSWER_TYPES.has(q.type) ? [] : ''
-      return { question_id: q.questionId, type: q.type, submitted_answer }
-    })
-    return {
-      deployment_id: deploymentIdNumber,
-      started_at: new Date().toISOString(),
-      cheating_count: cheatingCount,
-      answers: answerList,
-    }
-  }
-
-  // 3회 부정행위 감지 시: 시험 종료 처리 후 현재 답안 자동 제출 → 결과 페이지 이동
-  const handleCheatingTerminate = () => {
-    setOpenModal(null)
-    setIsEnded(true)
-    setEndReason('cheating')
-    const payload = buildSubmitPayload()
-    if (!payload) {
-      clearVerificationAndNavigate(null)
-      return
-    }
-    submissionMutation.mutate(payload, {
-      onSuccess: (result) => {
-        applySubmitSuccess(result)
-        clearVerificationAndNavigate(result.submissionId)
-      },
-      onError: () => {
-        queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
-        clearVerificationAndNavigate(null)
-      },
-    })
-  }
-
-  const handleSubmit = () => {
-    const payload = buildSubmitPayload()
-    if (!payload) return
-    submissionMutation.mutate(payload, {
-      onSuccess: (result) => {
-        applySubmitSuccess(result)
-        setOpenModal('submitComplete')
-      },
-    })
-  }
-
-  const handleSubmitCompleteConfirm = () => {
-    const sid = submittedSubmissionId
-    setOpenModal(null)
-    setSubmittedSubmissionId(null)
-    submittedSubmissionIdRef.current = null
-    clearVerificationAndNavigate(sid)
-  }
-
-  const handleEndConfirm = () => {
-    const sid = submittedSubmissionIdRef.current ?? submittedSubmissionId
-    setSubmittedSubmissionId(null)
-    submittedSubmissionIdRef.current = null
-    clearVerificationAndNavigate(sid)
-  }
-
-  // —— 시간 종료 (버튼/실제 만료 공통) ——
-  const endQuizByTime = () => {
-    setRemainingSeconds(0)
-    setIsEnded(true)
-    setEndReason('time')
-  }
-
-  const submitAndEndByTime = () => {
-    if (hasAutoSubmittedRef.current) return
-    hasAutoSubmittedRef.current = true
-    const payload = buildSubmitPayload()
-    if (!payload) {
-      endQuizByTime()
-      return
-    }
-    submissionMutation.mutate(payload, {
-      onSuccess: applySubmitSuccess,
-      onError: () => {
-        queryClient.invalidateQueries({ queryKey: ['examDeployments'] })
-      },
-    })
-    endQuizByTime()
-  }
-  submitAndEndByTimeRef.current = submitAndEndByTime
-
-  const handleTimeEndTest = () => submitAndEndByTime()
-  const handleStatusEndTest = () => {
-    setIsEnded(true)
-    setEndReason('status')
-  }
+  const clearAndNavigateRef = useRef(clearVerificationAndNavigate)
+  clearAndNavigateRef.current = clearVerificationAndNavigate
+  useEffect(() => {
+    if (!showQuizEndModal) return
+    const timer = window.setTimeout(() => {
+      clearAndNavigateRef.current(submittedSubmissionIdRef.current)
+    }, STATUS_END_AUTO_NAVIGATE_MS)
+    return () => window.clearTimeout(timer)
+  }, [showQuizEndModal])
 
   const handleFullscreenRetry = async () => {
     try {
@@ -255,130 +152,20 @@ function QuizPage() {
     }
   }
 
-  const handleCloseSubmitCompleteModal = () => setOpenModal(null)
+  const handleStatusEndTest = () => {
+    setIsEnded(true)
+    setEndReason('status')
+  }
 
-  // 참가코드 검증 없이 URL로 직접 접근 시 경고 팝업 후 목록으로 리다이렉트
-  useEffect(() => {
-    const hasValidDeployment =
-      deploymentId && deploymentIdNumber > 0
-    const isVerified =
-      hasValidDeployment &&
-      sessionStorage.getItem(getQuizVerifiedKey(deploymentIdNumber))
-
-    if (!isVerified) {
-      window.alert(
-        '접근할 수 없습니다. 쪽지시험 목록에서 참가코드를 입력한 후 응시해 주세요.'
-      )
-      navigate(QUIZ_LIST_PATH, { replace: true })
-      return
-    }
-    setIsAccessAllowed(true)
-  }, [deploymentId, deploymentIdNumber, navigate])
-
-  // —— 부수효과: 이벤트 리스너 & 타이머 ——
-  useEffect(() => {
-    if (isEnded) return
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        handleCheatingDetected()
-      }
-    }
-    const handleWindowBlur = () => {
-      handleCheatingDetected()
-    }
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      handleCheatingDetected()
-      event.preventDefault()
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('blur', handleWindowBlur)
-    window.addEventListener('beforeunload', handleBeforeUnload)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('blur', handleWindowBlur)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-    }
-  }, [handleCheatingDetected, isEnded])
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      if (cheatingCount >= 3) return
-      if (!document.fullscreenElement) {
-        setOpenModal('fullscreen')
-      }
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' || event.key === 'F11') {
-        event.preventDefault()
-        handleCheatingDetected()
-      }
-    }
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange)
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [handleCheatingDetected, cheatingCount])
-
-  useEffect(() => {
-    if (!data || hasInitializedTimerFromApi.current || isEnded) return
-    hasInitializedTimerFromApi.current = true
-    const durationMinutes = data.durationTime
-    const totalSeconds = durationMinutes * 60
-    const elapsedSeconds = (data.elapsedTime ?? 0) * 60
-    const remaining = Math.max(0, totalSeconds - elapsedSeconds)
-    setRemainingSeconds(remaining > 0 ? remaining : totalSeconds)
-  }, [data, isEnded])
-
-  useEffect(() => {
-    if (isEnded) return
-    const timer = setInterval(() => {
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          submitAndEndByTimeRef.current()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [isEnded])
-
-  useEffect(() => {
-    if (isEnded) return
-    if (
-      statusData?.examStatus === 'closed' ||
-      statusData?.examStatus === 'private' ||
-      statusData?.forceSubmit
-    ) {
-      setIsEnded(true)
-      setEndReason('status')
-    }
-  }, [statusData, isEnded])
-
-  const minutes = Math.floor(remainingSeconds / 60)
-  const seconds = (remainingSeconds % 60).toString().padStart(2, '0')
-  const formattedRemaining = `${minutes} : ${seconds}`
-  const showTimeEndModal = isEnded && endReason === 'time'
-  const showQuizEndModal = isEnded && endReason === 'status'
-
-  useEffect(() => {
-    if (!showQuizEndModal) return
-    const timer = window.setTimeout(() => {
-      clearVerificationAndNavigate(submittedSubmissionIdRef.current)
-    }, STATUS_END_AUTO_NAVIGATE_MS)
-    return () => window.clearTimeout(timer)
-  }, [showQuizEndModal])
-
-  const warningLevel = Math.min(
-    Math.max(cheatingCount, 1),
-    3
-  ) as 1 | 2 | 3
+  if (showInvalidAccessModal) {
+    return (
+      <InvalidAccessModal
+        isOpen
+        onConfirm={() => navigate(QUIZ_LIST_PATH, { replace: true })}
+        autoRedirectMs={INVALID_ACCESS_AUTO_REDIRECT_MS}
+      />
+    )
+  }
 
   if (isAccessAllowed !== true || isLoading) {
     return <Loading />
@@ -387,7 +174,7 @@ function QuizPage() {
   return (
     <div>
       <QuizHeader
-        subjectName={data?.examName || '쪽지시험'}
+        subjectName={data?.examName ?? DEFAULT_EXAM_NAME}
         timeRemaining={formattedRemaining}
         timeRemainingSuffix="남음"
         cheatingCount={cheatingCount}
@@ -400,7 +187,7 @@ function QuizPage() {
             variant="secondary"
             size="sm"
             rounded="default"
-            onClick={handleTimeEndTest}
+            onClick={submitAndEndByTime}
             aria-label="시험 완료 처리, 작성한 문항 제출·미작성 0점 제출 후 결과 페이지 이동·목록 응시완료"
           >
             타이머 종료 테스트
@@ -475,7 +262,6 @@ function QuizPage() {
         </Modal.Footer>
       </Modal>
 
-      {/* 시간 종료 모달: 자동 제출 후 확인 시 결과 페이지 또는 목록으로 */}
       <Modal isOpen={showTimeEndModal} onClose={handleEndConfirm}>
         <Modal.Body>
           <div className="flex min-w-[250px] flex-col items-center gap-6 py-4">
@@ -486,8 +272,9 @@ function QuizPage() {
             />
             <p className="text-center text-[16px] text-foreground-secondary">
               시험 시간이 종료되었습니다.
-              {submittedSubmissionId != null &&
-                ' 답안이 제출되었습니다. (풀지 못한 문항은 0점 처리됩니다)'}
+              {submittedSubmissionId != null
+                ? ' 답안이 제출되었습니다. (풀지 못한 문항은 0점 처리됩니다)'
+                : ''}
             </p>
           </div>
         </Modal.Body>
@@ -505,17 +292,15 @@ function QuizPage() {
         </Modal.Footer>
       </Modal>
 
-      {/* 관리자에 의한 종료 모달: 5초 후 쪽지시험 리스트로 자동 이동 */}
       <QuizEndModal
         isOpen={showQuizEndModal}
         onClose={handleEndConfirm}
         onConfirm={handleEndConfirm}
       />
 
-      {/* 제출하기 완료 모달 */}
       <QuizSubmitCompleteModal
         isOpen={openModal === 'submitComplete'}
-        onClose={handleCloseSubmitCompleteModal}
+        onClose={() => setOpenModal(null)}
         onConfirm={handleSubmitCompleteConfirm}
       />
     </div>

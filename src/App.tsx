@@ -4,15 +4,17 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import '@/App.css'
 import LandingPage from '@/pages/LandingPage'
 import TestPage from '@/pages/TestPage'
-import QuizInvalidAccessPage from '@/pages/QuizInvalidAccessPage'
+import {
+  QuizInvalidAccessPage,
+  QuizPage,
+  QuizResultPage,
+  MyPageQuiz,
+} from '@/features/quiz'
 import LoginPage from '@/pages/LoginPage'
 import SignupPage from '@/pages/SignupPage'
 import SignupEmailPage from '@/pages/SignupEmailPage'
 import SocialLoginCallbackPage from '@/pages/SocialLoginCallbackPage'
 import MyPage from '@/pages/MyPage'
-import MyPageQuiz from '@/components/MyPageQuiz'
-import QuizPage from '@/pages/QuizPage'
-import QuizResultPage from '@/pages/QuizResultPage'
 import MainLayout from '@/components/layout/MainLayout'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 import MyInfo from './components/MyInfo'

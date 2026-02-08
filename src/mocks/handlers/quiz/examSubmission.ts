@@ -43,10 +43,13 @@ export const examSubmissionHandler = http.post('/api/v1/exams/submissions', asyn
   const correctAnswerCount = Math.min(answerCount, Math.floor(score / 5))
 
   const submissionId = mapSubmissionId(body.deployment_id)
-  return HttpResponse.json({
-    submission_id: submissionId,
-    score,
-    correct_answer_count: correctAnswerCount,
-    redirect_url: `/exam/result/${submissionId}`,
-  })
+  return HttpResponse.json(
+    {
+      submission_id: submissionId,
+      score,
+      correct_answer_count: correctAnswerCount,
+      redirect_url: `/quiz/result/${submissionId}`,
+    },
+    { status: 201 }
+  )
 })
