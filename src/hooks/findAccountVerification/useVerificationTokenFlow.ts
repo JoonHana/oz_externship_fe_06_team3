@@ -1,5 +1,5 @@
 // 토큰 기반 인증 (send→verify→token) - FindId/FindPassword Flow에서 사용
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useVerificationRequestScope } from '@/hooks/verification/useVerificationRequestScope'
 
@@ -70,6 +70,8 @@ export function useVerificationTokenFlow({
   const [verifying, setVerifying] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const sendRequestSeqRef = useRef(0)
+  const verifyRequestSeqRef = useRef(0)
 
   const { prevIdentityRef, isCurrentRequest } = useVerificationRequestScope({
     identity: normalizedIdentity,
@@ -77,8 +79,12 @@ export function useVerificationTokenFlow({
   })
 
   const invalidateVerification = useCallback(() => {
+    sendRequestSeqRef.current += 1
+    verifyRequestSeqRef.current += 1
     setToken(null)
     setCodeSent(false)
+    setSending(false)
+    setVerifying(false)
     setNotice(null)
     setError(null)
     resetTimer()
@@ -86,6 +92,8 @@ export function useVerificationTokenFlow({
   }, [resetTimer, onInvalidate])
 
   const resetAll = useCallback(() => {
+    sendRequestSeqRef.current += 1
+    verifyRequestSeqRef.current += 1
     setToken(null)
     setCodeSent(false)
     setSending(false)
@@ -132,14 +140,24 @@ export function useVerificationTokenFlow({
     setNotice(null)
     setSending(true)
     const requestedIdentity = normalizedIdentity
+    const requestSeq = sendRequestSeqRef.current + 1
+    sendRequestSeqRef.current = requestSeq
     try {
       await send(requestedIdentity)
-      if (!isCurrentRequest(requestedIdentity)) return
+      if (
+        sendRequestSeqRef.current !== requestSeq ||
+        !isCurrentRequest(requestedIdentity)
+      )
+        return
       setCodeSent(true)
       setNotice(sendSuccessNotice ?? null)
       startTimer()
     } catch (err) {
-      if (!isCurrentRequest(requestedIdentity)) return
+      if (
+        sendRequestSeqRef.current !== requestSeq ||
+        !isCurrentRequest(requestedIdentity)
+      )
+        return
       const sendErrorMessage = getSendErrorMessage
         ? getSendErrorMessage(err)
         : err instanceof Error
@@ -147,7 +165,9 @@ export function useVerificationTokenFlow({
           : '전송에 실패했습니다.'
       setError(sendErrorMessage?.trim() || null)
     } finally {
-      setSending(false)
+      if (sendRequestSeqRef.current === requestSeq) {
+        setSending(false)
+      }
     }
   }, [
     enabled,
@@ -179,17 +199,27 @@ export function useVerificationTokenFlow({
     setVerifying(true)
     const requestedIdentity = normalizedIdentity
     const requestedCode = code.trim()
+    const requestSeq = verifyRequestSeqRef.current + 1
+    verifyRequestSeqRef.current = requestSeq
     try {
       const response = await verify({
         identity: requestedIdentity,
         code: requestedCode,
       })
-      if (!isCurrentRequest(requestedIdentity)) return
+      if (
+        verifyRequestSeqRef.current !== requestSeq ||
+        !isCurrentRequest(requestedIdentity)
+      )
+        return
       setToken(response.token)
       setNotice(verifySuccessNotice ?? null)
       resetTimer()
     } catch (err) {
-      if (!isCurrentRequest(requestedIdentity)) return
+      if (
+        verifyRequestSeqRef.current !== requestSeq ||
+        !isCurrentRequest(requestedIdentity)
+      )
+        return
       const verifyErrorMessage = getVerifyErrorMessage
         ? getVerifyErrorMessage(err)
         : err instanceof Error
@@ -197,7 +227,9 @@ export function useVerificationTokenFlow({
           : '인증에 실패했습니다.'
       setError(verifyErrorMessage?.trim() || null)
     } finally {
-      setVerifying(false)
+      if (verifyRequestSeqRef.current === requestSeq) {
+        setVerifying(false)
+      }
     }
   }, [
     enabled,

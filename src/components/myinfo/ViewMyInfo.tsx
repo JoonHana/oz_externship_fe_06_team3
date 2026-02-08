@@ -8,7 +8,12 @@ import { WITHDRAW_REASON_MAP } from '@/constants/withdrawReason'
 import type { WithdrawalReasonFormData } from '@/schemas/modalSchemas'
 
 export function ViewMyInfo() {
-  const { accessToken, user: currentUser, setAuth } = useAuthStore()
+  const {
+    accessToken,
+    refreshToken,
+    user: currentUser,
+    setAuth,
+  } = useAuthStore()
   // 프로필 상태
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -28,8 +33,8 @@ export function ViewMyInfo() {
         const res = await import('@/api/auth')
         if (!accessToken) throw new Error('토큰 없음')
         const info = await res.me(accessToken)
-        setAuth({ accessToken: accessToken as string, user: info })
-      } catch (err: any) {
+        setAuth({ accessToken, refreshToken, user: info })
+      } catch {
         setProfileError('내 정보 조회에 실패했습니다.')
       } finally {
         setProfileLoading(false)
@@ -38,7 +43,7 @@ export function ViewMyInfo() {
     if (!currentUser) {
       fetchAndUpdateUser()
     }
-  }, [accessToken, currentUser, setAuth])
+  }, [accessToken, currentUser, refreshToken, setAuth])
 
   // 수강 과정 별도 로딩/에러 관리 (zustand)
   useEffect(() => {
@@ -48,7 +53,7 @@ export function ViewMyInfo() {
       try {
         const data = await getMyCourses()
         setCourses(data)
-      } catch (err) {
+      } catch {
         setCoursesError('')
       } finally {
         setCoursesLoading(false)
@@ -78,8 +83,8 @@ export function ViewMyInfo() {
       })
 
       alert('회원 탈퇴가 완료되었습니다.')
-    } catch (error) {
-      console.error(error)
+    } catch {
+      alert('회원 탈퇴 중 오류가 발생했습니다.')
     }
   }
   return (
