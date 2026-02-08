@@ -23,7 +23,7 @@ export default function Header() {
 
   const navigate = useNavigate()
 
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const isAuthenticated = useAuthStore((s) => !!s.accessToken)
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
 

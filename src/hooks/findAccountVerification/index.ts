@@ -3,4 +3,4 @@ export {
   useVerificationTokenFlow,
   type UseVerificationTokenFlowOptions,
   type UseVerificationTokenFlowResult,
-} from './useVerificationTokenFlow'
+} from '@/hooks/findAccountVerification/useVerificationTokenFlow'

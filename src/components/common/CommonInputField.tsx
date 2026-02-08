@@ -3,7 +3,6 @@ import {
   useFormContext,
   type FieldValues,
   type Path,
-  type RegisterOptions,
 } from 'react-hook-form'
 import {
   CommonInput,
@@ -16,7 +15,6 @@ type CommonInputFieldProps<T extends FieldValues> = Omit<
   'value' | 'onChange' | 'name'
 > & {
   name: Path<T>
-  rules?: RegisterOptions<T>
   state?: FieldState
   stateOverride?: FieldState
   transformOnChange?: (value: string) => string
@@ -24,7 +22,6 @@ type CommonInputFieldProps<T extends FieldValues> = Omit<
 
 export function CommonInputField<T extends FieldValues>({
   name,
-  rules,
   state = 'default',
   stateOverride,
   helperTextByState,
@@ -36,7 +33,7 @@ export function CommonInputField<T extends FieldValues>({
   const {
     field,
     fieldState: { error },
-  } = useController<T>({ name, control, rules })
+  } = useController<T>({ name, control })
 
   const fieldValue = String(field.value ?? '')
   const isEmpty = fieldValue.trim().length === 0

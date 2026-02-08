@@ -31,6 +31,7 @@ export function buildVerificationState<Token>(
   },
   extraError?: string | null
 ): VerificationState<Token> {
+  // token 유무/코드 전송 여부에 따라 단계 결정
   const error = extraError ?? verification.error
   if (verification.token != null) {
     return {

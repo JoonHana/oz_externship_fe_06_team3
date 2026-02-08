@@ -1,8 +1,9 @@
 // 이메일/SMS 인증의 공통 로직 (인증번호 전송 → 타이머 시작 → 인증번호 입력 → 검증 → 토큰 획득)
-import { useEffect, useMemo, useReducer, useCallback, useRef } from 'react'
+import { useEffect, useMemo, useReducer, useCallback } from 'react'
 import type { Path } from 'react-hook-form'
 import type { SignupFormData } from '@/schemas/auth'
 import { useCountdown } from '@/hooks/useCountdown'
+import { useVerificationRequestScope } from '@/hooks/verification/useVerificationRequestScope'
 import {
   verificationReducer,
   computeVerificationUI,
@@ -77,9 +78,11 @@ export function useVerificationFlow<TVerifyRes>({
   )
 
   const { token, verified, codeSent, sendStatus, flowMessage, verifyStatus } = state
-
-  const previousIdentityRef = useRef(identity)
-  const justSentRef = useRef(false)
+  const { prevIdentityRef: previousIdentityRef, isCurrentRequest } =
+    useVerificationRequestScope({
+      identity,
+      enabled: true,
+    })
 
   // identity 변경 시 모든 상태 초기화 + 타이머 리셋
   const resetAll = useCallback(() => {
@@ -87,18 +90,30 @@ export function useVerificationFlow<TVerifyRes>({
     resetTimer()
   }, [resetTimer])
 
-  // identity(이메일/전화번호) 변경 감지 → resetAll 호출 (justSent 직후는 제외)
+  // identity(이메일/전화번호) 변경 감지 → resetAll 호출
   useEffect(() => {
-    if (sendStatus === 'pending') return
-    if (justSentRef.current) {
-      justSentRef.current = false
-      previousIdentityRef.current = identity
-      return
-    }
     if (previousIdentityRef.current === identity) return
     previousIdentityRef.current = identity
-    resetAll()
-  }, [identity, resetAll, sendStatus])
+
+    const hasActiveVerification =
+      codeSent ||
+      verified ||
+      token != null ||
+      sendStatus === 'pending' ||
+      verifyStatus === 'pending'
+    if (hasActiveVerification) {
+      resetAll()
+    }
+  }, [
+    identity,
+    resetAll,
+    codeSent,
+    verified,
+    token,
+    sendStatus,
+    verifyStatus,
+    previousIdentityRef,
+  ])
 
   // 인증번호 입력 비워지면 검증 에러/필드 에러 초기화
   useEffect(() => {
@@ -135,6 +150,7 @@ export function useVerificationFlow<TVerifyRes>({
   )
 
   // canSend, canVerify, fieldState, codeFieldState 계산
+  // UI 파생 상태 계산
   const ui = useMemo(
     () =>
       computeVerificationUI({
@@ -160,16 +176,17 @@ export function useVerificationFlow<TVerifyRes>({
       return
     }
 
-    if (busy || sendStatus === 'pending') return
+    if (busy || sendStatus === 'pending' || verifyStatus === 'pending') return
 
     resetVerifyState()
     dispatch({ type: 'SEND_REQUEST' })
 
     const isResend = codeSent
+    const requestedIdentity = identity
     await withBusy({ setBusy }, async () => {
       try {
-        await send(identity)
-        justSentRef.current = true
+        await send(requestedIdentity)
+        if (!isCurrentRequest(requestedIdentity)) return
         dispatch({
           type: 'SEND_SUCCESS',
           payload: {
@@ -180,6 +197,7 @@ export function useVerificationFlow<TVerifyRes>({
         })
         startTimer()
       } catch (sendError) {
+        if (!isCurrentRequest(requestedIdentity)) return
         const errorMessage = getSendErrorMessage(sendError)
         dispatch({ type: 'SEND_FAILURE', payload: { message: errorMessage } })
         resetTimer()
@@ -190,6 +208,7 @@ export function useVerificationFlow<TVerifyRes>({
     codeSent,
     busy,
     sendStatus,
+    verifyStatus,
     clearErrors,
     identityFields,
     codeField,
@@ -201,6 +220,7 @@ export function useVerificationFlow<TVerifyRes>({
     send,
     startTimer,
     getSendErrorMessage,
+    isCurrentRequest,
     text.sent,
     text.resent,
   ])
@@ -220,12 +240,14 @@ export function useVerificationFlow<TVerifyRes>({
       return
     }
 
-    if (busy || verifyStatus === 'pending') return
+    if (busy || verifyStatus === 'pending' || sendStatus === 'pending') return
 
+    const requestedIdentity = identity
     await withBusy({ setBusy }, async () => {
       dispatch({ type: 'VERIFY_REQUEST' })
       try {
-        const verifyResponse = await verify(identity, code.trim())
+        const verifyResponse = await verify(requestedIdentity, code.trim())
+        if (!isCurrentRequest(requestedIdentity)) return
         const tokenValue = getToken(verifyResponse)
         dispatch({
           type: 'VERIFY_SUCCESS',
@@ -236,6 +258,7 @@ export function useVerificationFlow<TVerifyRes>({
         })
         resetTimer()
       } catch (verifyError) {
+        if (!isCurrentRequest(requestedIdentity)) return
         const errorMessage = getVerifyErrorMessage(verifyError)
         dispatch({ type: 'VERIFY_FAILURE', payload: { message: errorMessage } })
       }
@@ -245,6 +268,7 @@ export function useVerificationFlow<TVerifyRes>({
     code,
     busy,
     verifyStatus,
+    sendStatus,
     isRunning,
     clearErrors,
     codeField,
@@ -254,6 +278,7 @@ export function useVerificationFlow<TVerifyRes>({
     verify,
     getToken,
     getVerifyErrorMessage,
+    isCurrentRequest,
     text.codeRequired,
     text.expired,
     text.verifySuccess,

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import axios from 'axios'
 import type { MappedError } from '@/utils/error/types'
-import type { UseVerificationTokenFlowResult } from './useVerificationTokenFlow'
+import type { UseVerificationTokenFlowResult } from '@/hooks/findAccountVerification/useVerificationTokenFlow'
 
 export function isAbortOrCancelError(err: unknown): boolean {
   if (err instanceof Error) {
@@ -14,6 +14,7 @@ export function isAbortOrCancelError(err: unknown): boolean {
 export function useFlowAbortController(isActive: boolean) {
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  // 활성 상태에서만 AbortController 생성/해제
   useEffect(() => {
     if (!isActive) return
     abortControllerRef.current = new AbortController()
@@ -32,6 +33,7 @@ export function useErrorBridge(
 ) {
   const prevErrorRef = useRef<string | null | undefined>(undefined)
 
+  // 이전 에러와 동일하면 재설정하지 않음
   useEffect(() => {
     if (prevErrorRef.current === error) return
     prevErrorRef.current = error

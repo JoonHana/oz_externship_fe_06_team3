@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import * as authApi from '@/api/auth'
 import { mapResetPasswordError } from '@/utils/error/authEndpointErrorMapper'
-import { RESET_PASSWORD_ACTIONS } from './resetPasswordFlowConstants'
 
 export type ResetPasswordStep = 'ready' | 'submitting' | 'done'
 
@@ -10,6 +9,14 @@ export type ResetPasswordState =
   | { step: 'ready'; emailToken: string; error: string | null }
   | { step: 'submitting'; emailToken: string; error: string | null }
   | { step: 'done'; emailToken?: never; error: string | null }
+
+const RESET_PASSWORD_ACTIONS = {
+  INGEST_TOKEN: 'INGEST_TOKEN',
+  SUBMIT_START: 'SUBMIT_START',
+  SUBMIT_SUCCESS: 'SUBMIT_SUCCESS',
+  SUBMIT_FAILURE: 'SUBMIT_FAILURE',
+  RESET: 'RESET',
+} as const
 
 type ResetPasswordAction =
   | { type: typeof RESET_PASSWORD_ACTIONS.INGEST_TOKEN; emailToken: string }
@@ -76,6 +83,7 @@ export function useResetPasswordFlow({
   initialToken,
   setRootError,
 }: UseResetPasswordFlowOptions): UseResetPasswordFlowResult {
+  // 상태 머신 초기화
   const [state, dispatch] = useReducer(
     resetPasswordReducer,
     { initialToken },
@@ -138,6 +146,7 @@ export function useResetPasswordFlow({
     setRootError(state.error)
   }, [state.error, setRootError])
 
+  // 제출 가능 여부
   const canSubmit =
     state.step === 'ready' && 'emailToken' in state && !!state.emailToken
   const isSubmitting = state.step === 'submitting'

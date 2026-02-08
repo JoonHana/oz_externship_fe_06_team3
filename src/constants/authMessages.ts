@@ -90,11 +90,11 @@ export const AUTH_MESSAGES = {
   findPassword: {
     defaultGuide: '이메일로 비밀번호 재설정 링크를 보내드려요.',
     defaultGuideAfterSend:
-      '입력하신 이메일로 인증코드를 전송했어요. 인증코드를 입력해 인증을 완료해 주세요.',
-    sendSuccess: '* 인증코드를 전송했습니다.',
-    verifySuccess: '* 인증이 완료되었습니다.',
-    expired: '* 인증 시간이 만료되었습니다. 인증코드를 다시 요청해주세요.',
-    verifyRequired: '* 이메일 인증을 완료해주세요.',
+      '입력하신 이메일로 인증코드를 전송했어요.',
+    sendSuccess: '인증코드를 전송했습니다.',
+    verifySuccess: '인증이 완료되었습니다.',
+    expired: '인증 시간이 만료되었습니다. 인증코드를 다시 요청해주세요.',
+    verifyRequired: '이메일 인증을 완료해주세요.',
   },
   // 비밀번호 재설정
   resetPassword: {
@@ -115,7 +115,7 @@ export const AUTH_MESSAGES = {
   findId: {
     defaultGuide: '이름과 휴대전화를 입력하고 인증번호를 요청해주세요.',
     defaultGuideAfterSend:
-      '입력하신 휴대전화로 인증번호를 전송했어요. 인증번호를 입력해 인증을 완료해 주세요.',
+      '입력하신 휴대전화로 인증번호를 전송했어요.',
     sendSuccess: '인증번호를 전송했습니다.',
     verifySuccess: '* 인증이 완료되었습니다.',
     notFound:
