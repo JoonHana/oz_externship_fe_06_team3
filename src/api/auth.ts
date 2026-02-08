@@ -28,6 +28,18 @@ interface ApiRequestOptions {
   signal?: AbortSignal
 }
 
+function withSignal(options?: ApiRequestOptions) {
+  return options?.signal ? { signal: options.signal } : undefined
+}
+
+function mapVerifyEmailResult(data: VerifyEmailResponseDTO): VerifyEmailResult {
+  return { emailToken: data.email_token, detail: data.detail }
+}
+
+function mapVerifySmsResult(data: VerifySmsResponseDTO): VerifySmsResult {
+  return { smsToken: data.sms_token, detail: data.detail }
+}
+
 export async function login(payload: LoginPayload): Promise<LoginResult> {
   const { data } = await apiClient.post<LoginResult>(
     '/api/v1/accounts/login/',
@@ -67,7 +79,7 @@ export async function sendEmailVerification(
   await apiClient.post(
     '/api/v1/accounts/verification/send-email/',
     payload,
-    options?.signal ? { signal: options.signal } : {}
+    withSignal(options)
   )
 }
 
@@ -78,9 +90,9 @@ export async function verifyEmailCode(
   const { data } = await apiClient.post<VerifyEmailResponseDTO>(
     '/api/v1/accounts/verification/verify-email/',
     { email: payload.email, code: payload.verificationCode },
-    options?.signal ? { signal: options.signal } : {}
+    withSignal(options)
   )
-  return { emailToken: data.email_token, detail: data.detail }
+  return mapVerifyEmailResult(data)
 }
 
 export async function sendSmsVerification(
@@ -90,7 +102,7 @@ export async function sendSmsVerification(
   await apiClient.post(
     '/api/v1/accounts/verification/send-sms/',
     { phone_number: payload.phoneNumber },
-    options?.signal ? { signal: options.signal } : {}
+    withSignal(options)
   )
 }
 
@@ -104,9 +116,9 @@ export async function verifySmsCode(
       phone_number: payload.phoneNumber,
       code: payload.verificationCode,
     },
-    options?.signal ? { signal: options.signal } : {}
+    withSignal(options)
   )
-  return { smsToken: data.sms_token, detail: data.detail }
+  return mapVerifySmsResult(data)
 }
 
 export async function signup(payload: SignupPayload): Promise<void> {
@@ -129,7 +141,7 @@ export async function findMaskedEmail(
   const { data } = await apiClient.post<{ email: string }>(
     '/api/v1/accounts/find-email/',
     { name: payload.name, sms_token: payload.smsToken },
-    options?.signal ? { signal: options.signal } : {}
+    withSignal(options)
   )
   return { maskedEmail: data.email }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 
 import { Button } from '@/components/common/Button'
@@ -7,10 +7,15 @@ import { Button } from '@/components/common/Button'
 const TABS = [
   { id: 'exam', label: '쪽지시험', image: '/LandingPage_img/main_exam.png' },
   { id: 'qna', label: '질의응답', image: '/LandingPage_img/main_qna.png' },
-  {id: 'community',label: '커뮤니티',image: '/LandingPage_img/main_community.png'},
+  {
+    id: 'community',
+    label: '커뮤니티',
+    image: '/LandingPage_img/main_community.png',
+  },
 ] as const
 
 type TabType = (typeof TABS)[number]['id']
+const TAB_FADE_DELAY_MS = 180
 
 function LandingPage() {
   const [activeTab, setActiveTab] = useState<TabType>('exam')
@@ -35,7 +40,7 @@ function LandingPage() {
     timeoutRef.current = window.setTimeout(() => {
       setDisplayTab(next)
       setIsFadingOut(false)
-    }, 180)
+    }, TAB_FADE_DELAY_MS)
   }
 
   useEffect(() => {

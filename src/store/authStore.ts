@@ -11,7 +11,7 @@ type AuthState = {
 
   setAuth: (payload: {
     accessToken: string | null
-    refreshToken?: string
+    refreshToken: string | null
     user: User
   }) => void
   clearAuth: () => void
@@ -29,11 +29,11 @@ export const useAuthStore = create<AuthState>()(
       user: null,
 
       setAuth: ({ accessToken, refreshToken, user }) => {
-        set((prev) => ({
+        set({
           accessToken,
-          refreshToken: refreshToken ?? prev.refreshToken,
+          refreshToken,
           user,
-        }))
+        })
       },
 
       clearAuth: () => {
@@ -48,12 +48,11 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.login(payload)
           const accessToken = response?.access_token
-          const refreshToken = response?.refresh_token // undefined일 수 있음
+          const refreshToken = response?.refresh_token ?? null
           if (!accessToken) {
             throw new Error('LOGIN_FAILED')
           }
           const user = await authApi.me(accessToken)
-          // refreshToken이 없으면 setAuth에 undefined로 저장 (별도 API에서 추후 갱신)
           get().setAuth({ accessToken, refreshToken, user })
         } catch (error) {
           get().clearAuth()
@@ -73,15 +72,16 @@ export const useAuthStore = create<AuthState>()(
 
       restore: async () => {
         const accessToken = get().accessToken
+        const refreshToken = get().refreshToken
         if (!accessToken) return
 
         try {
-        const user = await authApi.me(accessToken)
-        set({ user })
-      } catch {
-        get().clearAuth()
-      }
-    },
+          const user = await authApi.me(accessToken)
+          get().setAuth({ accessToken, refreshToken, user })
+        } catch {
+          get().clearAuth()
+        }
+      },
     }),
     {
       name: 'auth-storage',

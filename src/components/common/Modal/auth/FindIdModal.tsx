@@ -2,6 +2,7 @@
 import { useCallback, useEffect } from 'react'
 import { FormProvider, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+
 import { findIdSchema, type FindIdFormData } from '@/schemas/modalSchemas'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { Button } from '@/components/common/Button'
@@ -11,9 +12,7 @@ import {
   deriveFieldState,
   deriveVerificationMessageUI,
 } from '@/utils/formMessage'
-import {
-  useVerificationFieldBridge,
-} from '@/hooks/verification/useVerificationFieldBridge'
+import { useVerificationFieldBridge } from '@/hooks/verification/useVerificationFieldBridge'
 import { useRootErrorBridge } from '@/hooks/form/useRootErrorBridge'
 import { buildVerificationVerifySection } from '@/components/common/Modal/auth/verificationModalSection'
 import { useFindIdFlow } from '@/hooks/flow'
@@ -28,45 +27,135 @@ export interface FindIdModalProps {
   onFindIdSuccess?: (email: string) => void
 }
 
-type FindIdModalState = {
-  methods: ReturnType<typeof useForm<FindIdFormData>>
-  sections: {
-    identity: {
-      nameInput: {
-        name: 'name'
-        placeholder: string
-        state: 'default' | 'error' | 'success'
-        helperVisibility: 'always'
-        width: number | string
-      }
-      phoneInput: {
-        name: 'phone'
-        placeholder: string
-        state: 'default' | 'error' | 'success'
-        helperVisibility: 'always'
-        width: number
-      }
-    }
-    verify: ReturnType<typeof buildVerificationVerifySection>
-    submit: {
-      button: {
-        label: string
-        disabled: boolean
-        variant: 'primary' | 'disabled'
-      }
-      onSubmit: (e?: React.BaseSyntheticEvent) => void
-    }
-  }
-  ui: ReturnType<typeof deriveVerificationMessageUI>
-  onClose: () => void
+export function FindIdModal(props: FindIdModalProps) {
+  const modalState = useFindIdModalState(props)
+  return <FindIdModalView isOpen={props.isOpen} modalState={modalState} />
+}
+
+type FindIdModalState = ReturnType<typeof useFindIdModalState>
+
+function FindIdModalView({
+  isOpen,
+  modalState,
+}: {
+  isOpen: boolean
+  modalState: FindIdModalState
+}) {
+  const { methods, sections, ui, onClose } = modalState
+
+  const headerSection = (
+    <div className="flex flex-col items-center gap-2">
+      <img src="/icons/FindId.svg" alt="아이디 찾기" className="size-[32px]" />
+      <h2 className="title-l-b text-foreground">아이디 찾기</h2>
+      <VerificationMessageDisplay
+        displayText={ui.displayText}
+        hasMessage={ui.hasMessage}
+        isMessageError={ui.isMessageError}
+        isDefaultGuide={ui.isDefaultGuide}
+      />
+    </div>
+  )
+
+  const identitySection = (
+    <Modal.InputRow
+      label="이름"
+      required
+      labelClassName="text-[16px] font-semibold text-foreground"
+      className="gap-2"
+    >
+      <CommonInputField<FindIdFormData>
+        name={sections.identity.nameInput.name}
+        placeholder={sections.identity.nameInput.placeholder}
+        state={sections.identity.nameInput.state}
+        helperVisibility={sections.identity.nameInput.helperVisibility}
+        width={sections.identity.nameInput.width}
+      />
+    </Modal.InputRow>
+  )
+
+  const verifySection = (
+    <Modal.InputRow
+      label="휴대전화"
+      required
+      labelClassName="text-[16px] font-semibold text-foreground"
+      className="gap-2"
+    >
+      <div className="flex flex-col gap-3">
+        <VerificationInputWithButton<FindIdFormData>
+          input={{
+            name: sections.identity.phoneInput.name,
+            placeholder: sections.identity.phoneInput.placeholder,
+            state: sections.identity.phoneInput.state,
+            helperVisibility: sections.identity.phoneInput.helperVisibility,
+            width: sections.identity.phoneInput.width,
+          }}
+          button={{
+            onClick: sections.verify.sendButton.onClick,
+            disabled: sections.verify.sendButton.disabled,
+            isLoading: sections.verify.sendButton.isLoading,
+            label: sections.verify.sendButton.label,
+          }}
+        />
+        <VerificationInputWithButton<FindIdFormData>
+          input={{
+            name: sections.verify.codeInput.name,
+            placeholder: sections.verify.codeInput.placeholder,
+            state: sections.verify.codeInput.state,
+            helperVisibility: sections.verify.codeInput.helperVisibility,
+            width: sections.verify.codeInput.width,
+            rightSlot: sections.verify.codeInput.rightSlot,
+            disabled: sections.verify.codeInput.disabled,
+          }}
+          button={{
+            onClick: sections.verify.verifyButton.onClick,
+            disabled: sections.verify.verifyButton.disabled,
+            isLoading: sections.verify.verifyButton.isLoading,
+            label: sections.verify.verifyButton.label,
+          }}
+        />
+      </div>
+    </Modal.InputRow>
+  )
+
+  const submitSection = (
+    <div className="pt-4">
+      <Button
+        type="submit"
+        variant={sections.submit.button.variant}
+        size="xl"
+        className="w-full"
+        disabled={sections.submit.button.disabled}
+      >
+        {sections.submit.button.label}
+      </Button>
+    </div>
+  )
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal.Header>{headerSection}</Modal.Header>
+
+      <Modal.Body className="pt-0">
+        <FormProvider {...methods}>
+          <form
+            onSubmit={sections.submit.onSubmit}
+            className="flex w-full max-w-[360px] flex-col gap-6"
+          >
+            {identitySection}
+            {verifySection}
+            {submitSection}
+          </form>
+        </FormProvider>
+      </Modal.Body>
+    </Modal>
+  )
 }
 
 function useFindIdModalState({
   isOpen,
   onClose,
   onFindIdSuccess,
-}: FindIdModalProps): FindIdModalState {
-  // 폼 설정
+}: FindIdModalProps) {
   const methods = useForm<FindIdFormData>({
     resolver: zodResolver(findIdSchema),
     defaultValues: {
@@ -81,7 +170,6 @@ function useFindIdModalState({
     formState: { errors },
   } = methods
 
-  // 에러 브릿지(루트/인증코드)
   const setRootError = useRootErrorBridge(methods)
   const {
     setFieldError: setVerificationFieldError,
@@ -103,7 +191,6 @@ function useFindIdModalState({
     [clearVerificationFieldError]
   )
 
-  // 입력값
   const name = useWatch({
     control: methods.control,
     name: 'name',
@@ -120,7 +207,6 @@ function useFindIdModalState({
     defaultValue: '',
   })
 
-  // 플로우
   const findIdFlow = useFindIdFlow({
     name,
     phone,
@@ -132,13 +218,40 @@ function useFindIdModalState({
     setVerificationCodeValue,
   })
 
-  // 모달 닫힘 시 초기화
   const reset = methods.reset
   useEffect(() => {
     if (!isOpen) reset()
   }, [isOpen, reset])
 
-  // 인증코드 전송/확인
+  const isFindIdDone = findIdFlow.state.step === 'done'
+  const {
+    verified,
+    canFindEmail,
+    isSubmitting,
+    error: findIdError,
+    findMaskedEmail,
+  } = findIdFlow
+
+  // 인증번호 확인 완료 직후, 이름+휴대전화 조합으로 계정 존재 여부를 미리 확인
+  useEffect(() => {
+    if (!verified) return
+    if (!canFindEmail) return
+    if (isSubmitting) return
+    if (isFindIdDone) return
+    if (findIdError) return
+    if (!name.trim()) return
+
+    void findMaskedEmail(name)
+  }, [
+    verified,
+    canFindEmail,
+    isSubmitting,
+    isFindIdDone,
+    findIdError,
+    findMaskedEmail,
+    name,
+  ])
+
   const handleSendCode = useCallback(async () => {
     const isValid = await trigger(['name', 'phone'])
     if (!isValid) return
@@ -159,7 +272,6 @@ function useFindIdModalState({
     await findIdFlow.onVerify()
   }, [findIdFlow, setFieldError, trigger])
 
-  // 아이디 찾기 제출
   const onSubmit = useCallback(
     async (data: FindIdFormData) => {
       if (!findIdFlow.verified) {
@@ -167,7 +279,10 @@ function useFindIdModalState({
         return
       }
 
-      const maskedEmail = await findIdFlow.findMaskedEmail(data.name)
+      const maskedEmail =
+        findIdFlow.state.step === 'done'
+          ? findIdFlow.state.maskedEmail
+          : await findIdFlow.findMaskedEmail(data.name)
       if (maskedEmail) {
         onFindIdSuccess?.(maskedEmail)
       }
@@ -175,7 +290,6 @@ function useFindIdModalState({
     [findIdFlow, onFindIdSuccess, setFieldError]
   )
 
-  // 메시지/UI 상태
   const messageUI = deriveVerificationMessageUI({
     error: findIdFlow.error,
     notice: findIdFlow.notice,
@@ -253,129 +367,4 @@ function useFindIdModalState({
     ui: messageUI,
     onClose,
   }
-}
-
-type FindIdModalViewProps = {
-  isOpen: boolean
-  modalState: ReturnType<typeof useFindIdModalState>
-}
-
-function FindIdModalView({ isOpen, modalState }: FindIdModalViewProps) {
-  const { methods, sections, ui, onClose } = modalState
-
-  // 헤더/안내 메시지
-  const headerSection = (
-    <div className="flex flex-col items-center gap-2">
-      <img src="/icons/FindId.svg" alt="아이디 찾기" className="size-[32px]" />
-      <h2 className="title-l-b text-foreground">아이디 찾기</h2>
-      <VerificationMessageDisplay
-        displayText={ui.displayText}
-        hasMessage={ui.hasMessage}
-        isMessageError={ui.isMessageError}
-        isDefaultGuide={ui.isDefaultGuide}
-      />
-    </div>
-  )
-
-  // 이름 입력 섹션
-  const identitySection = (
-    <Modal.InputRow
-      label="이름"
-      required
-      labelClassName="text-[16px] font-semibold text-foreground"
-      className="gap-2"
-    >
-      <CommonInputField<FindIdFormData>
-        name={sections.identity.nameInput.name}
-        placeholder={sections.identity.nameInput.placeholder}
-        state={sections.identity.nameInput.state}
-        helperVisibility={sections.identity.nameInput.helperVisibility}
-        width={sections.identity.nameInput.width}
-      />
-    </Modal.InputRow>
-  )
-
-  // 휴대전화 인증 섹션
-  const verifySection = (
-    <Modal.InputRow
-      label="휴대전화"
-      required
-      labelClassName="text-[16px] font-semibold text-foreground"
-      className="gap-2"
-    >
-      <div className="flex flex-col gap-3">
-        <VerificationInputWithButton<FindIdFormData>
-          input={{
-            name: sections.identity.phoneInput.name,
-            placeholder: sections.identity.phoneInput.placeholder,
-            state: sections.identity.phoneInput.state,
-            helperVisibility: sections.identity.phoneInput.helperVisibility,
-            width: sections.identity.phoneInput.width,
-          }}
-          button={{
-            onClick: sections.verify.sendButton.onClick,
-            disabled: sections.verify.sendButton.disabled,
-            isLoading: sections.verify.sendButton.isLoading,
-            label: sections.verify.sendButton.label,
-          }}
-        />
-        <VerificationInputWithButton<FindIdFormData>
-          input={{
-            name: sections.verify.codeInput.name,
-            placeholder: sections.verify.codeInput.placeholder,
-            state: sections.verify.codeInput.state,
-            helperVisibility: sections.verify.codeInput.helperVisibility,
-            width: sections.verify.codeInput.width,
-            rightSlot: sections.verify.codeInput.rightSlot,
-            disabled: sections.verify.codeInput.disabled,
-          }}
-          button={{
-            onClick: sections.verify.verifyButton.onClick,
-            disabled: sections.verify.verifyButton.disabled,
-            isLoading: sections.verify.verifyButton.isLoading,
-            label: sections.verify.verifyButton.label,
-          }}
-        />
-      </div>
-    </Modal.InputRow>
-  )
-
-  // 제출 버튼 섹션
-  const submitSection = (
-    <div className="pt-4">
-      <Button
-        type="submit"
-        variant={sections.submit.button.variant}
-        size="xl"
-        className="w-full"
-        disabled={sections.submit.button.disabled}
-      >
-        {sections.submit.button.label}
-      </Button>
-    </div>
-  )
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose}>
-      <Modal.Header>{headerSection}</Modal.Header>
-
-      <Modal.Body className="pt-0">
-        <FormProvider {...methods}>
-          <form
-            onSubmit={sections.submit.onSubmit}
-            className="flex w-full max-w-[360px] flex-col gap-6"
-          >
-            {identitySection}
-            {verifySection}
-            {submitSection}
-          </form>
-        </FormProvider>
-      </Modal.Body>
-    </Modal>
-  )
-}
-
-export function FindIdModal(props: FindIdModalProps) {
-  const modalState = useFindIdModalState(props)
-  return <FindIdModalView isOpen={props.isOpen} modalState={modalState} />
 }

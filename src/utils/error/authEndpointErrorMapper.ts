@@ -52,11 +52,11 @@ export function mapVerifySmsError(err: unknown): MappedError {
 export function mapFindMaskedEmailError(err: unknown): MappedError {
   const parsed = parseAxiosError(err)
   const message =
-    parsed.status === 404
+    parsed.status === 404 || parsed.status === 400
       ? AUTH_MESSAGES.findId.notFound
       : resolveMessage(
           parsed,
-          { 400: AUTH_MESSAGES.findId.findFailed },
+          {},
           getFallbackMessage(parsed, AUTH_MESSAGES.findId.findFailed)
         )
   return toForm(message)

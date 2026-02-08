@@ -61,7 +61,7 @@ export default function SocialLoginCallbackPage() {
     const restoreSession = async () => {
       try {
         const user = await authApi.me(token)
-        setAuth({ accessToken: token, user })
+        setAuth({ accessToken: token, refreshToken: null, user })
         navigate('/', { replace: true })
       } catch {
         setErrorMessage(

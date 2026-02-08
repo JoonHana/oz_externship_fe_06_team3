@@ -15,7 +15,7 @@ export interface VerificationMessageDisplayProps {
 }
 
 const MESSAGE_WRAPPER_CLASS =
-  'flex max-w-[360px] min-w-[192px] items-center justify-center text-center text-[14px] break-words'
+  'flex max-w-[248px] min-w-[192px] items-center justify-center text-center text-[14px] break-keep'
 const MESSAGE_ARIA_LIVE = 'polite'
 
 function resolveMessageTextClassName(props: VerificationMessageDisplayProps): string {
