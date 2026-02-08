@@ -223,6 +223,35 @@ function useFindIdModalState({
     if (!isOpen) reset()
   }, [isOpen, reset])
 
+  const isFindIdDone = findIdFlow.state.step === 'done'
+  const {
+    verified,
+    canFindEmail,
+    isSubmitting,
+    error: findIdError,
+    findMaskedEmail,
+  } = findIdFlow
+
+  // 인증번호 확인 완료 직후, 이름+휴대전화 조합으로 계정 존재 여부를 미리 확인
+  useEffect(() => {
+    if (!verified) return
+    if (!canFindEmail) return
+    if (isSubmitting) return
+    if (isFindIdDone) return
+    if (findIdError) return
+    if (!name.trim()) return
+
+    void findMaskedEmail(name)
+  }, [
+    verified,
+    canFindEmail,
+    isSubmitting,
+    isFindIdDone,
+    findIdError,
+    findMaskedEmail,
+    name,
+  ])
+
   const handleSendCode = useCallback(async () => {
     const isValid = await trigger(['name', 'phone'])
     if (!isValid) return
@@ -250,7 +279,10 @@ function useFindIdModalState({
         return
       }
 
-      const maskedEmail = await findIdFlow.findMaskedEmail(data.name)
+      const maskedEmail =
+        findIdFlow.state.step === 'done'
+          ? findIdFlow.state.maskedEmail
+          : await findIdFlow.findMaskedEmail(data.name)
       if (maskedEmail) {
         onFindIdSuccess?.(maskedEmail)
       }

@@ -102,14 +102,14 @@ export const AUTH_MESSAGES = {
     noTokenMessage: '인증 정보가 없습니다. 비밀번호 찾기부터 진행해주세요.',
     toastSuccess: '비밀번호 변경 완료!',
     toastRedirectMessage: '잠시 후 로그인 페이지로 이동합니다.',
-    failed: '* 비밀번호 재설정에 실패했습니다. 다시 시도해주세요.',
-    tokenInvalid: '* 이메일 인증을 다시 진행해주세요.',
+    failed: '비밀번호 재설정에 실패했습니다. 다시 시도해주세요.',
+    tokenInvalid: '이메일 인증을 다시 진행해주세요.',
   },
   // 비밀번호 변경 (내 정보)
   changePassword: {
     success: '비밀번호 변경 성공.',
-    failed: '* 비밀번호 변경에 실패했습니다. 다시 시도해주세요.',
-    unauthorized: '* 로그인 정보가 필요합니다.',
+    failed: '비밀번호 변경에 실패했습니다. 다시 시도해주세요.',
+    unauthorized: '로그인 정보가 필요합니다.',
   },
   // 아이디 찾기
   findId: {
@@ -117,11 +117,11 @@ export const AUTH_MESSAGES = {
     defaultGuideAfterSend:
       '입력하신 휴대전화로 인증번호를 전송했어요.',
     sendSuccess: '인증번호를 전송했습니다.',
-    verifySuccess: '* 인증이 완료되었습니다.',
+    verifySuccess: '인증이 완료되었습니다.',
     notFound:
-      '* 입력한 이름과 휴대폰 번호로 등록된\n이메일이 존재하지 않습니다.',
-    findFailed: '* 아이디 찾기 중 오류가 발생했습니다. 다시 시도해주세요.',
-    verifyRequired: '* 인증번호를 먼저 확인해주세요.',
-    expired: '* 인증 시간이 만료되었습니다. 다시 전송해주세요.',
+      '입력한 이름과 휴대폰 번호로 등록된 이메일이 존재하지 않습니다.',
+    findFailed: '아이디 찾기 중 오류가 발생했습니다. 다시 시도해주세요.',
+    verifyRequired: '인증번호를 먼저 확인해주세요.',
+    expired: '인증 시간이 만료되었습니다. 다시 전송해주세요.',
   },
 } as const
