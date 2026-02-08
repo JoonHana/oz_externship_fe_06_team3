@@ -159,7 +159,7 @@ function EmailVerificationModalView({
       isOpen={isOpen}
       onClose={onClose}
       toastPosition="top-far"
-      toast={ui.showVerifyToast ? <EmailVerificationToast /> : undefined}
+      toast={ui.showSendToast ? <EmailVerificationToast /> : undefined}
     >
       <Modal.Header>{headerSection}</Modal.Header>
 
@@ -309,9 +309,9 @@ function useEmailVerificationModalState({
   )
 
   const rootError = errors.root?.message ?? null
-  const shouldHideVerifySuccessNotice =
-    emailVerificationFlow.notice === messages.verifySuccess
-  const noticeForDisplay = shouldHideVerifySuccessNotice
+  const shouldHideSendSuccessNotice =
+    emailVerificationFlow.notice === messages.sendSuccess
+  const noticeForDisplay = shouldHideSendSuccessNotice
     ? null
     : emailVerificationFlow.notice
 
@@ -323,9 +323,9 @@ function useEmailVerificationModalState({
     codeSent: emailVerificationFlow.codeSent,
   })
 
-  const showVerifyToast = useVerifySuccessToast(
+  const showSendToast = useSendSuccessToast(
     emailVerificationFlow.notice,
-    messages.verifySuccess
+    messages.sendSuccess
   )
 
   const emailFieldState = deriveFieldState({
@@ -390,7 +390,7 @@ function useEmailVerificationModalState({
       isMessageError: messageUI.isMessageError,
       isDefaultGuide: messageUI.isDefaultGuide,
       hasMessage: messageUI.hasMessage,
-      showVerifyToast,
+      showSendToast,
     },
     onClose,
   }
@@ -490,26 +490,26 @@ async function submitVerifiedFlow({
   }
 }
 
-function useVerifySuccessToast(
+function useSendSuccessToast(
   notice: string | null,
-  verifySuccessNotice: string
+  sendSuccessNotice: string
 ): boolean {
-  const [showVerifyToast, setShowVerifyToast] = useState(false)
+  const [showSendToast, setShowSendToast] = useState(false)
 
   useEffect(() => {
-    if (notice !== verifySuccessNotice) {
-      setShowVerifyToast(false)
+    if (notice !== sendSuccessNotice) {
+      setShowSendToast(false)
       return
     }
 
-    setShowVerifyToast(true)
+    setShowSendToast(true)
     const timer = setTimeout(
-      () => setShowVerifyToast(false),
+      () => setShowSendToast(false),
       EMAIL_VERIFY_SUCCESS_TOAST_DURATION_MS
     )
 
     return () => clearTimeout(timer)
-  }, [notice, verifySuccessNotice])
+  }, [notice, sendSuccessNotice])
 
-  return showVerifyToast
+  return showSendToast
 }
