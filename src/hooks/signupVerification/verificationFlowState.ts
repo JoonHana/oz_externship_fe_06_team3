@@ -46,13 +46,18 @@ export function computeVerificationUI(
   } = params
 
   const canSend =
-    identityValid && !busy && !verified && sendStatus !== 'pending'
+    identityValid &&
+    !busy &&
+    !verified &&
+    sendStatus !== 'pending' &&
+    verifyStatus !== 'pending'
   const canVerify =
     !!codeSent &&
     !!code?.trim() &&
     !busy &&
     !verified &&
-    verifyStatus !== 'pending'
+    verifyStatus !== 'pending' &&
+    sendStatus !== 'pending'
 
   const fieldState: FieldState = verified
     ? 'success'

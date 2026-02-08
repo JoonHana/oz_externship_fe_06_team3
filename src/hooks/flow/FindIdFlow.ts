@@ -1,5 +1,5 @@
 // 아이디 찾기 비즈니스 로직 - SMS 인증 → findMaskedEmail API
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import * as authApi from '@/api/auth'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { FIND_ID_PASSWORD_TTL_SECONDS } from '@/constants/auth'
@@ -20,7 +20,7 @@ import {
 import {
   buildVerificationState,
   type VerificationState,
-} from './flowVerificationState'
+} from '@/hooks/flow/flowVerificationState'
 import { useVerificationTokenFlow } from '@/hooks/findAccountVerification/useVerificationTokenFlow'
 
 export type FindIdState =
@@ -79,10 +79,13 @@ export function useFindIdFlow({
   const [maskedEmail, setMaskedEmail] = useState<string | null>(null)
   const [maskedEmailError, setMaskedEmailError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const maskedEmailRequestSeqRef = useRef(0)
   const abortControllerRef = useFlowAbortController(isOpen)
 
+  // 인증 토큰 플로우 (SMS 전송/검증)
   const verification = useVerificationTokenFlow({
     identity: `${name}|${phoneNormalized}`,
+    isIdentityValid: name.trim().length > 0 && phoneNormalized.length > 0,
     code: verificationCode,
     ttlSec: FIND_ID_PASSWORD_TTL_SECONDS,
     enabled: isOpen,
@@ -106,8 +109,11 @@ export function useFindIdFlow({
     sendSuccessNotice: AUTH_MESSAGES.findId.sendSuccess,
     verifySuccessNotice: AUTH_MESSAGES.findId.verifySuccess,
     onInvalidate: () => {
+      maskedEmailRequestSeqRef.current += 1
+      setIsSubmitting(false)
       setVerificationCodeValue('')
       setMaskedEmail(null)
+      setMaskedEmailError(null)
     },
   })
 
@@ -120,11 +126,7 @@ export function useFindIdFlow({
       return { step: 'done', maskedEmail, notice: verification.notice, error }
     }
     return buildVerificationState(verification, maskedEmailError)
-  }, [
-    maskedEmail,
-    maskedEmailError,
-    verification,
-  ])
+  }, [maskedEmail, maskedEmailError, verification])
 
   const resetAll = useCallback(() => {
     verification.resetAll()
@@ -140,9 +142,14 @@ export function useFindIdFlow({
     setFindError: setMaskedEmailError,
   })
 
+  // 인증 완료 후 아이디(마스킹 이메일) 조회
   const findMaskedEmail = useCallback(
     async (userName: string): Promise<string | null> => {
+      if (isSubmitting) return null
       if (!verification.token) return null
+
+      const requestSeq = maskedEmailRequestSeqRef.current + 1
+      maskedEmailRequestSeqRef.current = requestSeq
 
       setMaskedEmailError(null)
       setRootError(null)
@@ -153,9 +160,11 @@ export function useFindIdFlow({
           { name: userName, smsToken: verification.token },
           { signal: abortControllerRef.current?.signal }
         )
+        if (maskedEmailRequestSeqRef.current !== requestSeq) return null
         setMaskedEmail(response.maskedEmail)
         return response.maskedEmail
       } catch (error) {
+        if (maskedEmailRequestSeqRef.current !== requestSeq) return null
         if (isAbortOrCancelError(error)) return null
         const mappedError = mapFindMaskedEmailError(error)
         if (mappedError.kind === 'form') {
@@ -163,10 +172,12 @@ export function useFindIdFlow({
         }
         return null
       } finally {
-        setIsSubmitting(false)
+        if (maskedEmailRequestSeqRef.current === requestSeq) {
+          setIsSubmitting(false)
+        }
       }
     },
-    [verification.token, abortControllerRef, setRootError]
+    [verification.token, abortControllerRef, isSubmitting, setRootError]
   )
 
   return {

@@ -14,7 +14,7 @@ import {
 import {
   FindIdModal,
   EmailVerificationModal,
-} from '@/components/common/Modal/variants'
+} from '@/components/common/Modal/auth'
 
 function TestPage() {
   // 각 모달의 열림 상태 관리

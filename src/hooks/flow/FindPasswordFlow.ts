@@ -18,7 +18,7 @@ import {
 import {
   buildVerificationState,
   type VerificationState,
-} from './flowVerificationState'
+} from '@/hooks/flow/flowVerificationState'
 import { useVerificationTokenFlow } from '@/hooks/findAccountVerification/useVerificationTokenFlow'
 
 export type FindPasswordState = VerificationState<string>
@@ -77,8 +77,10 @@ export function useFindPasswordFlow({
   const emailNormalized = normalizeEmail(email)
   const abortControllerRef = useFlowAbortController(isOpen)
 
+  // 인증 토큰 플로우 (이메일 전송/검증)
   const verification = useVerificationTokenFlow({
     identity: emailNormalized,
+    isIdentityValid: emailNormalized.length > 0,
     code: verificationCode,
     ttlSec: FIND_ID_PASSWORD_TTL_SECONDS,
     enabled: isOpen,
@@ -127,6 +129,7 @@ export function useFindPasswordFlow({
   const canSubmitToReset =
     verification.token != null && emailNormalized.length > 0
 
+  // 인증 완료 후 비밀번호 재설정 단계로 전달
   const submitToReset = useCallback(
     (email: string) => {
       if (!canSubmitToReset) return

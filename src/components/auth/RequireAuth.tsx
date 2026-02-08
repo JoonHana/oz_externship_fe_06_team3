@@ -7,7 +7,7 @@ type LocationState = {
 }
 
 export function RequireAuth() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const isAuthenticated = useAuthStore((s) => !!s.accessToken)
   const location = useLocation()
 
   if (!isAuthenticated) {

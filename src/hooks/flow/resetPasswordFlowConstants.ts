@@ -1,8 +1,0 @@
-// useResetPasswordFlow reducer 액션 타입
-export const RESET_PASSWORD_ACTIONS = {
-  INGEST_TOKEN: 'INGEST_TOKEN',
-  SUBMIT_START: 'SUBMIT_START',
-  SUBMIT_SUCCESS: 'SUBMIT_SUCCESS',
-  SUBMIT_FAILURE: 'SUBMIT_FAILURE',
-  RESET: 'RESET',
-} as const
