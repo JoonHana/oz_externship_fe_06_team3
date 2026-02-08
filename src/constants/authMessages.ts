@@ -89,8 +89,7 @@ export const AUTH_MESSAGES = {
   // 비밀번호 찾기
   findPassword: {
     defaultGuide: '이메일로 비밀번호 재설정 링크를 보내드려요.',
-    defaultGuideAfterSend:
-      '입력하신 이메일로 인증코드를 전송했어요.',
+    defaultGuideAfterSend: '입력하신 이메일로 인증코드를 전송했어요.',
     sendSuccess: '인증코드를 전송했습니다.',
     verifySuccess: '인증이 완료되었습니다.',
     expired: '인증 시간이 만료되었습니다. 인증코드를 다시 요청해주세요.',
@@ -102,26 +101,24 @@ export const AUTH_MESSAGES = {
     noTokenMessage: '인증 정보가 없습니다. 비밀번호 찾기부터 진행해주세요.',
     toastSuccess: '비밀번호 변경 완료!',
     toastRedirectMessage: '잠시 후 로그인 페이지로 이동합니다.',
-    failed: '* 비밀번호 재설정에 실패했습니다. 다시 시도해주세요.',
-    tokenInvalid: '* 이메일 인증을 다시 진행해주세요.',
+    failed: '비밀번호 재설정에 실패했습니다. 다시 시도해주세요.',
+    tokenInvalid: '이메일 인증을 다시 진행해주세요.',
   },
   // 비밀번호 변경 (내 정보)
   changePassword: {
     success: '비밀번호 변경 성공.',
-    failed: '* 비밀번호 변경에 실패했습니다. 다시 시도해주세요.',
-    unauthorized: '* 로그인 정보가 필요합니다.',
+    failed: '비밀번호 변경에 실패했습니다. 다시 시도해주세요.',
+    unauthorized: '로그인 정보가 필요합니다.',
   },
   // 아이디 찾기
   findId: {
     defaultGuide: '이름과 휴대전화를 입력하고 인증번호를 요청해주세요.',
-    defaultGuideAfterSend:
-      '입력하신 휴대전화로 인증번호를 전송했어요.',
+    defaultGuideAfterSend: '입력하신 휴대전화로 인증번호를 전송했어요.',
     sendSuccess: '인증번호를 전송했습니다.',
-    verifySuccess: '* 인증이 완료되었습니다.',
-    notFound:
-      '* 입력한 이름과 휴대폰 번호로 등록된\n이메일이 존재하지 않습니다.',
-    findFailed: '* 아이디 찾기 중 오류가 발생했습니다. 다시 시도해주세요.',
-    verifyRequired: '* 인증번호를 먼저 확인해주세요.',
-    expired: '* 인증 시간이 만료되었습니다. 다시 전송해주세요.',
+    verifySuccess: '인증이 완료되었습니다.',
+    notFound: '입력한 이름과 휴대폰 번호로 등록된 이메일이 존재하지 않습니다.',
+    findFailed: '아이디 찾기 중 오류가 발생했습니다. 다시 시도해주세요.',
+    verifyRequired: '인증번호를 먼저 확인해주세요.',
+    expired: '인증 시간이 만료되었습니다. 다시 전송해주세요.',
   },
 } as const

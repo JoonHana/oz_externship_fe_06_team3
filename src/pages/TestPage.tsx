@@ -3,7 +3,6 @@ import {
   FindIdResultModal,
   ResetPasswordModal,
   WithdrawnMemberModal,
-  RestoreAccountModal,
   RegisterStudentModal,
   WithdrawalReasonModal,
   StartQuizModal,
@@ -25,7 +24,6 @@ function TestPage() {
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false)
   const [emailToken, setEmailToken] = useState<string | null>(null)
   const [withdrawnMemberOpen, setWithdrawnMemberOpen] = useState(false)
-  const [restoreAccountOpen, setRestoreAccountOpen] = useState(false)
   const [registerStudentOpen, setRegisterStudentOpen] = useState(false)
   const [withdrawalReasonOpen, setWithdrawalReasonOpen] = useState(false)
   const [startQuizOpen, setStartQuizOpen] = useState(false)
@@ -80,16 +78,7 @@ function TestPage() {
           탈퇴회원 안내
         </Button>
 
-        {/* 6. 계정 다시 사용하기 */}
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={() => setRestoreAccountOpen(true)}
-        >
-          계정 다시 사용하기
-        </Button>
-
-        {/* 7. 수강생 등록 */}
+        {/* 6. 수강생 등록 */}
         <Button
           variant="primary"
           size="lg"
@@ -98,7 +87,7 @@ function TestPage() {
           수강생 등록
         </Button>
 
-        {/* 8. 회원 탈퇴 사유 */}
+        {/* 7. 회원 탈퇴 사유 */}
         <Button
           variant="primary"
           size="lg"
@@ -107,7 +96,7 @@ function TestPage() {
           회원 탈퇴 사유
         </Button>
 
-        {/* 9. 쪽지시험 시작 */}
+        {/* 8. 쪽지시험 시작 */}
         <Button
           variant="primary"
           size="lg"
@@ -116,7 +105,7 @@ function TestPage() {
           쪽지시험 시작
         </Button>
 
-        {/* 10. 부정행위 1차 경고 */}
+        {/* 9. 부정행위 1차 경고 */}
         <Button
           variant="primary"
           size="lg"
@@ -125,7 +114,7 @@ function TestPage() {
           부정행위 1차 경고
         </Button>
 
-        {/* 11. 부정행위 2차 경고 */}
+        {/* 10. 부정행위 2차 경고 */}
         <Button
           variant="primary"
           size="lg"
@@ -134,7 +123,7 @@ function TestPage() {
           부정행위 2차 경고
         </Button>
 
-        {/* 12. 부정행위 3차 경고 */}
+        {/* 11. 부정행위 3차 경고 */}
         <Button
           variant="primary"
           size="lg"
@@ -143,7 +132,7 @@ function TestPage() {
           부정행위 3차 경고
         </Button>
 
-        {/* 13. 시험 종료(관리자) */}
+        {/* 12. 시험 종료(관리자) */}
         <Button
           variant="primary"
           size="lg"
@@ -198,14 +187,7 @@ function TestPage() {
         onClose={() => setWithdrawnMemberOpen(false)}
         onRestoreAccount={() => {
           setWithdrawnMemberOpen(false)
-          setRestoreAccountOpen(true)
         }}
-      />
-
-      <RestoreAccountModal
-        isOpen={restoreAccountOpen}
-        onClose={() => setRestoreAccountOpen(false)}
-        onSuccess={() => {}}
       />
 
       <RegisterStudentModal

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
 import { restoreAccount } from '@/api/auth'
+import { RESTORE_RESULT_REDIRECT_DELAY_MS } from '@/constants/auth'
 
 type RestoreVerifiedPayload = {
   email: string
@@ -25,7 +26,7 @@ export function useWithdrawnMemberFlow(navigate: NavigateFunction) {
     const timer = setTimeout(() => {
       setResultOpen(false)
       navigate('/login', { replace: true })
-    }, 2000)
+    }, RESTORE_RESULT_REDIRECT_DELAY_MS)
     return () => clearTimeout(timer)
   }, [navigate, resultOpen])
 

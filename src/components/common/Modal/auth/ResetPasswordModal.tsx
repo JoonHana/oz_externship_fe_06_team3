@@ -8,6 +8,7 @@ import {
   resetPasswordSchema,
   type ResetPasswordFormData,
 } from '@/schemas/modalSchemas'
+import { RESET_PASSWORD_SUCCESS_TOAST_DURATION_MS } from '@/constants/auth'
 import { AUTH_MESSAGES } from '@/constants/authMessages'
 import { pickVisibleMessage, toMessageDisplay } from '@/utils/formMessage'
 import { useResetPasswordFlow } from '@/hooks/flow'
@@ -22,8 +23,6 @@ interface ResetPasswordModalProps {
   // Flow가 수신 후 state에 저장. 1회 사용 후 폐기
   initialToken: string | null
 }
-
-const RESET_PASSWORD_SUCCESS_TOAST_DURATION_MS = 2500
 
 type ResetPasswordModalState = {
   methods: ReturnType<typeof useForm<ResetPasswordFormData>>

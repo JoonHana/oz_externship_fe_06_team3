@@ -9,7 +9,7 @@ type AuthState = {
   user: User | null
   setAuth: (payload: {
     accessToken: string | null
-    refreshToken?: string
+    refreshToken: string | null
     user: User
   }) => void
   clearAuth: () => void
@@ -63,7 +63,7 @@ export function setupRefreshInterceptor(
         if (!refreshPromise) {
           refreshPromise = callRefreshToken(refreshToken)
             .then((newToken) => {
-              setAuth({ accessToken: newToken, user })
+              setAuth({ accessToken: newToken, refreshToken, user })
               return newToken
             })
             .finally(() => {

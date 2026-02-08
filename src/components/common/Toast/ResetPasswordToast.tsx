@@ -18,14 +18,14 @@ export function ResetPasswordToast({
       role="status"
       aria-live="polite"
       className={cn(
-        'flex w-[396px] flex-col items-center rounded-2xl bg-white px-6 py-8',
+        'flex h-[128px] w-[396px] flex-col items-center justify-center gap-1 rounded-2xl bg-white px-5 py-4',
         className
       )}
     >
-      <div className="bg-success-500 mb-6 flex size-12 flex-shrink-0 items-center justify-center rounded-full">
+      <div className="bg-success-500 mb-1 flex size-6 flex-shrink-0 items-center justify-center rounded-full">
         <svg
-          width="28"
-          height="28"
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -40,7 +40,7 @@ export function ResetPasswordToast({
           />
         </svg>
       </div>
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-1">
         <p className="text-center text-[18px] leading-[22px] font-bold text-gray-900">
           {message}
         </p>
