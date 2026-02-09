@@ -4,6 +4,8 @@ import { unmapGender } from '@/utils/gender'
 import { useMyInfoStore } from '@/store/myInfoStore'
 import { checkNickname, sendSmsVerification, verifySmsCode } from '@/api/auth'
 import { useCountdown } from '@/hooks/useCountdown'
+import { useState, useRef } from 'react'
+import { CameraIcon } from '../common/CameraIcon'
 
 type GenderUI = 'male' | 'female'
 
@@ -11,7 +13,10 @@ type Props = {
   user: User
 }
 
-export function EditMyInfo({ user }: Props) {
+export function EditMyInfo({
+  user,
+  setSelectedImage,
+}: Props & { setSelectedImage?: (file: File | null) => void }) {
   const {
     nickname,
     nicknameStatus,
@@ -127,17 +132,45 @@ export function EditMyInfo({ user }: Props) {
 
   const currentGender = unmapGender(user.gender)
 
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null
+    setSelectedImage?.(file)
+    if (file) {
+      setPreviewUrl(URL.createObjectURL(file))
+    } else {
+      setPreviewUrl(null)
+    }
+  }
+
   return (
     <div className="info-border mt-[20px] w-[747px]">
       <Section title="프로필 수정">
-        <div className="flex justify-center">
-          <img
-            src={
-              user.profile_img_url ? user.profile_img_url : '/프로필 사진.svg'
-            }
-            alt="프로필 사진"
-            className="mb-[52px] h-[184px] rounded-full"
-          />
+        <div className="flex flex-col items-center">
+          <div className="relative mb-[16px] h-[184px] w-[184px]">
+            <img
+              src={previewUrl || user.profile_img_url || '/프로필 사진.svg'}
+              alt="프로필 사진"
+              className="h-[184px] w-[184px] rounded-full object-cover"
+            />
+            <button
+              type="button"
+              className="absolute right-2 bottom-2 rounded-full bg-white p-1 shadow transition hover:bg-gray-100"
+              onClick={() => fileInputRef.current?.click()}
+              style={{ zIndex: 2 }}
+            >
+              <CameraIcon size={32} color="#FAFAFA" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              onChange={handleImageChange}
+              style={{ display: 'none' }}
+            />
+          </div>
         </div>
 
         <Label>닉네임</Label>
@@ -328,7 +361,7 @@ function Section({
 }) {
   return (
     <section className="mb-[80px]">
-      <p className="text-primary title-l">{title}</p>
+      <p className="text-primary title-l-b">{title}</p>
       <hr className="border-mono-400 mt-[16px] mb-[40px]" />
       <div className="flex flex-col gap-[15px]">{children}</div>
     </section>

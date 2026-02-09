@@ -151,7 +151,11 @@ export default function Header() {
                   aria-label="프로필 메뉴 열기"
                 >
                   <img
-                    src="/프로필 사진.svg"
+                    src={
+                      user?.profile_img_url
+                        ? user.profile_img_url
+                        : '/프로필 사진.svg'
+                    }
                     alt="프로필"
                     className="h-[40px] w-[40px] rounded-full object-cover"
                   />
