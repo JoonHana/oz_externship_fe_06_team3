@@ -17,9 +17,12 @@ const dropdownButtonClass =
 
 export default function Header() {
   const [open, setOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [registerStudentModalOpen, setRegisterStudentModalOpen] =
     useState(false)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null)
+  const mobileMenuButtonRef = useRef<HTMLDivElement | null>(null)
 
   const navigate = useNavigate()
 
@@ -27,22 +30,31 @@ export default function Header() {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
 
-  // 드롭다운 바깥 클릭하면 닫히기
+  // 드롭다운/모바일 메뉴 바깥 클릭하면 닫히기
   useEffect(() => {
-    if (!open) return
+    if (!open && !mobileMenuOpen) return
 
     const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as Node
-      if (!dropdownRef.current) return
-      if (!dropdownRef.current.contains(target)) setOpen(false)
+      const clickedOutsideDesktopMenu =
+        open && dropdownRef.current && !dropdownRef.current.contains(target)
+      const clickedOutsideMobileMenu =
+        mobileMenuOpen &&
+        mobileMenuRef.current &&
+        !mobileMenuRef.current.contains(target) &&
+        !mobileMenuButtonRef.current?.contains(target)
+
+      if (clickedOutsideDesktopMenu) setOpen(false)
+      if (clickedOutsideMobileMenu) setMobileMenuOpen(false)
     }
 
     document.addEventListener('mousedown', handleOutsideClick)
     return () => document.removeEventListener('mousedown', handleOutsideClick)
-  }, [open])
+  }, [open, mobileMenuOpen])
 
   const handleLogout = async () => {
     setOpen(false)
+    setMobileMenuOpen(false)
     await logout()
     navigate('/', { replace: true })
   }
@@ -51,16 +63,16 @@ export default function Header() {
     <header className="fixed top-0 right-0 left-0 z-50 w-full">
       {/* 상단 알림 바 */}
       <div className="w-full bg-[#222222] text-center text-sm text-white">
-        <div className="mx-auto max-w-[1200px] py-2 font-[Pretendard]">
+        <div className="mx-auto max-w-[1200px] truncate px-4 py-2 font-[Pretendard] text-[12px] sm:text-sm">
           🚨 선착순 모집! 국비지원 받고 4주 완성
         </div>
       </div>
 
       {/* 메인 헤더 */}
-      <div className="w-full border-b border-gray-200 bg-white">
+      <div className="relative w-full border-b border-gray-200 bg-white">
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-5">
           {/* 왼쪽: 로고 + 메뉴 */}
-          <div className="flex items-center gap-10">
+          <div className="flex items-center gap-6 lg:gap-10">
             <a href="/" className="flex items-center">
               <svg
                 width="150"
@@ -99,7 +111,7 @@ export default function Header() {
               </svg>
             </a>
 
-            <nav className="flex gap-10 font-[Pretendard] text-[18px] text-gray-700">
+            <nav className="hidden gap-10 font-[Pretendard] text-[18px] text-gray-700 lg:flex">
               <a
                 href="#"
                 className="transition-colors duration-200 hover:text-black"
@@ -115,8 +127,8 @@ export default function Header() {
             </nav>
           </div>
 
-          {/* 오른쪽 메뉴 */}
-          <div className="flex items-center gap-2 font-[Pretendard] text-[16px] text-gray-500">
+          {/* 오른쪽 메뉴: 데스크톱 */}
+          <div className="hidden items-center gap-2 font-[Pretendard] text-[16px] text-gray-500 lg:flex">
             {!isAuthenticated ? (
               <>
                 <Button
@@ -210,7 +222,144 @@ export default function Header() {
               </div>
             )}
           </div>
+
+          {/* 오른쪽 메뉴: 모바일 햄버거 */}
+          <div ref={mobileMenuButtonRef} className="lg:hidden">
+            <Button
+              type="button"
+              variant="link"
+              size="auto"
+              className="p-1hover:no-underline min-w-0 rounded-[8px]"
+              onClick={() => {
+                setMobileMenuOpen((prev) => !prev)
+                setOpen(false)
+              }}
+              aria-expanded={mobileMenuOpen}
+              aria-label="모바일 메뉴 열기"
+            >
+              <span className="flex h-8 w-8 flex-col items-center justify-center gap-1">
+                <span className="block h-[2px] w-5 rounded bg-[#222222]" />
+                <span className="block h-[2px] w-5 rounded bg-[#222222]" />
+                <span className="block h-[2px] w-5 rounded bg-[#222222]" />
+              </span>
+            </Button>
+          </div>
         </div>
+
+        {mobileMenuOpen && (
+          <div
+            ref={mobileMenuRef}
+            className="border-t border-gray-200 bg-white shadow-[0_8px_20px_0_#00000014] lg:hidden"
+          >
+            <div className="mx-auto max-w-[1200px] px-5 py-4">
+              <nav className="flex flex-col gap-1 font-[Pretendard] text-[16px] text-gray-700">
+                <a
+                  href="#"
+                  className="hover:bg-primary-100 rounded-[8px] px-2 py-2 transition-colors duration-200 hover:text-black"
+                >
+                  커뮤니티
+                </a>
+                <a
+                  href="#"
+                  className="hover:bg-primary-100 rounded-[8px] px-2 py-2 transition-colors duration-200 hover:text-black"
+                >
+                  질의응답
+                </a>
+              </nav>
+
+              <div className="border-mono-200 mt-3 border-t pt-3">
+                {!isAuthenticated ? (
+                  <div className="flex flex-col gap-1">
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="auto"
+                      className="text-mono-700 hover:bg-primary-100 w-full justify-start rounded-[8px] px-2 py-2 font-[Pretendard] text-[16px] hover:no-underline"
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        navigate('/login')
+                      }}
+                    >
+                      로그인
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="auto"
+                      className="text-mono-700 hover:bg-primary-100 w-full justify-start rounded-[8px] px-2 py-2 font-[Pretendard] text-[16px] hover:no-underline"
+                      onClick={() => {
+                        setMobileMenuOpen(false)
+                        navigate('/signup')
+                      }}
+                    >
+                      회원가입
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="bg-mono-100 mb-2 flex items-center gap-4 rounded-[8px] px-1 py-2">
+                      <img
+                        src={
+                          user?.profile_img_url
+                            ? user.profile_img_url
+                            : '/프로필 사진.svg'
+                        }
+                        alt="프로필"
+                        className="h-[40px] w-[40px] shrink-0 rounded-full object-cover"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-semibold text-black">
+                          {user?.name ?? '유저'}
+                        </p>
+                        <p className="text-mono-500 truncate text-[13px]">
+                          {user?.email ?? ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="auto"
+                        className="hover:bg-primary-100 hover:text-primary w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:no-underline"
+                        onClick={() => {
+                          setMobileMenuOpen(false)
+                          setRegisterStudentModalOpen(true)
+                        }}
+                      >
+                        수강생 등록
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="auto"
+                        className="hover:bg-primary-100 hover:text-primary w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:no-underline"
+                        onClick={() => {
+                          setMobileMenuOpen(false)
+                          navigate('/mypage/profile')
+                        }}
+                      >
+                        마이페이지
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="auto"
+                        className="hover:bg-primary-100 hover:text-primary w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:no-underline"
+                        onClick={handleLogout}
+                      >
+                        로그아웃
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <RegisterStudentModal
