@@ -152,6 +152,18 @@ function QuizPage() {
     }
   }
 
+  /** 부정행위 경고 모달 확인: 전체화면이 아니면 전체화면으로 전환 후 모달 닫기 */
+  const handleCheatingConfirm = async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen()
+      } catch {
+        // 전체화면 전환 실패 시에도 모달은 닫음
+      }
+    }
+    handleCheatingClose()
+  }
+
   const handleStatusEndTest = () => {
     setIsEnded(true)
     setEndReason('status')
@@ -236,7 +248,7 @@ function QuizPage() {
         isOpen={openModal === 'cheating'}
         onClose={handleCheatingClose}
         warningLevel={warningLevel}
-        onConfirm={handleCheatingClose}
+        onConfirm={handleCheatingConfirm}
         onTerminate={handleCheatingTerminate}
       />
 
