@@ -4,9 +4,8 @@ import Skeleton from './common/Skeleton'
 import { ViewMyInfo } from './myinfo/ViewMyInfo'
 import { EditMyInfo } from './myinfo/EditMyInfo'
 import { useAuthStore } from '@/store/authStore'
-import { me } from '@/api/auth'
 import { getMyCourses } from '@/api/info'
-import { updateMyInfo } from '@/api/auth'
+import { updateMyInfo, changePhone, me } from '@/api/auth'
 import { patchProfileImage } from '@/api/profileImage'
 import { useMyInfoStore } from '@/store/myInfoStore'
 
@@ -32,7 +31,7 @@ export default function MyInfo() {
 
   const handleSave = async () => {
     if (!user) return
-    const { nickname, phone, nicknameStatus, phoneStatus, error } =
+    const { nickname, nicknameStatus, phoneStatus, error, phoneVerifyToken } =
       useMyInfoStore.getState()
     const canPatch =
       nicknameStatus === 'success' ||
@@ -54,10 +53,18 @@ export default function MyInfo() {
       }
     }
     try {
-      const updated = await updateMyInfo({
-        nickname: nicknameStatus === 'success' ? nickname : user.nickname,
-        phone_number: phoneStatus === 'success' ? phone : user.phone_number,
-      })
+      let updated = user
+      // 휴대폰 인증이 완료된 경우 change-phone API 호출
+      if (phoneVerifyToken) {
+        await changePhone(phoneVerifyToken)
+        // 변경 후 내 정보 재조회
+        updated = await me(accessToken)
+      } else {
+        // 닉네임/이미지만 변경
+        updated = await updateMyInfo({
+          nickname: nicknameStatus === 'success' ? nickname : user.nickname,
+        })
+      }
       setAuth({
         accessToken,
         refreshToken,
