@@ -1,4 +1,5 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Button, Loading } from '@/components/common'
 import { QUIZ_LIST_PATH } from '@/constants/quiz'
 import QuizHeader from '@/components/quiz/QuizHeader'
@@ -45,6 +46,7 @@ function buildResultHeaderMessage(
 
 function QuizResultPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { submissionId } = useParams<{ submissionId: string }>()
   const submissionIdNumber = submissionId ? Number(submissionId) : 0
 
@@ -54,6 +56,14 @@ function QuizResultPage() {
   )
 
   const goToList = () => navigate(QUIZ_LIST_PATH)
+
+  // 결과 페이지 진입 시 히스토리에 목록 URL 추가 → 브라우저 뒤로가기 시 목록으로 이동
+  useEffect(() => {
+    if (!submissionId) return
+    const resultPath = location.pathname
+    window.history.pushState(null, '', QUIZ_LIST_PATH)
+    window.history.pushState(null, '', resultPath)
+  }, [submissionId, location.pathname])
 
   if (isLoading) {
     return (
