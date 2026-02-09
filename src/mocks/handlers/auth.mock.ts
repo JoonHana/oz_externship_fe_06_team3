@@ -172,6 +172,54 @@ export const checkNicknameHandler = http.post(
   }
 )
 
+export const checkEmailHandler = http.post(
+  api('/api/v1/accounts/check-email/'),
+  async ({ request }) => {
+    await delay(80)
+    const body = (await request.json()) as { email?: string }
+    const email = normEmail(String(body.email ?? ''))
+
+    if (!email) {
+      return error(400, { error_detail: { email: ['이메일을 입력해주세요.'] } })
+    }
+
+    if (usersByEmail.has(email)) {
+      return error(409, { error_detail: '이미 가입된 이메일입니다.' })
+    }
+
+    return HttpResponse.json(
+      { detail: '사용가능한 이메일 입니다.' },
+      { status: 200 }
+    )
+  }
+)
+
+export const checkPhoneHandler = http.post(
+  api('/api/v1/accounts/check-phone/'),
+  async ({ request }) => {
+    await delay(80)
+    const body = (await request.json()) as { phone_number?: string }
+    const phone = normPhone(String(body.phone_number ?? ''))
+
+    if (phone.length < 10) {
+      return error(400, {
+        error_detail: { phone_number: ['휴대폰 번호를 확인해주세요.'] },
+      })
+    }
+
+    if (usedPhones.has(phone)) {
+      return error(409, {
+        error_detail: '이미 가입에 사용된 휴대전화 번호입니다.',
+      })
+    }
+
+    return HttpResponse.json(
+      { detail: '사용가능한 휴대전화 번호입니다.' },
+      { status: 200 }
+    )
+  }
+)
+
 export const sendEmailHandler = http.post(
   api('/api/v1/accounts/verification/send-email/'),
   async ({ request }) => {
@@ -435,6 +483,8 @@ export const authHandlers = [
   logoutHandler,
   meHandler,
   checkNicknameHandler,
+  checkEmailHandler,
+  checkPhoneHandler,
   sendEmailHandler,
   verifyEmailHandler,
   sendSmsHandler,
