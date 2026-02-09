@@ -72,7 +72,10 @@ export function useSmsVerification({
       return { ok: true }
     },
 
-    send: (identity) => authApi.sendSmsVerification({ phoneNumber: identity }),
+    send: async (identity) => {
+      await authApi.checkPhone({ phoneNumber: identity })
+      await authApi.sendSmsVerification({ phoneNumber: identity })
+    },
     verify: (identity, verificationCode) =>
       authApi.verifySmsCode({ phoneNumber: identity, verificationCode }),
     getToken: (response) => response.smsToken,

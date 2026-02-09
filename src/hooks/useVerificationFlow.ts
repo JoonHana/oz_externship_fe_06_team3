@@ -43,8 +43,6 @@ type UseVerificationFlowArgs<TVerifyRes> = {
   }
 }
 
-const SECONDS_PER_MINUTE = 60
-
 export function useVerificationFlow<TVerifyRes>({
   identity,
   code,
@@ -63,7 +61,7 @@ export function useVerificationFlow<TVerifyRes>({
   getVerifyErrorMessage,
   text,
 }: UseVerificationFlowArgs<TVerifyRes>) {
-  const ttlMinutes = Math.ceil(ttlSec / SECONDS_PER_MINUTE)
+  const ttlMinutes = Math.ceil(ttlSec / 60)
   const {
     timeLeft: remain,
     formatTime: mmss,

@@ -62,14 +62,22 @@ export async function me(accessToken: string | null = null): Promise<User> {
   return data
 }
 
-export interface CheckNicknamePayload {
-  nickname: string
-}
-
 export async function checkNickname(
-  payload: CheckNicknamePayload
+  payload: { nickname: string }
 ): Promise<void> {
   await apiClient.post('/api/v1/accounts/check-nickname/', payload)
+}
+
+export async function checkEmail(payload: { email: string }): Promise<void> {
+  await apiClient.post('/api/v1/accounts/check-email/', payload)
+}
+
+export async function checkPhone(payload: {
+  phoneNumber: string
+}): Promise<void> {
+  await apiClient.post('/api/v1/accounts/check-phone/', {
+    phone_number: payload.phoneNumber,
+  })
 }
 
 export async function sendEmailVerification(

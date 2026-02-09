@@ -53,7 +53,10 @@ export function useEmailVerification({
         : { ok: false, message: AUTH_MESSAGES.email.identityInvalid }
     },
 
-    send: (identity) => authApi.sendEmailVerification({ email: identity }),
+    send: async (identity) => {
+      await authApi.checkEmail({ email: identity })
+      await authApi.sendEmailVerification({ email: identity })
+    },
     verify: (identity, verificationCode) =>
       authApi.verifyEmailCode({ email: identity, verificationCode }),
     getToken: (response) => response.emailToken,
