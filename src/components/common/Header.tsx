@@ -229,7 +229,7 @@ export default function Header() {
               type="button"
               variant="link"
               size="auto"
-              className="min-w-0 rounded-[8px]  p-1hover:no-underline"
+              className="p-1hover:no-underline min-w-0 rounded-[8px]"
               onClick={() => {
                 setMobileMenuOpen((prev) => !prev)
                 setOpen(false)
@@ -255,26 +255,26 @@ export default function Header() {
               <nav className="flex flex-col gap-1 font-[Pretendard] text-[16px] text-gray-700">
                 <a
                   href="#"
-                  className="rounded-[8px] px-2 py-2 transition-colors duration-200 hover:bg-primary-100 hover:text-black"
+                  className="hover:bg-primary-100 rounded-[8px] px-2 py-2 transition-colors duration-200 hover:text-black"
                 >
                   커뮤니티
                 </a>
                 <a
                   href="#"
-                  className="rounded-[8px] px-2 py-2 transition-colors duration-200 hover:bg-primary-100 hover:text-black"
+                  className="hover:bg-primary-100 rounded-[8px] px-2 py-2 transition-colors duration-200 hover:text-black"
                 >
                   질의응답
                 </a>
               </nav>
 
-              <div className="mt-3 border-t border-mono-200 pt-3">
+              <div className="border-mono-200 mt-3 border-t pt-3">
                 {!isAuthenticated ? (
                   <div className="flex flex-col gap-1">
                     <Button
                       type="button"
                       variant="link"
                       size="auto"
-                      className="w-full justify-start rounded-[8px] px-2 py-2 font-[Pretendard] text-[16px] text-mono-700 hover:bg-primary-100 hover:no-underline"
+                      className="text-mono-700 hover:bg-primary-100 w-full justify-start rounded-[8px] px-2 py-2 font-[Pretendard] text-[16px] hover:no-underline"
                       onClick={() => {
                         setMobileMenuOpen(false)
                         navigate('/login')
@@ -286,7 +286,7 @@ export default function Header() {
                       type="button"
                       variant="link"
                       size="auto"
-                      className="w-full justify-start rounded-[8px] px-2 py-2 font-[Pretendard] text-[16px] text-mono-700 hover:bg-primary-100 hover:no-underline"
+                      className="text-mono-700 hover:bg-primary-100 w-full justify-start rounded-[8px] px-2 py-2 font-[Pretendard] text-[16px] hover:no-underline"
                       onClick={() => {
                         setMobileMenuOpen(false)
                         navigate('/signup')
@@ -297,13 +297,24 @@ export default function Header() {
                   </div>
                 ) : (
                   <div>
-                    <div className="mb-2 rounded-[8px] bg-mono-100 px-3 py-2">
-                      <p className="text-[14px] font-semibold text-black">
-                        {user?.name ?? '유저'}
-                      </p>
-                      <p className="text-[13px] text-mono-500">
-                        {user?.email ?? ''}
-                      </p>
+                    <div className="bg-mono-100 mb-2 flex items-center gap-4 rounded-[8px] px-1 py-2">
+                      <img
+                        src={
+                          user?.profile_img_url
+                            ? user.profile_img_url
+                            : '/프로필 사진.svg'
+                        }
+                        alt="프로필"
+                        className="h-[40px] w-[40px] shrink-0 rounded-full object-cover"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-[14px] font-semibold text-black">
+                          {user?.name ?? '유저'}
+                        </p>
+                        <p className="text-mono-500 truncate text-[13px]">
+                          {user?.email ?? ''}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-1">
@@ -311,7 +322,7 @@ export default function Header() {
                         type="button"
                         variant="link"
                         size="auto"
-                        className="w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:bg-primary-100 hover:text-primary hover:no-underline"
+                        className="hover:bg-primary-100 hover:text-primary w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:no-underline"
                         onClick={() => {
                           setMobileMenuOpen(false)
                           setRegisterStudentModalOpen(true)
@@ -324,7 +335,7 @@ export default function Header() {
                         type="button"
                         variant="link"
                         size="auto"
-                        className="w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:bg-primary-100 hover:text-primary hover:no-underline"
+                        className="hover:bg-primary-100 hover:text-primary w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:no-underline"
                         onClick={() => {
                           setMobileMenuOpen(false)
                           navigate('/mypage/profile')
@@ -337,7 +348,7 @@ export default function Header() {
                         type="button"
                         variant="link"
                         size="auto"
-                        className="w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:bg-primary-100 hover:text-primary hover:no-underline"
+                        className="hover:bg-primary-100 hover:text-primary w-full justify-start rounded-[8px] px-2 py-2 text-left text-sm hover:no-underline"
                         onClick={handleLogout}
                       >
                         로그아웃
