@@ -8,14 +8,24 @@ import { ResultQuestionItem } from '@/components/quiz'
 
 // 분당 밀리초 수
 const MS_PER_MINUTE = 60_000
+// 분당 초 수
+const SECONDS_PER_MINUTE = 60
 
-// 응시시간
+/**
+ * 응시시간(분) 계산
+ * - API의 elapsed_time(초)이 0 이상이면 우선 사용
+ * - 없으면 started_at ~ submitted_at 차이로 계산 (1분 미만이면 0)
+ * - fallback은 0 미만이면 0으로 처리
+ */
 function getElapsedMinutes(
   startedAt: string | undefined,
   submittedAt: string | undefined,
-  fallback: number
+  elapsedTimeSeconds: number
 ): number {
-  if (!startedAt || !submittedAt) return fallback
+  if (elapsedTimeSeconds >= 0) {
+    return Math.max(0, Math.floor(elapsedTimeSeconds / SECONDS_PER_MINUTE))
+  }
+  if (!startedAt || !submittedAt) return 0
   const started = new Date(startedAt).getTime()
   const submitted = new Date(submittedAt).getTime()
   return Math.max(0, Math.floor((submitted - started) / MS_PER_MINUTE))
@@ -58,7 +68,7 @@ function QuizResultPage() {
   const elapsedMinutes = getElapsedMinutes(
     data?.startedAt,
     data?.submittedAt,
-    data?.elapsedTime ?? 0
+    data?.elapsedTime ?? -1
   )
   const maxScore =
     data?.questions.reduce((sum, q) => sum + (q.point ?? 0), 0) ?? 0
