@@ -31,14 +31,8 @@ export default function MyInfo() {
 
   const handleSave = async () => {
     if (!user) return
-    const {
-      nickname,
-      nicknameStatus,
-      phoneStatus,
-      error,
-      verifiedPhone,
-      phoneVerifyToken,
-    } = useMyInfoStore.getState()
+    const { nickname, nicknameStatus, phoneStatus, error, phoneVerifyToken } =
+      useMyInfoStore.getState()
     const canPatch =
       nicknameStatus === 'success' ||
       phoneStatus === 'success' ||
