@@ -123,6 +123,8 @@ export function EditMyInfo({
       setField('error', null)
       resetTimer()
       setField('smsStatus', 'success')
+      setField('verifiedPhone', phone)
+      setField('phoneVerifyToken', result.smsToken)
     } catch (error) {
       setField('phoneStatus', 'error')
       setField('error', '인증번호가 일치하지 않습니다.')

@@ -10,6 +10,8 @@ export type MyInfoState = {
   phoneChanging: boolean
   smsToken: string | null
   error: string | null
+  verifiedPhone: string | null
+  phoneVerifyToken: string | null
   setField: (key: keyof MyInfoState, value: any) => void
   reset: () => void
 }
@@ -24,6 +26,8 @@ const initialState: Omit<MyInfoState, 'setField' | 'reset'> = {
   phoneChanging: false,
   smsToken: null,
   error: null,
+  verifiedPhone: null,
+  phoneVerifyToken: null,
 }
 
 export const useMyInfoStore = create<MyInfoState>((set) => ({
