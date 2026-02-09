@@ -51,7 +51,7 @@ function QuizPage() {
   const [isEnded, setIsEnded] = useState(false)
   const [endReason, setEndReason] = useState<'time' | 'status' | 'cheating' | null>(null)
   const [openModal, setOpenModal] = useState<
-    'cheating' | 'fullscreen' | 'submitComplete' | null
+    'cheating' | 'fullscreen' | 'submitComplete' | 'leaveWarning' | null
   >(null)
   const [answers, setAnswers] = useState<Record<number, string | string[] | null>>({})
 
@@ -98,6 +98,36 @@ function QuizPage() {
 
   submitAndEndByTimeRef.current = submitAndEndByTime
   useAdminStatusPolling(statusData, isEnded, setIsEnded, setEndReason)
+
+  const hasPushedHistoryRef = useRef(false)
+  const quizPathnameRef = useRef('')
+  useEffect(() => {
+    if (isEnded || !isAccessAllowed || isLoading || !deploymentId) return
+    if (hasPushedHistoryRef.current) return
+    hasPushedHistoryRef.current = true
+    const pathname = window.location.pathname
+    quizPathnameRef.current = pathname
+    window.history.pushState({ quizPage: true }, '', pathname)
+  }, [isEnded, isAccessAllowed, isLoading, deploymentId])
+
+  useEffect(() => {
+    if (isEnded) return
+    const onPopState = () => {
+      window.history.pushState(
+        { quizPage: true },
+        '',
+        quizPathnameRef.current || window.location.pathname
+      )
+      setOpenModal('leaveWarning')
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [isEnded])
+
+  const handleLeaveWarningConfirm = () => {
+    setOpenModal(null)
+    submitAndEndByTime()
+  }
 
   const handleAnswerChange = (questionId: number, value: string | string[]) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }))
@@ -315,6 +345,31 @@ function QuizPage() {
         onClose={() => setOpenModal(null)}
         onConfirm={handleSubmitCompleteConfirm}
       />
+
+      <Modal
+        isOpen={openModal === 'leaveWarning'}
+        onClose={() => setOpenModal(null)}
+      >
+        <Modal.Body>
+          <div className="flex min-w-[250px] flex-col items-center gap-4 py-4">
+            <p className="text-center text-[16px] text-foreground-secondary">
+              응시페이지 이탈하여 답안이 제출되고 시험이 종료됩니다.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="primary"
+            size="md"
+            rounded="default"
+            className="w-full"
+            onClick={handleLeaveWarningConfirm}
+            disabled={submissionMutation.isPending}
+          >
+            {submissionMutation.isPending ? '제출 중...' : '확인'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   )
 }
