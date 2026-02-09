@@ -58,15 +58,15 @@ function LandingPage() {
             className={clsx(
               'mx-auto w-full max-w-[1200px] px-5',
               'min-h-[calc(100dvh-var(--header-offset,100px))]',
-              'flex flex-col justify-center',
+              'flex flex-col items-center justify-center',
               'py-8',
               'scroll-mt-[var(--header-offset,100px)]',
               'overflow-hidden'
             )}
           >
-            <h1 className="text-center text-3xl leading-snug font-bold sm:text-4xl lg:text-5xl">
-              쪽지 시험으로 <br />
-              실력을 차곡차곡 쌓아보세요
+            <h1 className="text-center text-3xl leading-snug font-bold whitespace-normal sm:text-4xl lg:text-5xl">
+              <span className="block sm:pb-1 lg:pb-2">쪽지시험으로</span>
+              <span className="block">실력을 차곡차곡 쌓아보세요</span>
             </h1>
 
             <div className="border-mono-200 mx-auto my-6 w-fit rounded-full border bg-white px-2 py-2 shadow-sm sm:my-10">
@@ -83,7 +83,7 @@ function LandingPage() {
                       onClick={() => handleTabClick(tab.id)}
                       aria-pressed={isActive}
                       className={clsx(
-                        'px-5 py-2 transition-all duration-200 sm:px-6',
+                        'h-9 px-4 text-sm whitespace-nowrap transition-all duration-200 sm:h-10 sm:px-6 sm:text-base lg:h-11 lg:px-7',
                         'focus-visible:ring-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                         isActive
                           ? 'shadow-md'
