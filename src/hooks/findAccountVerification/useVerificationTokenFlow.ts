@@ -3,6 +3,9 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useCountdown } from '@/hooks/useCountdown'
 import { useVerificationRequestScope } from '@/hooks/verification/useVerificationRequestScope'
 
+const DEFAULT_SEND_ERROR_MESSAGE = '전송에 실패했습니다.'
+const DEFAULT_VERIFY_ERROR_MESSAGE = '인증에 실패했습니다.'
+
 export type UseVerificationTokenFlowOptions = {
   identity: string
   isIdentityValid?: boolean
@@ -41,6 +44,19 @@ export type UseVerificationTokenFlowResult = {
   isActive: boolean
 }
 
+function resolveErrorMessage(
+  err: unknown,
+  getErrorMessage: ((err: unknown) => string) | undefined,
+  fallback: string
+): string | null {
+  const message = getErrorMessage
+    ? getErrorMessage(err)
+    : err instanceof Error
+      ? err.message
+      : fallback
+  return message?.trim() || null
+}
+
 export function useVerificationTokenFlow({
   identity,
   isIdentityValid,
@@ -56,6 +72,7 @@ export function useVerificationTokenFlow({
   onInvalidate,
 }: UseVerificationTokenFlowOptions): UseVerificationTokenFlowResult {
   const normalizedIdentity = identity.trim()
+  const trimmedCode = code.trim()
   const hasIdentity =
     isIdentityValid !== undefined
       ? isIdentityValid
@@ -78,30 +95,31 @@ export function useVerificationTokenFlow({
     enabled,
   })
 
+  const clearVerificationState = useCallback(
+    (options?: { invokeInvalidateCallback?: boolean }) => {
+      sendRequestSeqRef.current += 1
+      verifyRequestSeqRef.current += 1
+      setToken(null)
+      setCodeSent(false)
+      setSending(false)
+      setVerifying(false)
+      setNotice(null)
+      setError(null)
+      resetTimer()
+      if (options?.invokeInvalidateCallback) {
+        onInvalidate?.()
+      }
+    },
+    [resetTimer, onInvalidate]
+  )
+
   const invalidateVerification = useCallback(() => {
-    sendRequestSeqRef.current += 1
-    verifyRequestSeqRef.current += 1
-    setToken(null)
-    setCodeSent(false)
-    setSending(false)
-    setVerifying(false)
-    setNotice(null)
-    setError(null)
-    resetTimer()
-    onInvalidate?.()
-  }, [resetTimer, onInvalidate])
+    clearVerificationState({ invokeInvalidateCallback: true })
+  }, [clearVerificationState])
 
   const resetAll = useCallback(() => {
-    sendRequestSeqRef.current += 1
-    verifyRequestSeqRef.current += 1
-    setToken(null)
-    setCodeSent(false)
-    setSending(false)
-    setVerifying(false)
-    setNotice(null)
-    setError(null)
-    resetTimer()
-  }, [resetTimer])
+    clearVerificationState()
+  }, [clearVerificationState])
 
   useEffect(() => {
     if (!enabled) {
@@ -135,7 +153,11 @@ export function useVerificationTokenFlow({
 
   // 모달 닫힘 상태(enabled=false)에서는 전송/검증 방지
   const onSend = useCallback(async () => {
-    if (!enabled || !hasIdentity || sending || verifying || token != null) return
+    const hasPendingRequest = sending || verifying
+    const isBlocked =
+      !enabled || !hasIdentity || hasPendingRequest || token != null
+    if (isBlocked) return
+
     setError(null)
     setNotice(null)
     setSending(true)
@@ -158,12 +180,9 @@ export function useVerificationTokenFlow({
         !isCurrentRequest(requestedIdentity)
       )
         return
-      const sendErrorMessage = getSendErrorMessage
-        ? getSendErrorMessage(err)
-        : err instanceof Error
-          ? err.message
-          : '전송에 실패했습니다.'
-      setError(sendErrorMessage?.trim() || null)
+      setError(
+        resolveErrorMessage(err, getSendErrorMessage, DEFAULT_SEND_ERROR_MESSAGE)
+      )
     } finally {
       if (sendRequestSeqRef.current === requestSeq) {
         setSending(false)
@@ -184,21 +203,22 @@ export function useVerificationTokenFlow({
   ])
 
   const onVerify = useCallback(async () => {
-    if (
+    const hasPendingRequest = sending || verifying
+    const isBlocked =
       !enabled ||
       !hasIdentity ||
       !codeSent ||
       isExpired ||
-      sending ||
-      verifying ||
+      hasPendingRequest ||
       token != null
-    )
-      return
+    if (isBlocked) return
+    if (!trimmedCode) return
+
     setError(null)
     setNotice(null)
     setVerifying(true)
     const requestedIdentity = normalizedIdentity
-    const requestedCode = code.trim()
+    const requestedCode = trimmedCode
     const requestSeq = verifyRequestSeqRef.current + 1
     verifyRequestSeqRef.current = requestSeq
     try {
@@ -220,12 +240,13 @@ export function useVerificationTokenFlow({
         !isCurrentRequest(requestedIdentity)
       )
         return
-      const verifyErrorMessage = getVerifyErrorMessage
-        ? getVerifyErrorMessage(err)
-        : err instanceof Error
-          ? err.message
-          : '인증에 실패했습니다.'
-      setError(verifyErrorMessage?.trim() || null)
+      setError(
+        resolveErrorMessage(
+          err,
+          getVerifyErrorMessage,
+          DEFAULT_VERIFY_ERROR_MESSAGE
+        )
+      )
     } finally {
       if (verifyRequestSeqRef.current === requestSeq) {
         setVerifying(false)
@@ -234,13 +255,13 @@ export function useVerificationTokenFlow({
   }, [
     enabled,
     hasIdentity,
-    normalizedIdentity,
-    code,
     codeSent,
     isExpired,
     sending,
     verifying,
     token,
+    normalizedIdentity,
+    trimmedCode,
     verify,
     verifySuccessNotice,
     resetTimer,
@@ -254,7 +275,7 @@ export function useVerificationTokenFlow({
     enabled &&
     hasIdentity &&
     codeSent &&
-    !!code.trim() &&
+    !!trimmedCode &&
     !isExpired &&
     !verified &&
     !sending &&
