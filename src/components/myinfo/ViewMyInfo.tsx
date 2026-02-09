@@ -106,7 +106,7 @@ export function ViewMyInfo() {
                       : '/프로필 사진.svg'
                   }
                   alt="프로필 사진"
-                  className="mb-[52px] h-[184px] rounded-full"
+                  className="mb-[52px] h-[184px] w-[184px] rounded-full object-cover"
                 />
               </div>
 

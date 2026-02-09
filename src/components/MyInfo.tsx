@@ -1,39 +1,43 @@
 import { useEffect, useState } from 'react'
-import { Button, Loading } from './common'
+import { Button } from './common'
+import Skeleton from './common/Skeleton'
 import { ViewMyInfo } from './myinfo/ViewMyInfo'
 import { EditMyInfo } from './myinfo/EditMyInfo'
-import type { User } from '@/types/auth'
+import { useAuthStore } from '@/store/authStore'
 import { me } from '@/api/auth'
 import { getMyCourses } from '@/api/info'
 import { updateMyInfo } from '@/api/auth'
+import { patchProfileImage } from '@/api/profileImage'
 import { useMyInfoStore } from '@/store/myInfoStore'
 
 export default function MyInfo() {
   const [isEdit, setIsEdit] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const { user, setAuth, accessToken, refreshToken } = useAuthStore()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [userData] = await Promise.all([me(), getMyCourses()])
-        setUser(userData)
+        setAuth({ accessToken, refreshToken, user: userData })
       } catch (e) {
         console.error('내 정보 조회 실패', e)
       } finally {
         setLoading(false)
       }
     }
-
     fetchData()
-  }, [])
+  }, [setAuth])
 
   const handleSave = async () => {
     if (!user) return
     const { nickname, phone, nicknameStatus, phoneStatus, error } =
       useMyInfoStore.getState()
-    // 닉네임 중복검사 통과 또는 전화번호 인증 완료 시만 저장
-    const canPatch = nicknameStatus === 'success' || phoneStatus === 'success'
+    const canPatch =
+      nicknameStatus === 'success' ||
+      phoneStatus === 'success' ||
+      !!selectedImage
     if (!canPatch) {
       if (error) {
         alert(error)
@@ -42,37 +46,79 @@ export default function MyInfo() {
       setIsEdit(false)
       return
     }
+    let newProfileImgUrl = user.profile_img_url
+    if (selectedImage) {
+      const result = await patchProfileImage(selectedImage)
+      if (result.ok && result.img_url) {
+        newProfileImgUrl = result.img_url
+      }
+    }
     try {
       const updated = await updateMyInfo({
         nickname: nicknameStatus === 'success' ? nickname : user.nickname,
         phone_number: phoneStatus === 'success' ? phone : user.phone_number,
       })
-      setUser(updated)
+      setAuth({
+        accessToken,
+        refreshToken,
+        user: { ...updated, profile_img_url: newProfileImgUrl },
+      })
       setIsEdit(false)
+      setSelectedImage(null)
     } catch (e) {
       console.error('내 정보 저장 실패', e)
     }
   }
 
   const handleEdit = () => {
-    // 번호 인증 관련 zustand 상태 초기화
     useMyInfoStore.getState().reset()
     setIsEdit(true)
   }
 
-  // 저장 버튼 활성화 조건 계산 관련 미사용 변수 삭제
-
   if (loading)
     return (
-      <div className="flex-center h-[600px]">
-        <Loading />
+      <div className="flex w-[744px] flex-col gap-[24px]">
+        {/* InfoSection: 프로필 스켈레톤 */}
+        <div className="flex w-[744px] items-center justify-between">
+          <Skeleton className="h-[32px] w-[120px]" />
+          <Skeleton className="h-[40px] w-[100px] rounded-[8px]" />
+        </div>
+        <div className="info-border mt-[20px] w-[747px]">
+          <section>
+            <div className="mb-[16px]">
+              <Skeleton className="mb-[8px] h-[28px] w-[56px]" />
+              <hr className="border-mono-400 mt-[8px] mb-[40px]" />
+            </div>
+            <div className="flex justify-center">
+              <Skeleton className="mb-[52px] h-[184px] w-[184px] rounded-full" />
+            </div>
+            <div className="mb-[90px] flex flex-col gap-[20px]">
+              <Skeleton className="h-[24px] w-[200px]" />
+              <Skeleton className="h-[24px] w-[300px]" />
+            </div>
+            <div className="flex flex-col gap-[20px]">
+              <Skeleton className="h-[24px] w-[120px]" />
+              <Skeleton className="h-[24px] w-[200px]" />
+              <Skeleton className="h-[24px] w-[120px]" />
+              <Skeleton className="h-[24px] w-[120px]" />
+            </div>
+          </section>
+        </div>
+        <div className="my-[48px] flex h-[147px] items-center justify-between">
+          <div className="flex w-[365px] flex-col">
+            <Skeleton className="mb-[20px] h-[28px] w-[200px]" />
+            <Skeleton className="mb-[8px] h-[18px] w-[300px]" />
+            <Skeleton className="h-[18px] w-[250px]" />
+          </div>
+          <Skeleton className="h-[48px] w-[142px] rounded-[4px]" />
+        </div>
       </div>
     )
   if (!user) return <div>정보를 불러올 수 없습니다.</div>
 
   return (
     <>
-      <div className="flex w-[744px] items-center justify-between">
+      <div className="mb-[32px] flex w-[744px] items-center justify-between">
         <div className="title-xl">내 정보</div>
         <Button
           size="md"
@@ -83,7 +129,7 @@ export default function MyInfo() {
       </div>
 
       {isEdit ? (
-        <EditMyInfo user={user} />
+        <EditMyInfo user={user} setSelectedImage={setSelectedImage} />
       ) : (
         <>
           <ViewMyInfo />
