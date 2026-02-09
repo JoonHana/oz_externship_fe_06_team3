@@ -73,7 +73,10 @@ export default function Header() {
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-5">
           {/* 왼쪽: 로고 + 메뉴 */}
           <div className="flex items-center gap-6 lg:gap-10">
-            <a href="/" className="flex items-center">
+            <a
+              href="https://my.ozcodingschool.site/"
+              className="flex items-center"
+            >
               <svg
                 width="150"
                 height="20"
@@ -113,13 +116,13 @@ export default function Header() {
 
             <nav className="hidden gap-10 font-[Pretendard] text-[18px] text-gray-700 lg:flex">
               <a
-                href="#"
+                href="https://community.ozcodingschool.site/"
                 className="transition-colors duration-200 hover:text-black"
               >
                 커뮤니티
               </a>
               <a
-                href="#"
+                href="https://qna.ozcodingschool.site/"
                 className="transition-colors duration-200 hover:text-black"
               >
                 질의응답

@@ -1,3 +1,9 @@
+// 휴대폰 번호 변경 API
+export async function changePhone(phone_verify_token: string): Promise<void> {
+  await apiClient.patch('/api/v1/accounts/change-phone/', {
+    phone_verify_token,
+  })
+}
 // 로그인, 회원가입, 인증(이메일/SMS), 아이디찾기, 비밀번호재설정 API
 import { apiClient } from '@/api/client'
 import type { LoginPayload, LoginResult, User } from '@/types/auth'
@@ -62,9 +68,9 @@ export async function me(accessToken: string | null = null): Promise<User> {
   return data
 }
 
-export async function checkNickname(
-  payload: { nickname: string }
-): Promise<void> {
+export async function checkNickname(payload: {
+  nickname: string
+}): Promise<void> {
   await apiClient.post('/api/v1/accounts/check-nickname/', payload)
 }
 
