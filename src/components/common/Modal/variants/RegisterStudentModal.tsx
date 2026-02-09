@@ -10,6 +10,7 @@ import {
   type RegisterStudentFormData,
 } from '@/schemas/modalSchemas'
 import { fetchCourses, fetchCohorts, enrollStudent } from '@/api/info'
+import axios from 'axios'
 
 interface RegisterStudentModalProps {
   isOpen: boolean
@@ -150,7 +151,10 @@ export function RegisterStudentModal({
 
             {enrollMutation.isError && (
               <p className="text-sm text-red-500">
-                등록 신청에 실패했습니다. 다시 시도해 주세요.
+                {axios.isAxiosError(enrollMutation.error) &&
+                enrollMutation.error.response?.status === 403
+                  ? '*등록 신청에 실패했습니다. 이미 해당 기수에 등록 신청하였습니다.'
+                  : '등록 신청에 실패했습니다. 다시 시도해 주세요.'}
               </p>
             )}
             <div className="pt-4">
