@@ -84,7 +84,13 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          const newAccessToken = await callRefreshToken()
+          let newAccessToken: string
+          try {
+            newAccessToken = await callRefreshToken()
+          } catch {
+            if (!refreshToken) throw new Error('Refresh failed')
+            newAccessToken = await callRefreshToken(refreshToken)
+          }
           const userData = user ?? (await authApi.me(newAccessToken))
           get().setAuth({
             accessToken: newAccessToken,
