@@ -11,7 +11,6 @@ const TABS = [
 ] as const
 
 type TabType = (typeof TABS)[number]['id']
-const TAB_FADE_DELAY_MS = 180
 
 function LandingPage() {
   const [activeTab, setActiveTab] = useState<TabType>('exam')
@@ -30,13 +29,13 @@ function LandingPage() {
     setActiveTab(nextTab)
     setIsFadingOut(true)
 
-    // 새 탭을 또 눌렀을 때 이전에 걸어둔 타이머가 아직 살아있으면 바로 취소
+    // 180ms 내에 이미지 변경 연속 눌렀을 때 중복 타이머를 방지
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
 
     timeoutRef.current = window.setTimeout(() => {
       setDisplayTab(nextTab)
       setIsFadingOut(false)
-    }, TAB_FADE_DELAY_MS)
+    }, 180)
   }
 
   useEffect(() => {
