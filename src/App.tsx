@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
@@ -18,6 +18,7 @@ import SocialLoginCallbackPage from '@/pages/SocialLoginCallbackPage'
 import MyPage from '@/pages/MyPage'
 import MainLayout from '@/components/layout/MainLayout'
 import { RequireAuth } from '@/components/auth/RequireAuth'
+import { useAuthStore } from '@/store/authStore'
 import MyInfo from './components/MyInfo'
 import PasswordChange from './components/PasswordChange'
 
@@ -31,9 +32,34 @@ function ScrollToTop() {
   return null
 }
 
+function AuthBootstrap() {
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const restore = useAuthStore((s) => s.restore)
+  const attemptedRef = useRef(false)
+
+  useEffect(() => {
+    if (attemptedRef.current) return
+    if (accessToken) {
+      attemptedRef.current = true
+      return
+    }
+
+    // persist rehydration 직후 값을 사용하도록 아주 짧게 지연
+    const timer = window.setTimeout(() => {
+      attemptedRef.current = true
+      void restore()
+    }, 50)
+
+    return () => window.clearTimeout(timer)
+  }, [accessToken, restore])
+
+  return null
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <AuthBootstrap />
       <ScrollToTop />
       <Routes>
         {/* 헤더가 포함된 페이지 */}

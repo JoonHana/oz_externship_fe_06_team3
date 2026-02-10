@@ -23,72 +23,84 @@ type AuthState = {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
-      accessToken: null,
-      user: null,
+    (set, get) => {
+      let restorePromise: Promise<void> | null = null
 
-      setAuth: (payload) => {
-        set((state) => ({ ...state, ...payload }))
-      },
+      return {
+        accessToken: null,
+        user: null,
 
-      clearAuth: () => {
-        set({
-          accessToken: null,
-          user: null,
-        })
-      },
+        setAuth: (payload) => {
+          set((state) => ({ ...state, ...payload }))
+        },
 
-      login: async (payload) => {
-        try {
-          const response = await authApi.login(payload)
-          const accessToken = response?.access_token
-          if (!accessToken) {
-            throw new Error('LOGIN_FAILED')
-          }
-          const user = await authApi.me(accessToken)
-          get().setAuth({ accessToken, user })
-        } catch (error) {
-          get().clearAuth()
-          throw error
-        }
-      },
-
-      logout: async () => {
-        try {
-          await authApi.logout()
-        } catch {
-          // 로그아웃 API 실패 시에도 클라이언트 인증은 초기화
-        } finally {
-          get().clearAuth()
-        }
-      },
-
-      restore: async () => {
-        const accessToken = get().accessToken
-        const user = get().user
-
-        if (accessToken) {
-          try {
-            const userData = await authApi.me(accessToken)
-            get().setAuth({ accessToken, user: userData })
-            return
-          } catch {
-            // accessToken 만료 등: 쿠키로 refresh 시도 (로그인 유지)
-          }
-        }
-
-        try {
-          const newAccessToken = await callRefreshToken()
-          const userData = user ?? (await authApi.me(newAccessToken))
-          get().setAuth({
-            accessToken: newAccessToken,
-            user: userData,
+        clearAuth: () => {
+          set({
+            accessToken: null,
+            user: null,
           })
-        } catch {
-          get().clearAuth()
-        }
-      },
-    }),
+        },
+
+        login: async (payload) => {
+          try {
+            const response = await authApi.login(payload)
+            const accessToken = response?.access_token
+            if (!accessToken) {
+              throw new Error('LOGIN_FAILED')
+            }
+            const user = await authApi.me(accessToken)
+            get().setAuth({ accessToken, user })
+          } catch (error) {
+            get().clearAuth()
+            throw error
+          }
+        },
+
+        logout: async () => {
+          try {
+            await authApi.logout()
+          } catch {
+            // 로그아웃 API 실패 시에도 클라이언트 인증은 초기화
+          } finally {
+            get().clearAuth()
+          }
+        },
+
+        restore: async () => {
+          if (restorePromise) return restorePromise
+
+          restorePromise = (async () => {
+            const accessToken = get().accessToken
+            const user = get().user
+
+            if (accessToken) {
+              try {
+                const userData = await authApi.me(accessToken)
+                get().setAuth({ accessToken, user: userData })
+                return
+              } catch {
+                // accessToken 만료 등: 쿠키로 refresh 시도 (로그인 유지)
+              }
+            }
+
+            try {
+              const newAccessToken = await callRefreshToken()
+              const userData = user ?? (await authApi.me(newAccessToken))
+              get().setAuth({
+                accessToken: newAccessToken,
+                user: userData,
+              })
+            } catch {
+              get().clearAuth()
+            }
+          })().finally(() => {
+            restorePromise = null
+          })
+
+          return restorePromise
+        },
+      }
+    },
     {
       name: 'auth-storage',
       partialize: (s) => ({
