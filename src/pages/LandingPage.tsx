@@ -7,11 +7,7 @@ import { Button } from '@/components/common/Button'
 const TABS = [
   { id: 'exam', label: '쪽지시험', image: '/LandingPage_img/main_exam.png' },
   { id: 'qna', label: '질의응답', image: '/LandingPage_img/main_qna.png' },
-  {
-    id: 'community',
-    label: '커뮤니티',
-    image: '/LandingPage_img/main_community.png',
-  },
+  { id: 'community',label: '커뮤니티',image: '/LandingPage_img/main_community.png'},
 ] as const
 
 type TabType = (typeof TABS)[number]['id']
@@ -24,7 +20,7 @@ function LandingPage() {
 
   const timeoutRef = useRef<number | null>(null)
   const currentTab = useMemo(
-    () => TABS.find((t) => t.id === displayTab) ?? TABS[0],
+    () => TABS.find((tab) => tab.id === displayTab) ?? TABS[0],
     [displayTab]
   )
 
