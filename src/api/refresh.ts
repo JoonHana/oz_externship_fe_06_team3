@@ -5,14 +5,12 @@ export const REFRESH_REQUEST_CONFIG = { __isRefreshRequest: true } as const
 
 /**
  * accessToken 재발급.
- * - token 없음: 쿠키만 전송 (백엔드가 쿠키에서 읽는 경우).
- * - token 있음: body에 refresh_token 전송 (쿠키 없을 때 fallback).
+ * - 쿠키 기반 refresh_token으로 재발급 요청.
  */
-export async function refreshToken(token?: string): Promise<string> {
-  const body = token != null ? { refresh_token: token } : {}
+export async function refreshToken(): Promise<string> {
   const { data } = await apiClient.post<{ access_token?: string }>(
     '/api/v1/accounts/me/refresh/',
-    body,
+    {},
     REFRESH_REQUEST_CONFIG as object
   )
   const accessToken = data?.access_token
