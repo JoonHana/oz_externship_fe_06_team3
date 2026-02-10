@@ -102,6 +102,8 @@ export default function MyInfo() {
               <Skeleton className="h-[24px] w-[200px]" />
               <Skeleton className="h-[24px] w-[300px]" />
             </div>
+            <Skeleton className="mt-[40px]mb-[8px] h-[28px] w-[56px]" />
+              <hr className="border-mono-400 mt-[8px] mb-[40px]" />
             <div className="flex flex-col gap-[20px]">
               <Skeleton className="h-[24px] w-[120px]" />
               <Skeleton className="h-[24px] w-[200px]" />
