@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 import '@/App.css'
@@ -20,9 +21,20 @@ import { RequireAuth } from '@/components/auth/RequireAuth'
 import MyInfo from './components/MyInfo'
 import PasswordChange from './components/PasswordChange'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  return null
+}
+
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         {/* 헤더가 포함된 페이지 */}
         <Route element={<MainLayout />}>
