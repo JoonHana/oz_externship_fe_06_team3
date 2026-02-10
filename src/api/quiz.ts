@@ -139,10 +139,18 @@ export const submitExam = async (payload: ExamSubmissionPayload) => {
  * 쪽지시험 결과 조회
  * 사용 예:
  * const data = await fetchExamSubmissionResult(350)
+ * 백엔드가 { data: { id, questions, exam, ... } } 형태로 감싸서 보낼 수 있음.
  */
 export const fetchExamSubmissionResult = async (submissionId: number) => {
   const response = await apiClient.get<ExamSubmissionResultResponse>(
     `/api/v1/exams/submissions/${submissionId}`
   )
-  return mapExamSubmissionResultDetail(response.data)
+  const raw = response.data as unknown as Record<string, unknown>
+  const payload: ExamSubmissionResultResponse =
+    raw?.data != null && typeof raw.data === 'object'
+      ? (raw.data as ExamSubmissionResultResponse)
+      : raw?.result != null && typeof raw.result === 'object'
+        ? (raw.result as ExamSubmissionResultResponse)
+        : (response.data as ExamSubmissionResultResponse)
+  return mapExamSubmissionResultDetail(payload)
 }

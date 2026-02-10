@@ -15,11 +15,13 @@ export function useQuizTimer(
   submitAndEndByTimeRef: React.MutableRefObject<() => void>
 ) {
   const [remainingSeconds, setRemainingSeconds] = useState(INITIAL_REMAINING_SECONDS)
+  const [startedAt, setStartedAt] = useState<string>('')
   const hasInitializedTimerFromApi = useRef(false)
 
   useEffect(() => {
     if (!data || hasInitializedTimerFromApi.current || isEnded) return
     hasInitializedTimerFromApi.current = true
+    setStartedAt(new Date().toISOString())
     const durationMinutes = data.durationTime
     const totalSeconds = durationMinutes * SECONDS_PER_MINUTE
     const elapsedSeconds = (data.elapsedTime ?? 0) * SECONDS_PER_MINUTE
@@ -45,5 +47,5 @@ export function useQuizTimer(
   const seconds = (remainingSeconds % 60).toString().padStart(2, '0')
   const formattedRemaining = `${minutes} : ${seconds}`
 
-  return { remainingSeconds, setRemainingSeconds, formattedRemaining }
+  return { remainingSeconds, setRemainingSeconds, formattedRemaining, startedAt }
 }

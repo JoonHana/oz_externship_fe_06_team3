@@ -3,17 +3,19 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { LoginPayload, User } from '@/types/auth'
 import * as authApi from '@/api/auth'
+import { refreshToken as callRefreshToken } from '@/api/refresh'
 
 type AuthState = {
   accessToken: string | null
   refreshToken: string | null
   user: User | null
 
-  setAuth: (payload: {
+  /** 넘긴 필드만 반영 (생략한 필드는 기존 값 유지). 리프레시 후 accessToken·user만 갱신할 때 사용 */
+  setAuth: (payload: Partial<{
     accessToken: string | null
     refreshToken: string | null
-    user: User
-  }) => void
+    user: User | null
+  }>) => void
   clearAuth: () => void
 
   login: (payload: LoginPayload) => Promise<void>
@@ -28,12 +30,8 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       user: null,
 
-      setAuth: ({ accessToken, refreshToken, user }) => {
-        set({
-          accessToken,
-          refreshToken,
-          user,
-        })
+      setAuth: (payload) => {
+        set((state) => ({ ...state, ...payload }))
       },
 
       clearAuth: () => {
@@ -73,11 +71,32 @@ export const useAuthStore = create<AuthState>()(
       restore: async () => {
         const accessToken = get().accessToken
         const refreshToken = get().refreshToken
-        if (!accessToken) return
+        const user = get().user
+
+        if (accessToken) {
+          try {
+            const userData = await authApi.me(accessToken)
+            get().setAuth({ accessToken, refreshToken, user: userData })
+            return
+          } catch {
+            // accessToken 만료 등: 쿠키로 refresh 시도 (로그인 유지)
+          }
+        }
 
         try {
-          const user = await authApi.me(accessToken)
-          get().setAuth({ accessToken, refreshToken, user })
+          let newAccessToken: string
+          try {
+            newAccessToken = await callRefreshToken()
+          } catch {
+            if (!refreshToken) throw new Error('Refresh failed')
+            newAccessToken = await callRefreshToken(refreshToken)
+          }
+          const userData = user ?? (await authApi.me(newAccessToken))
+          get().setAuth({
+            accessToken: newAccessToken,
+            refreshToken,
+            user: userData,
+          })
         } catch {
           get().clearAuth()
         }

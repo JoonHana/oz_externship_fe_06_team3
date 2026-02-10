@@ -9,22 +9,19 @@ import { ResultQuestionItem } from '@/components/quiz'
 
 // 분당 밀리초 수
 const MS_PER_MINUTE = 60_000
-// 분당 초 수
-const SECONDS_PER_MINUTE = 60
 
 /**
  * 응시시간(분) 계산
- * - API의 elapsed_time(초)이 0 이상이면 우선 사용
- * - 없으면 started_at ~ submitted_at 차이로 계산 (1분 미만이면 0)
- * - fallback은 0 미만이면 0으로 처리
+ * - GET /api/v1/exams/submissions/:id 응답의 elapsed_time(분)을 그대로 사용
+ * - elapsed_time이 없거나 음수일 때만 started_at ~ submitted_at 차이로 계산
  */
 function getElapsedMinutes(
   startedAt: string | undefined,
   submittedAt: string | undefined,
-  elapsedTimeSeconds: number
+  elapsedTimeMinutes: number
 ): number {
-  if (elapsedTimeSeconds >= 0) {
-    return Math.max(0, Math.floor(elapsedTimeSeconds / SECONDS_PER_MINUTE))
+  if (elapsedTimeMinutes >= 0) {
+    return Math.max(0, Math.floor(elapsedTimeMinutes))
   }
   if (!startedAt || !submittedAt) return 0
   const started = new Date(startedAt).getTime()
@@ -75,6 +72,7 @@ function QuizResultPage() {
 
   const questionCount = data?.questions.length ?? 0
   const cheatingCount = data?.cheatingCount ?? 0
+  // 헤더 응시시간: GET /api/v1/exams/submissions/:id 응답의 elapsed_time(분) 그대로 사용
   const elapsedMinutes = getElapsedMinutes(
     data?.startedAt,
     data?.submittedAt,
