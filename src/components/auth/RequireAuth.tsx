@@ -19,15 +19,20 @@ export function RequireAuth() {
     if (accessToken) return
     let cancelled = false
     setRestoring(true)
-    restore()
-      .finally(() => {
-        if (!cancelled) {
-          setRestoring(false)
-          setRestoreAttempted(true)
-        }
-      })
+    // persist 복원이 끝날 시간을 주어, rehydration 전에 restore 실패 → clearAuth 되는 것 방지
+    const timer = window.setTimeout(() => {
+      if (cancelled) return
+      restore()
+        .finally(() => {
+          if (!cancelled) {
+            setRestoring(false)
+            setRestoreAttempted(true)
+          }
+        })
+    }, 50)
     return () => {
       cancelled = true
+      window.clearTimeout(timer)
     }
   }, [accessToken, restore])
 
