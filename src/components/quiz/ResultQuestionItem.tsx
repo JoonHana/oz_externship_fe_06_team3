@@ -20,8 +20,28 @@ const RESULT_API_TYPE_TO_INTERNAL: Record<string, string> = {
   ORDERING: 'ordering',
 }
 
+/** API가 snake_case(single_choice) 또는 대문자(SINGLE_CHOICE)로 올 수 있음 → switch용 통일 타입 */
+const SNAKE_TO_SWITCH_TYPE: Record<string, string> = {
+  single_choice: 'SINGLE_CHOICE',
+  multiple_choice: 'MULTI_SELECT',
+  ox: 'OX',
+  short_answer: 'SHORT_ANSWER',
+  fill_blank: 'FILL_IN_BLANK',
+  ordering: 'ORDERING',
+  SINGLE_CHOICE: 'SINGLE_CHOICE',
+  MULTI_SELECT: 'MULTI_SELECT',
+  OX: 'OX',
+  SHORT_ANSWER: 'SHORT_ANSWER',
+  FILL_IN_BLANK: 'FILL_IN_BLANK',
+  ORDERING: 'ORDERING',
+}
+
 function toInternalType(apiType: string): QuizQuestion['type'] {
   return (RESULT_API_TYPE_TO_INTERNAL[apiType] ?? apiType) as QuizQuestion['type']
+}
+
+function normalizeResultType(type: string): string {
+  return SNAKE_TO_SWITCH_TYPE[type] ?? type
 }
 
 interface ResultQuestionItemProps {
@@ -53,8 +73,9 @@ export default function ResultQuestionItem({ question, index }: ResultQuestionIt
   const mapped = mapResultQuestionToQuizQuestion(question, index)
   const submitted = question.submittedAnswer
   const noop = () => {}
+  const normalizedType = normalizeResultType(question.type ?? '')
 
-  switch (question.type) {
+  switch (normalizedType) {
     case 'SINGLE_CHOICE':
       return (
         <SingleChoice
