@@ -10,7 +10,6 @@ import type { WithdrawalReasonFormData } from '@/schemas/modalSchemas'
 export function ViewMyInfo() {
   const {
     accessToken,
-    refreshToken,
     user: currentUser,
     setAuth,
   } = useAuthStore()
@@ -33,7 +32,7 @@ export function ViewMyInfo() {
         const res = await import('@/api/auth')
         if (!accessToken) throw new Error('토큰 없음')
         const info = await res.me(accessToken)
-        setAuth({ accessToken, refreshToken, user: info })
+        setAuth({ accessToken, user: info })
       } catch {
         setProfileError('내 정보 조회에 실패했습니다.')
       } finally {
@@ -43,7 +42,7 @@ export function ViewMyInfo() {
     if (!currentUser) {
       fetchAndUpdateUser()
     }
-  }, [accessToken, currentUser, refreshToken, setAuth])
+  }, [accessToken, currentUser, setAuth])
 
   // 수강 과정 별도 로딩/에러 관리 (zustand)
   useEffect(() => {

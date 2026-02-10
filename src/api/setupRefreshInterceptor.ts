@@ -5,11 +5,10 @@ import type { User } from '@/types/auth'
 const LOGIN_PATH = '/login'
 
 type AuthState = {
-  refreshToken: string | null
+  accessToken: string | null
   user: User | null
   setAuth: (payload: Partial<{
     accessToken: string | null
-    refreshToken: string | null
     user: User | null
   }>) => void
   clearAuth: () => void
@@ -24,7 +23,7 @@ function clearAuthAndRedirectToLogin(getAuthState: () => AuthState) {
 /** 재시도 요청 플래그: 재시도된 요청이 또 401이면 refresh 재시도 무한 루프 방지 */
 const RETRY_REQUEST_FLAG = '__isRetryRequest' as const
 
-/** 401 시 리프레시 토큰으로 accessToken 갱신 후 실패한 요청 재시도 */
+/** 401 시 refresh로 accessToken 갱신 후 실패한 요청 재시도 */
 export function setupRefreshInterceptor(
   client: AxiosInstance,
   getAuthState: () => AuthState
@@ -53,24 +52,17 @@ export function setupRefreshInterceptor(
         return Promise.reject(error)
       }
 
-      const { refreshToken, user, setAuth } = state
-      if (!user) {
-        clearAuthAndRedirectToLogin(getAuthState)
+      // 인증 컨텍스트가 없으면(예: 로그인 실패 401) refresh 시도하지 않음
+      if (!state.accessToken) {
         return Promise.reject(error)
       }
+      const { setAuth } = state
 
       try {
         if (!refreshPromise) {
-          refreshPromise = (async () => {
-            try {
-              return await callRefreshToken()
-            } catch {
-              if (refreshToken) return await callRefreshToken(refreshToken)
-              throw new Error('Refresh failed')
-            }
-          })()
+          refreshPromise = callRefreshToken()
             .then((newToken) => {
-              setAuth({ accessToken: newToken, user })
+              setAuth({ accessToken: newToken })
               return newToken
             })
             .finally(() => {

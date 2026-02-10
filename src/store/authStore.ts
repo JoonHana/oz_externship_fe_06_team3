@@ -7,13 +7,11 @@ import { refreshToken as callRefreshToken } from '@/api/refresh'
 
 type AuthState = {
   accessToken: string | null
-  refreshToken: string | null
   user: User | null
 
   /** 넘긴 필드만 반영 (생략한 필드는 기존 값 유지). 리프레시 후 accessToken·user만 갱신할 때 사용 */
   setAuth: (payload: Partial<{
     accessToken: string | null
-    refreshToken: string | null
     user: User | null
   }>) => void
   clearAuth: () => void
@@ -27,7 +25,6 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       accessToken: null,
-      refreshToken: null,
       user: null,
 
       setAuth: (payload) => {
@@ -37,7 +34,6 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () => {
         set({
           accessToken: null,
-          refreshToken: null,
           user: null,
         })
       },
@@ -46,12 +42,11 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.login(payload)
           const accessToken = response?.access_token
-          const refreshToken = response?.refresh_token ?? null
           if (!accessToken) {
             throw new Error('LOGIN_FAILED')
           }
           const user = await authApi.me(accessToken)
-          get().setAuth({ accessToken, refreshToken, user })
+          get().setAuth({ accessToken, user })
         } catch (error) {
           get().clearAuth()
           throw error
@@ -70,13 +65,12 @@ export const useAuthStore = create<AuthState>()(
 
       restore: async () => {
         const accessToken = get().accessToken
-        const refreshToken = get().refreshToken
         const user = get().user
 
         if (accessToken) {
           try {
             const userData = await authApi.me(accessToken)
-            get().setAuth({ accessToken, refreshToken, user: userData })
+            get().setAuth({ accessToken, user: userData })
             return
           } catch {
             // accessToken 만료 등: 쿠키로 refresh 시도 (로그인 유지)
@@ -84,17 +78,10 @@ export const useAuthStore = create<AuthState>()(
         }
 
         try {
-          let newAccessToken: string
-          try {
-            newAccessToken = await callRefreshToken()
-          } catch {
-            if (!refreshToken) throw new Error('Refresh failed')
-            newAccessToken = await callRefreshToken(refreshToken)
-          }
+          const newAccessToken = await callRefreshToken()
           const userData = user ?? (await authApi.me(newAccessToken))
           get().setAuth({
             accessToken: newAccessToken,
-            refreshToken,
             user: userData,
           })
         } catch {
@@ -106,7 +93,6 @@ export const useAuthStore = create<AuthState>()(
       name: 'auth-storage',
       partialize: (s) => ({
         accessToken: s.accessToken,
-        refreshToken: s.refreshToken,
         user: s.user,
       }),
     }
