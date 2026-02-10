@@ -24,17 +24,17 @@ function LandingPage() {
     [displayTab]
   )
 
-  const handleTabClick = (next: TabType) => {
-    if (next === activeTab) return
+  const handleTabClick = (nextTab: TabType) => {
+    if (nextTab === activeTab) return
 
-    setActiveTab(next)
+    setActiveTab(nextTab)
     setIsFadingOut(true)
 
     // 새 탭을 또 눌렀을 때 이전에 걸어둔 타이머가 아직 살아있으면 바로 취소
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
 
     timeoutRef.current = window.setTimeout(() => {
-      setDisplayTab(next)
+      setDisplayTab(nextTab)
       setIsFadingOut(false)
     }, TAB_FADE_DELAY_MS)
   }
