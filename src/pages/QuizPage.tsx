@@ -69,7 +69,7 @@ function QuizPage() {
   const { cheatingCount, handleCheatingClose } = useCheatingDetection(isEnded, setOpenModal)
 
   const submitAndEndByTimeRef = useRef<() => void>(() => {})
-  const { setRemainingSeconds, formattedRemaining } = useQuizTimer(
+  const { setRemainingSeconds, formattedRemaining, startedAt } = useQuizTimer(
     data,
     isEnded,
     submitAndEndByTimeRef
@@ -90,6 +90,7 @@ function QuizPage() {
     data,
     answers,
     cheatingCount,
+    quizStartedAt: startedAt,
     setOpenModal,
     setIsEnded,
     setEndReason,

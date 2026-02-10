@@ -6,7 +6,6 @@ export type LoginPayload = {
 
 export type LoginResult = {
   access_token: string
-  refresh_token: string
 }
 
 export type User = {

@@ -13,13 +13,13 @@ export default function MyInfo() {
   const [isEdit, setIsEdit] = useState(false)
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const { user, setAuth, accessToken, refreshToken } = useAuthStore()
+  const { user, setAuth, accessToken } = useAuthStore()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [userData] = await Promise.all([me(), getMyCourses()])
-        setAuth({ accessToken, refreshToken, user: userData })
+        setAuth({ accessToken, user: userData })
       } catch (e) {
         console.error('내 정보 조회 실패', e)
       } finally {
@@ -67,7 +67,6 @@ export default function MyInfo() {
       }
       setAuth({
         accessToken,
-        refreshToken,
         user: { ...updated, profile_img_url: newProfileImgUrl },
       })
       setIsEdit(false)
