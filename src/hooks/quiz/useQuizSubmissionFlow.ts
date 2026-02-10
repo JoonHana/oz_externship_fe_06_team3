@@ -13,6 +13,8 @@ interface UseQuizSubmissionFlowParams {
   data: ExamDeploymentDetailResult | undefined
   answers: Record<number, string | string[] | null>
   cheatingCount: number
+  /** 응시 페이지 진입 후 타이머가 처음 시작된 시각 (ISO 문자열). 제출 시 started_at으로 전송 */
+  quizStartedAt: string
   setOpenModal: (modal: QuizOpenModal | null) => void
   setIsEnded: (ended: boolean) => void
   setEndReason: (reason: EndReason) => void
@@ -27,6 +29,7 @@ export function useQuizSubmissionFlow({
   data,
   answers,
   cheatingCount,
+  quizStartedAt,
   setOpenModal,
   setIsEnded,
   setEndReason,
@@ -88,7 +91,7 @@ export function useQuizSubmissionFlow({
     })
     return {
       deployment_id: deploymentIdNumber,
-      started_at: new Date().toISOString(),
+      started_at: quizStartedAt || new Date().toISOString(),
       cheating_count: cheatingCount,
       answers: answerList,
     }
