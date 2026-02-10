@@ -5,6 +5,7 @@ import type { User } from '@/types/auth'
 const LOGIN_PATH = '/login'
 
 type AuthState = {
+  refreshToken: string | null
   user: User | null
   setAuth: (payload: Partial<{
     accessToken: string | null
@@ -52,7 +53,7 @@ export function setupRefreshInterceptor(
         return Promise.reject(error)
       }
 
-      const { user, setAuth } = state
+      const { refreshToken, user, setAuth } = state
       if (!user) {
         clearAuthAndRedirectToLogin(getAuthState)
         return Promise.reject(error)
@@ -60,7 +61,14 @@ export function setupRefreshInterceptor(
 
       try {
         if (!refreshPromise) {
-          refreshPromise = callRefreshToken()
+          refreshPromise = (async () => {
+            try {
+              return await callRefreshToken()
+            } catch {
+              if (refreshToken) return await callRefreshToken(refreshToken)
+              throw new Error('Refresh failed')
+            }
+          })()
             .then((newToken) => {
               setAuth({ accessToken: newToken, user })
               return newToken
