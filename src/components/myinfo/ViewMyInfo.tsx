@@ -150,7 +150,7 @@ export function ViewMyInfo() {
               >
                 <div className="flex flex-col justify-center">
                   <p className="text-mono-400 placeholder-a mb-[10px]">
-                    {item.course.tag} • {item.cohort.status}
+                    {item.course.tag} • 오즈코딩
                   </p>
                   <p className="text-mono-900">
                     {item.course.name} &lt; {item.cohort.number}기 &gt;
