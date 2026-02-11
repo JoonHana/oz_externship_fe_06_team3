@@ -257,13 +257,13 @@ export default function Header() {
             <div className="mx-auto max-w-[1200px] px-5 py-4">
               <nav className="flex flex-col gap-1 font-[Pretendard] text-[16px] text-gray-700">
                 <a
-                  href="#"
+                  href="https://community.ozcodingschool.site/"
                   className="hover:bg-primary-100 rounded-[8px] px-2 py-2 transition-colors duration-200 hover:text-black"
                 >
                   커뮤니티
                 </a>
                 <a
-                  href="#"
+                  href="https://qna.ozcodingschool.site/"
                   className="hover:bg-primary-100 rounded-[8px] px-2 py-2 transition-colors duration-200 hover:text-black"
                 >
                   질의응답
