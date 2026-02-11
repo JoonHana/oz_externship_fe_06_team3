@@ -38,6 +38,7 @@ function ScrollToTop() {
 }
 
 function AuthBootstrap() {
+  const { pathname } = useLocation()
   const accessToken = useAuthStore((s) => s.accessToken)
   const restore = useAuthStore((s) => s.restore)
   const clearAuth = useAuthStore((s) => s.clearAuth)
@@ -45,6 +46,10 @@ function AuthBootstrap() {
 
   useEffect(() => {
     if (attemptedRef.current) return
+    const isSocialCallbackPath = pathname.startsWith('/auth/callback')
+
+    // 소셜 로그인 콜백에서는 서버가 심어둔 access_token 쿠키를 먼저 읽어야 한다.
+    if (isSocialCallbackPath) return
 
     if (isManualLogoutMarked()) {
       attemptedRef.current = true
@@ -66,7 +71,7 @@ function AuthBootstrap() {
     }, 50)
 
     return () => window.clearTimeout(timer)
-  }, [accessToken, clearAuth, restore])
+  }, [accessToken, clearAuth, pathname, restore])
 
   return null
 }
