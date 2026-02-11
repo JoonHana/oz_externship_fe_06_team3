@@ -1,5 +1,11 @@
-import { useEffect, useRef } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useRef } from 'react'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+  useNavigationType,
+} from 'react-router-dom'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 import '@/App.css'
@@ -20,7 +26,6 @@ import MainLayout from '@/components/layout/MainLayout'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 import { useAuthStore } from '@/store/authStore'
 import {
-  clearClientAuthCookies,
   clearPersistedAuthState,
   isManualLogoutMarked,
 } from '@/utils/authSessionMarker'
@@ -29,10 +34,21 @@ import PasswordChange from './components/PasswordChange'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
+  const navigationType = useNavigationType()
+  const isFirstRenderRef = useRef(true)
 
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
+  useLayoutEffect(() => {
+    // 초기 렌더(새로고침 포함)에서는 브라우저의 기존 스크롤 복원을 유지
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false
+      return
+    }
+
+    // 뒤로가기/앞으로가기(POP)에서는 사용자의 스크롤 컨텍스트를 보존
+    if (navigationType === 'POP') return
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [navigationType, pathname])
 
   return null
 }
@@ -53,7 +69,6 @@ function AuthBootstrap() {
 
     if (isManualLogoutMarked()) {
       attemptedRef.current = true
-      clearClientAuthCookies()
       clearPersistedAuthState()
       clearAuth()
       return
