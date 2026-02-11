@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware'
 import type { LoginPayload, User } from '@/types/auth'
 import * as authApi from '@/api/auth'
 import { refreshToken as callRefreshToken } from '@/api/refresh'
+import { normalizeProfileImageUrl } from '@/utils/profileImageUrl'
 import {
   clearClientAuthCookies,
   clearPersistedAuthState,
@@ -46,7 +47,21 @@ export const useAuthStore = create<AuthState>()(
           if (payload.accessToken && isManualLogoutMarked()) {
             return
           }
-          set((state) => ({ ...state, ...payload }))
+          const normalizedPayload: Partial<{
+            accessToken: string | null
+            user: User | null
+          }> = { ...payload }
+
+          if ('user' in payload && payload.user) {
+            normalizedPayload.user = {
+              ...payload.user,
+              profile_img_url: normalizeProfileImageUrl(
+                payload.user.profile_img_url
+              ),
+            }
+          }
+
+          set((state) => ({ ...state, ...normalizedPayload }))
         },
 
         clearAuth: () => {
