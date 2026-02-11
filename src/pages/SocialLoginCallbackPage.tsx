@@ -21,6 +21,11 @@ const getCookie = (name: string): string | null => {
   return decodeURIComponent(raw)
 }
 
+const clearCookie = (name: string) => {
+  document.cookie = `${name}=; Max-Age=0; Path=/`
+  document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/`
+}
+
 const SOCIAL_ERROR_MESSAGE: Record<string, string> = {
   KAKAO_ERROR_001: '토큰 또는 사용자 정보를 불러오지 못했습니다.',
   KAKAO_ERROR_002: '카카오 로그인 중 알 수 없는 오류가 발생했습니다.',
@@ -64,8 +69,10 @@ export default function SocialLoginCallbackPage() {
         const user = await authApi.me(token)
         clearManualLogoutMark()
         setAuth({ accessToken: token, user })
+        clearCookie('access_token')
         navigate('/', { replace: true })
       } catch {
+        clearCookie('access_token')
         setErrorMessage(
           '로그인 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'
         )
