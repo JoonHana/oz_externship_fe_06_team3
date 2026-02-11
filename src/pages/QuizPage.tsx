@@ -225,7 +225,7 @@ function QuizPage() {
 
       <main className="flex flex-col items-center px-10 py-6">
         <QuizWarningBox />
-        <div className="mb-6 flex items-center gap-3">
+        {/* <div className="mb-6 flex items-center gap-3">
           <Button
             variant="secondary"
             size="sm"
@@ -243,7 +243,7 @@ function QuizPage() {
           >
             상태 종료 테스트
           </Button>
-        </div>
+        </div> */}
 
         <div className="min-h-[500px] min-w-[1200px]">
           {data?.questions && data.questions.length > 0 ? (
