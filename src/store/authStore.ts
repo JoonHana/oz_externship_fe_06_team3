@@ -6,7 +6,6 @@ import * as authApi from '@/api/auth'
 import { refreshToken as callRefreshToken } from '@/api/refresh'
 import { normalizeProfileImageUrl } from '@/utils/profileImageUrl'
 import {
-  clearClientAuthCookies,
   clearPersistedAuthState,
   clearManualLogoutMark,
   isManualLogoutMarked,
@@ -32,10 +31,6 @@ type AuthState = {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
-      if (isManualLogoutMarked()) {
-        clearPersistedAuthState()
-      }
-
       let restorePromise: Promise<void> | null = null
 
       return {
@@ -97,7 +92,6 @@ export const useAuthStore = create<AuthState>()(
           } catch {
             // 로그아웃 API 실패 시에도 클라이언트 인증은 초기화
           } finally {
-            clearClientAuthCookies()
             clearPersistedAuthState()
           }
         },
@@ -107,7 +101,6 @@ export const useAuthStore = create<AuthState>()(
 
           restorePromise = (async () => {
             if (isManualLogoutMarked()) {
-              clearClientAuthCookies()
               clearPersistedAuthState()
               get().clearAuth()
               return

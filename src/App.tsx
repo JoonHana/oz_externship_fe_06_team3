@@ -20,7 +20,6 @@ import MainLayout from '@/components/layout/MainLayout'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 import { useAuthStore } from '@/store/authStore'
 import {
-  clearClientAuthCookies,
   clearPersistedAuthState,
   isManualLogoutMarked,
 } from '@/utils/authSessionMarker'
@@ -53,7 +52,6 @@ function AuthBootstrap() {
 
     if (isManualLogoutMarked()) {
       attemptedRef.current = true
-      clearClientAuthCookies()
       clearPersistedAuthState()
       clearAuth()
       return
