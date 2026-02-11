@@ -6,6 +6,7 @@ import { Button } from '@/components/common/Button'
 import Loading from '@/components/common/Loading'
 import * as authApi from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
+import { clearManualLogoutMark } from '@/utils/authSessionMarker'
 
 // access_token 쿠키 조회
 const getCookie = (name: string): string | null => {
@@ -61,6 +62,7 @@ export default function SocialLoginCallbackPage() {
     const restoreSession = async () => {
       try {
         const user = await authApi.me(token)
+        clearManualLogoutMark()
         setAuth({ accessToken: token, user })
         navigate('/', { replace: true })
       } catch {
