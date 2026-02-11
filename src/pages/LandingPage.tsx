@@ -3,11 +3,21 @@ import { Link } from 'react-router-dom'
 import clsx from 'clsx'
 
 import { Button } from '@/components/common/Button'
+import Skeleton from '@/components/common/Skeleton'
+
+const TAB_SWITCH_DELAY_MS = 180
+const PREVIEW_IMAGE_SIZE = { width: 1208, height: 603 } as const
+const BANNER_IMAGE_SIZE = { width: 1200, height: 277 } as const
+const SKELETON_TONE_CLASS = 'bg-[#EEF1F4]'
 
 const TABS = [
   { id: 'exam', label: '쪽지시험', image: '/LandingPage_img/main_exam.png' },
   { id: 'qna', label: '질의응답', image: '/LandingPage_img/main_qna.png' },
-  { id: 'community',label: '커뮤니티',image: '/LandingPage_img/main_community.png'},
+  {
+    id: 'community',
+    label: '커뮤니티',
+    image: '/LandingPage_img/main_community.png',
+  },
 ] as const
 
 type TabType = (typeof TABS)[number]['id']
@@ -16,6 +26,8 @@ function LandingPage() {
   const [activeTab, setActiveTab] = useState<TabType>('exam')
   const [displayTab, setDisplayTab] = useState<TabType>('exam')
   const [isFadingOut, setIsFadingOut] = useState(false)
+  const [isPreviewLoaded, setIsPreviewLoaded] = useState(false)
+  const [isBannerLoaded, setIsBannerLoaded] = useState(false)
 
   const timeoutRef = useRef<number | null>(null)
   const currentTab = useMemo(
@@ -23,19 +35,24 @@ function LandingPage() {
     [displayTab]
   )
 
+  const handlePreviewLoaded = () => {
+    setIsPreviewLoaded(true)
+  }
+
   const handleTabClick = (nextTab: TabType) => {
     if (nextTab === activeTab) return
 
     setActiveTab(nextTab)
     setIsFadingOut(true)
 
-    // 180ms 내에 이미지 변경 연속 눌렀을 때 중복 타이머를 방지
+    // 탭 전환 애니메이션 지연 동안 중복 타이머를 방지
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
 
     timeoutRef.current = window.setTimeout(() => {
       setDisplayTab(nextTab)
+      setIsPreviewLoaded(false)
       setIsFadingOut(false)
-    }, 180)
+    }, TAB_SWITCH_DELAY_MS)
   }
 
   useEffect(() => {
@@ -92,20 +109,34 @@ function LandingPage() {
               </div>
             </div>
 
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex w-full items-center justify-center">
               <div
                 className={clsx(
-                  'w-full transition-all duration-300 ease-out',
+                  'relative w-full overflow-hidden rounded-2xl transition-all duration-300 ease-out',
                   isFadingOut
                     ? 'translate-y-2 opacity-0'
                     : 'translate-y-0 opacity-100'
                 )}
               >
+                <Skeleton
+                  className={clsx(
+                    `${SKELETON_TONE_CLASS} pointer-events-none absolute inset-0 z-0 h-full w-full rounded-2xl transition-opacity duration-300`,
+                    isPreviewLoaded ? 'opacity-0' : 'opacity-100'
+                  )}
+                />
                 <img
                   src={currentTab.image}
                   alt={`${currentTab.label} 화면 미리보기`}
-                  className="h-auto max-h-[45dvh] w-full object-contain sm:max-h-[52dvh] lg:max-h-[58dvh]"
+                  width={PREVIEW_IMAGE_SIZE.width}
+                  height={PREVIEW_IMAGE_SIZE.height}
+                  className={clsx(
+                    'relative z-10 h-auto max-h-[45dvh] w-full object-contain sm:max-h-[52dvh] lg:max-h-[58dvh]',
+                    'transition-opacity duration-300',
+                    isPreviewLoaded ? 'opacity-100' : 'opacity-0'
+                  )}
                   draggable={false}
+                  onLoad={handlePreviewLoaded}
+                  onError={handlePreviewLoaded}
                 />
               </div>
             </div>
@@ -116,12 +147,25 @@ function LandingPage() {
           <div className="mx-auto w-full max-w-[1200px] px-5">
             <Link
               to="/qna"
-              className="block overflow-hidden rounded-2xl shadow-sm transition-shadow hover:shadow-md"
+              className="relative block overflow-hidden rounded-2xl shadow-sm transition-shadow hover:shadow-md"
             >
+              <Skeleton
+                className={clsx(
+                  `${SKELETON_TONE_CLASS} pointer-events-none absolute inset-0 z-0 h-full w-full rounded-2xl transition-opacity duration-300`,
+                  isBannerLoaded ? 'opacity-0' : 'opacity-100'
+                )}
+              />
               <img
                 src="/LandingPage_img/main_banner.png"
                 alt="Q&A 페이지 바로가기"
-                className="h-auto w-full"
+                width={BANNER_IMAGE_SIZE.width}
+                height={BANNER_IMAGE_SIZE.height}
+                className={clsx(
+                  'relative z-10 h-auto w-full transition-opacity duration-300',
+                  isBannerLoaded ? 'opacity-100' : 'opacity-0'
+                )}
+                onLoad={() => setIsBannerLoaded(true)}
+                onError={() => setIsBannerLoaded(true)}
               />
             </Link>
           </div>
