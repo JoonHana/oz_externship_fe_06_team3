@@ -57,6 +57,10 @@ export default function MyInfo() {
       // 휴대폰 인증이 완료된 경우 change-phone API 호출
       if (phoneVerifyToken) {
         await changePhone(phoneVerifyToken)
+        // 휴대폰 변경 후, 닉네임도 함께 변경이 요청된 상태면 적용
+        if (nicknameStatus === 'success') {
+          await updateMyInfo({ nickname })
+        }
         // 변경 후 내 정보 재조회
         updated = await me(accessToken)
       } else {
