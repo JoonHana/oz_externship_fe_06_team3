@@ -4,6 +4,13 @@ import { persist } from 'zustand/middleware'
 import type { LoginPayload, User } from '@/types/auth'
 import * as authApi from '@/api/auth'
 import { refreshToken as callRefreshToken } from '@/api/refresh'
+import {
+  clearClientAuthCookies,
+  clearPersistedAuthState,
+  clearManualLogoutMark,
+  isManualLogoutMarked,
+  markManualLogout,
+} from '@/utils/authSessionMarker'
 
 type AuthState = {
   accessToken: string | null
@@ -24,6 +31,10 @@ type AuthState = {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
+      if (isManualLogoutMarked()) {
+        clearPersistedAuthState()
+      }
+
       let restorePromise: Promise<void> | null = null
 
       return {
@@ -31,6 +42,10 @@ export const useAuthStore = create<AuthState>()(
         user: null,
 
         setAuth: (payload) => {
+          // 명시적 로그아웃 이후에는 의도치 않은 비동기 setAuth(지연 응답)로 재로그인되는 것을 차단
+          if (payload.accessToken && isManualLogoutMarked()) {
+            return
+          }
           set((state) => ({ ...state, ...payload }))
         },
 
@@ -49,6 +64,7 @@ export const useAuthStore = create<AuthState>()(
               throw new Error('LOGIN_FAILED')
             }
             const user = await authApi.me(accessToken)
+            clearManualLogoutMark()
             get().setAuth({ accessToken, user })
           } catch (error) {
             get().clearAuth()
@@ -57,12 +73,17 @@ export const useAuthStore = create<AuthState>()(
         },
 
         logout: async () => {
+          const currentAccessToken = get().accessToken
+          markManualLogout()
+          get().clearAuth()
+
           try {
-            await authApi.logout()
+            await authApi.logout(currentAccessToken)
           } catch {
             // 로그아웃 API 실패 시에도 클라이언트 인증은 초기화
           } finally {
-            get().clearAuth()
+            clearClientAuthCookies()
+            clearPersistedAuthState()
           }
         },
 
@@ -70,6 +91,13 @@ export const useAuthStore = create<AuthState>()(
           if (restorePromise) return restorePromise
 
           restorePromise = (async () => {
+            if (isManualLogoutMarked()) {
+              clearClientAuthCookies()
+              clearPersistedAuthState()
+              get().clearAuth()
+              return
+            }
+
             const accessToken = get().accessToken
             const user = get().user
 

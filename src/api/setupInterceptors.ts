@@ -1,4 +1,5 @@
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+import { isManualLogoutMarked } from '@/utils/authSessionMarker'
 
 export function setupAuthInterceptor(
   client: AxiosInstance,
@@ -15,6 +16,8 @@ export function setupAuthInterceptor(
         ).__isRefreshRequest
       )
       if (isRefreshRequest) return config
+
+      if (isManualLogoutMarked()) return config
 
       const token = getAccessToken()
       if (token) {

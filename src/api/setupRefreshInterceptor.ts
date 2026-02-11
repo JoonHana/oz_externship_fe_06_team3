@@ -1,6 +1,7 @@
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 import { refreshToken as callRefreshToken } from '@/api/refresh'
 import type { User } from '@/types/auth'
+import { isManualLogoutMarked } from '@/utils/authSessionMarker'
 
 const LOGIN_PATH = '/login'
 
@@ -53,7 +54,7 @@ export function setupRefreshInterceptor(
       }
 
       // 인증 컨텍스트가 없으면(예: 로그인 실패 401) refresh 시도하지 않음
-      if (!state.accessToken) {
+      if (!state.accessToken || isManualLogoutMarked()) {
         return Promise.reject(error)
       }
       const { setAuth } = state

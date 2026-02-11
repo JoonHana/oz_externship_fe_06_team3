@@ -7,15 +7,10 @@ import { Button } from '@/components/common/Button'
 const TABS = [
   { id: 'exam', label: '쪽지시험', image: '/LandingPage_img/main_exam.png' },
   { id: 'qna', label: '질의응답', image: '/LandingPage_img/main_qna.png' },
-  {
-    id: 'community',
-    label: '커뮤니티',
-    image: '/LandingPage_img/main_community.png',
-  },
+  { id: 'community',label: '커뮤니티',image: '/LandingPage_img/main_community.png'},
 ] as const
 
 type TabType = (typeof TABS)[number]['id']
-const TAB_FADE_DELAY_MS = 180
 
 function LandingPage() {
   const [activeTab, setActiveTab] = useState<TabType>('exam')
@@ -24,23 +19,23 @@ function LandingPage() {
 
   const timeoutRef = useRef<number | null>(null)
   const currentTab = useMemo(
-    () => TABS.find((t) => t.id === displayTab) ?? TABS[0],
+    () => TABS.find((tab) => tab.id === displayTab) ?? TABS[0],
     [displayTab]
   )
 
-  const handleTabClick = (next: TabType) => {
-    if (next === activeTab) return
+  const handleTabClick = (nextTab: TabType) => {
+    if (nextTab === activeTab) return
 
-    setActiveTab(next)
+    setActiveTab(nextTab)
     setIsFadingOut(true)
 
-    // 새 탭을 또 눌렀을 때 이전에 걸어둔 타이머가 아직 살아있으면 바로 취소
+    // 180ms 내에 이미지 변경 연속 눌렀을 때 중복 타이머를 방지
     if (timeoutRef.current) window.clearTimeout(timeoutRef.current)
 
     timeoutRef.current = window.setTimeout(() => {
-      setDisplayTab(next)
+      setDisplayTab(nextTab)
       setIsFadingOut(false)
-    }, TAB_FADE_DELAY_MS)
+    }, 180)
   }
 
   useEffect(() => {
