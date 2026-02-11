@@ -19,6 +19,11 @@ import MyPage from '@/pages/MyPage'
 import MainLayout from '@/components/layout/MainLayout'
 import { RequireAuth } from '@/components/auth/RequireAuth'
 import { useAuthStore } from '@/store/authStore'
+import {
+  clearClientAuthCookies,
+  clearPersistedAuthState,
+  isManualLogoutMarked,
+} from '@/utils/authSessionMarker'
 import MyInfo from './components/MyInfo'
 import PasswordChange from './components/PasswordChange'
 
@@ -35,10 +40,20 @@ function ScrollToTop() {
 function AuthBootstrap() {
   const accessToken = useAuthStore((s) => s.accessToken)
   const restore = useAuthStore((s) => s.restore)
+  const clearAuth = useAuthStore((s) => s.clearAuth)
   const attemptedRef = useRef(false)
 
   useEffect(() => {
     if (attemptedRef.current) return
+
+    if (isManualLogoutMarked()) {
+      attemptedRef.current = true
+      clearClientAuthCookies()
+      clearPersistedAuthState()
+      clearAuth()
+      return
+    }
+
     if (accessToken) {
       attemptedRef.current = true
       return
@@ -51,7 +66,7 @@ function AuthBootstrap() {
     }, 50)
 
     return () => window.clearTimeout(timer)
-  }, [accessToken, restore])
+  }, [accessToken, clearAuth, restore])
 
   return null
 }
