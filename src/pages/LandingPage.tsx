@@ -8,7 +8,7 @@ import Skeleton from '@/components/common/Skeleton'
 const TAB_SWITCH_DELAY_MS = 180
 const PREVIEW_IMAGE_SIZE = { width: 1208, height: 603 } as const
 const BANNER_IMAGE_SIZE = { width: 1200, height: 277 } as const
-const SKELETON_TONE_CLASS = 'bg-[#EEF1F4]'
+const SKELETON_TONE_CLASS = 'bg-[#EEF1F4] animate-none'
 
 const TABS = [
   { id: 'exam', label: '쪽지시험', image: '/LandingPage_img/main_exam.png' },
@@ -26,6 +26,7 @@ function LandingPage() {
   const [activeTab, setActiveTab] = useState<TabType>('exam')
   const [displayTab, setDisplayTab] = useState<TabType>('exam')
   const [isFadingOut, setIsFadingOut] = useState(false)
+
   const [isPreviewLoaded, setIsPreviewLoaded] = useState(false)
   const [isBannerLoaded, setIsBannerLoaded] = useState(false)
 
