@@ -22,8 +22,9 @@ const getCookie = (name: string): string | null => {
 }
 
 const clearCookie = (name: string) => {
-  document.cookie = `${name}=; Max-Age=0; Path=/`
-  document.cookie = `${name}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/`
+  const expires = 'Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  document.cookie = `${name}=; ${expires}; Max-Age=0; Path=/; Domain=.ozcodingschool.site; SameSite=None; Secure`
+  document.cookie = `${name}=; ${expires}; Max-Age=0; Path=/; SameSite=None; Secure`
 }
 
 const SOCIAL_ERROR_MESSAGE: Record<string, string> = {
