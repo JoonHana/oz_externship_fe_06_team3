@@ -195,10 +195,11 @@ function QuizPage() {
     handleCheatingClose()
   }
 
-  const handleStatusEndTest = () => {
-    setIsEnded(true)
-    setEndReason('status')
-  }
+  // 개발용: 상태 종료 테스트 버튼과 함께 주석 해제
+  // const handleStatusEndTest = () => {
+  //   setIsEnded(true)
+  //   setEndReason('status')
+  // }
 
   if (showInvalidAccessModal) {
     return (
