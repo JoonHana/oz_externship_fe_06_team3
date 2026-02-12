@@ -151,9 +151,12 @@ export function RegisterStudentModal({
 
             {enrollMutation.isError && (
               <p className="text-sm text-red-500">
-                {axios.isAxiosError(enrollMutation.error) &&
-                enrollMutation.error.response?.status === 403
-                  ? '*등록 신청에 실패했습니다. 이미 해당 기수에 등록 신청하였습니다.'
+                {axios.isAxiosError(enrollMutation.error)
+                  ? enrollMutation.error.response?.status === 409
+                    ? '* 이미 해당 기수에 등록 신청하였습니다.'
+                    : enrollMutation.error.response?.status === 403
+                      ? '* 등록 신청에 실패했습니다. 이미 수강생 등록 완료된 회원입니다.'
+                      : '등록 신청에 실패했습니다. 다시 시도해 주세요.'
                   : '등록 신청에 실패했습니다. 다시 시도해 주세요.'}
               </p>
             )}
