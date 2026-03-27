@@ -1,14 +1,20 @@
 import { http, HttpResponse, delay } from 'msw'
+import {
+  MOCK_EMAIL_VERIFICATION_CODE,
+  MOCK_LOGIN_CREDENTIALS,
+  MOCK_LOGIN_USER,
+  MOCK_SMS_VERIFICATION_CODE,
+} from '@/constants/mockAuth'
 
 const CODE_TTL_MS = 5 * 60 * 1000
 
 // 테스트용 인증코드
-const FIXED_EMAIL_CODE = 'ABCDE12345' // 이메일 코드: ABCDE12345
-const FIXED_SMS_CODE = '123456' // SMS 코드: 123456
+const FIXED_EMAIL_CODE = MOCK_EMAIL_VERIFICATION_CODE // 이메일 코드: ABCDE12345
+const FIXED_SMS_CODE = MOCK_SMS_VERIFICATION_CODE // SMS 코드: 123456
 
 // 테스트용 아이디/비밀번호
-const SEED_EMAIL = 'test@example.com' // 아이디: test@example.com
-const SEED_PASSWORD = 'Test123!' // 비밀번호: Test123!
+const SEED_EMAIL = MOCK_LOGIN_CREDENTIALS.email // 아이디: test@example.com
+const SEED_PASSWORD = MOCK_LOGIN_CREDENTIALS.password // 비밀번호: Test123!
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const api = (path: string) => new RegExp(`(${escapeRegExp(path)})(\\?.*)?$`)
@@ -71,14 +77,14 @@ const error = (status: number, payload: JsonValue) =>
 // 시드 유저 추가
 if (!usersByEmail.has(SEED_EMAIL)) {
   const user: UserDto = {
-    id: seq++,
-    email: SEED_EMAIL,
-    nickname: '테스트유저',
-    name: '테스트 유저',
-    phone_number: '01012345678',
-    birthday: '2000-01-01',
-    gender: 'M',
-    profile_img_url: null,
+    id: MOCK_LOGIN_USER.id ?? seq++,
+    email: MOCK_LOGIN_USER.email,
+    nickname: MOCK_LOGIN_USER.nickname,
+    name: MOCK_LOGIN_USER.name,
+    phone_number: MOCK_LOGIN_USER.phone_number,
+    birthday: MOCK_LOGIN_USER.birthday,
+    gender: MOCK_LOGIN_USER.gender,
+    profile_img_url: MOCK_LOGIN_USER.profile_img_url,
     created_at: new Date().toISOString(),
   }
   usersByEmail.set(SEED_EMAIL, { password: SEED_PASSWORD, user })

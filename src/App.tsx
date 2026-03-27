@@ -7,8 +7,10 @@ import {
   useNavigationType,
 } from 'react-router-dom'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Toaster } from 'react-hot-toast'
 
 import '@/App.css'
+import MockAuthHelpPanel from '@/components/auth/MockAuthHelpPanel'
 import LandingPage from '@/pages/LandingPage'
 import TestPage from '@/pages/TestPage'
 import {
@@ -96,6 +98,7 @@ function App() {
     <BrowserRouter>
       <AuthBootstrap />
       <ScrollToTop />
+      <MockAuthHelpPanel />
       <Routes>
         {/* 헤더가 포함된 페이지 */}
         <Route element={<MainLayout />}>
@@ -132,6 +135,17 @@ function App() {
           />
         </Route>
       </Routes>
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            border: '1px solid #e5e7eb',
+            padding: '12px 16px',
+            color: '#111827',
+          },
+        }}
+      />
       <ReactQueryDevtools initialIsOpen={false} />
     </BrowserRouter>
   )
