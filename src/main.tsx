@@ -14,7 +14,8 @@ const queryClient = new QueryClient()
 
 async function enableMocking() {
   // VITE_USE_MSW=true → 목 데이터(MSW), false → 실백엔드
-  if (!import.meta.env.DEV || import.meta.env.VITE_USE_MSW !== 'true') return
+  // 프로덕션 배포(Vercel)에서도 mock 배포가 가능하도록 DEV 여부와 분리한다.
+  if (import.meta.env.VITE_USE_MSW !== 'true') return
 
   const { worker } = await import('./mocks/browser')
   await worker.start({
