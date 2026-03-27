@@ -40,15 +40,18 @@ type Props = {
 }
 
 export default function SocialLoginSection({ onLogin, mode = 'login' }: Props) {
+  const isMockMode = import.meta.env.VITE_USE_MSW === 'true'
   const providers =
     mode === 'signup' ? SOCIAL_PROVIDERS_SIGNUP : SOCIAL_PROVIDERS_LOGIN
+
   return (
     <div className="flex w-full flex-col items-start gap-3">
       {providers.map((provider) => (
         <Button
           key={provider.id}
           type="button"
-          variant={provider.variant}
+          variant={isMockMode ? 'disabled' : provider.variant}
+          disabled={isMockMode}
           onClick={() => onLogin(provider.id)}
           className="h-[52px] w-full gap-2.5 rounded px-2 py-2"
         >
@@ -68,6 +71,11 @@ export default function SocialLoginSection({ onLogin, mode = 'login' }: Props) {
           </div>
         </Button>
       ))}
+      {isMockMode ? (
+        <p className="text-mono-600 text-sm">
+          Mock 배포에서는 소셜 로그인 대신 일반 로그인을 사용하세요.
+        </p>
+      ) : null}
     </div>
   )
 }
