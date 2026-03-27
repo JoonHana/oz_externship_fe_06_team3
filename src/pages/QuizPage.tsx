@@ -125,6 +125,15 @@ function QuizPage() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [isEnded])
 
+  useEffect(() => {
+    return () => {
+      if (!document.fullscreenElement) return
+      void document.exitFullscreen().catch(() => {
+        // 브라우저 정책/타이밍 이슈로 해제 실패 가능
+      })
+    }
+  }, [])
+
   const handleLeaveWarningConfirm = () => {
     setOpenModal(null)
     submitAndEndByTime()

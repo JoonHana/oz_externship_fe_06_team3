@@ -15,6 +15,8 @@ export function useCheatingDetection(
   const [cheatingCount, setCheatingCount] = useState(0)
   const lastCheatingAtRef = useRef(0)
   const handlerRef = useRef<() => void>(() => {})
+  const mountedAtRef = useRef(Date.now())
+  const fullscreenGuardAppliedRef = useRef(false)
 
   const handleCheatingDetected = () => {
     if (isEnded) return
@@ -50,6 +52,16 @@ export function useCheatingDetection(
     if (isEnded) return
     const onFullscreenChange = () => {
       if (cheatingCount >= 3) return
+      // 진입 직후 브라우저/라우팅 타이밍으로 인한 오탐을 줄이기 위해
+      // 최초 1회만 짧은 완충 구간에서는 fullscreen 경고를 무시한다.
+      if (!fullscreenGuardAppliedRef.current) {
+        const elapsedSinceMount = Date.now() - mountedAtRef.current
+        if (elapsedSinceMount < 300) {
+          fullscreenGuardAppliedRef.current = true
+          return
+        }
+        fullscreenGuardAppliedRef.current = true
+      }
       if (!document.fullscreenElement) setOpenModal('fullscreen')
     }
     const onKeyDown = (e: KeyboardEvent) => {

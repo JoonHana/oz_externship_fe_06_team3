@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw'
 const CHECK_CODE_PATH = '/api/v1/exams/deployments/:deploymentId/check_code'
 
 /** 목 데이터에서 허용하는 참가코드 (아무 코드나 통과시키려면 여기 추가) */
-const VALID_CODES = new Set(['123456', '000000'])
+const VALID_CODES = new Set(['aA1234', '000000'])
 
 export const checkCodeHandler = http.post(CHECK_CODE_PATH, async ({ request }) => {
   let body: { code?: string } = {}
