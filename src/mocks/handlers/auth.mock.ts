@@ -5,6 +5,7 @@ import {
   MOCK_LOGIN_USER,
   MOCK_SMS_VERIFICATION_CODE,
 } from '@/constants/mockAuth'
+import { maskEmailForDisplay } from '@/utils/emailMask'
 
 const CODE_TTL_MS = 5 * 60 * 1000
 
@@ -15,6 +16,8 @@ const FIXED_SMS_CODE = MOCK_SMS_VERIFICATION_CODE // SMS 코드: 123456
 // 테스트용 아이디/비밀번호
 const SEED_EMAIL = MOCK_LOGIN_CREDENTIALS.email // 아이디: test@example.com
 const SEED_PASSWORD = MOCK_LOGIN_CREDENTIALS.password // 비밀번호: Test123!
+const WITHDRAWN_EMAIL = 'restore@example.com'
+const WITHDRAWN_PASSWORD = 'Restore123!'
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const api = (path: string) => new RegExp(`(${escapeRegExp(path)})(\\?.*)?$`)
@@ -33,6 +36,7 @@ type UserDto = {
 
 type StoredUser = {
   password: string
+  withdrawn: boolean
   user: UserDto
 }
 
@@ -74,6 +78,13 @@ type JsonValue =
 const error = (status: number, payload: JsonValue) =>
   HttpResponse.json(payload, { status })
 
+const findUserByPhone = (phone: string) => {
+  for (const stored of usersByEmail.values()) {
+    if (stored.user.phone_number === phone) return stored
+  }
+  return null
+}
+
 // 시드 유저 추가
 if (!usersByEmail.has(SEED_EMAIL)) {
   const user: UserDto = {
@@ -87,7 +98,32 @@ if (!usersByEmail.has(SEED_EMAIL)) {
     profile_img_url: MOCK_LOGIN_USER.profile_img_url,
     created_at: new Date().toISOString(),
   }
-  usersByEmail.set(SEED_EMAIL, { password: SEED_PASSWORD, user })
+  usersByEmail.set(SEED_EMAIL, {
+    password: SEED_PASSWORD,
+    withdrawn: false,
+    user,
+  })
+  usedNicknames.add(user.nickname.toLowerCase())
+  usedPhones.add(user.phone_number)
+}
+
+if (!usersByEmail.has(WITHDRAWN_EMAIL)) {
+  const user: UserDto = {
+    id: seq++,
+    email: WITHDRAWN_EMAIL,
+    nickname: '복구유저',
+    name: '복구 유저',
+    phone_number: '01055556666',
+    birthday: '1999-01-01',
+    gender: 'F',
+    profile_img_url: null,
+    created_at: new Date().toISOString(),
+  }
+  usersByEmail.set(WITHDRAWN_EMAIL, {
+    password: WITHDRAWN_PASSWORD,
+    withdrawn: true,
+    user,
+  })
   usedNicknames.add(user.nickname.toLowerCase())
   usedPhones.add(user.phone_number)
 }
@@ -98,9 +134,15 @@ export const loginHandler = http.post(
     await delay(120)
     const body = (await request.json()) as { email?: string; password?: string }
     const email = normEmail(String(body.email ?? ''))
-    const password = String(body.password ?? '')
+    const password = String(body.password ?? '').trim()
 
     const found = usersByEmail.get(email)
+    if (found?.withdrawn) {
+      return error(403, {
+        error_detail: '탈퇴한 회원입니다. 계정 복구를 진행해주세요.',
+      })
+    }
+
     if (!found || found.password !== password) {
       return error(400, {
         error_detail: {
@@ -237,10 +279,6 @@ export const sendEmailHandler = http.post(
       return error(400, { error_detail: { email: ['이메일을 입력해주세요.'] } })
     }
 
-    if (usersByEmail.has(email)) {
-      return error(409, { error_detail: '이미 가입된 이메일입니다.' })
-    }
-
     emailCodes.set(email, { code: FIXED_EMAIL_CODE, at: now() })
 
     return HttpResponse.json(
@@ -267,14 +305,12 @@ export const verifyEmailHandler = http.post(
       })
     }
 
-    if (usersByEmail.has(email)) {
-      return error(409, { error_detail: '이미 가입된 이메일입니다.' })
-    }
-
     const saved = emailCodes.get(email)
     if (!saved) {
       return error(400, {
-        error_detail: { code: ['인증코드가 일치하지 않습니다.'] },
+        error_detail: {
+          code: ['먼저 인증코드를 전송한 뒤 같은 이메일로 확인해주세요.'],
+        },
       })
     }
 
@@ -314,12 +350,6 @@ export const sendSmsHandler = http.post(
       })
     }
 
-    if (usedPhones.has(phone)) {
-      return error(409, {
-        error_detail: '이미 가입에 사용된 휴대전화 번호입니다.',
-      })
-    }
-
     smsCodes.set(phone, { code: FIXED_SMS_CODE, at: now() })
 
     return HttpResponse.json(
@@ -352,16 +382,12 @@ export const verifySmsHandler = http.post(
       })
     }
 
-    if (usedPhones.has(phone)) {
-      return error(409, {
-        error_detail: '이미 가입에 사용된 휴대전화 번호입니다.',
-      })
-    }
-
     const saved = smsCodes.get(phone)
     if (!saved) {
       return error(400, {
-        error_detail: { code: ['인증코드가 일치하지 않습니다.'] },
+        error_detail: {
+          code: ['먼저 인증번호를 전송한 뒤 같은 휴대전화 번호로 확인해주세요.'],
+        },
       })
     }
 
@@ -383,6 +409,130 @@ export const verifySmsHandler = http.post(
 
     return HttpResponse.json(
       { detail: '회원가입을 위한 휴대폰 인증에 성공하였습니다.', sms_token },
+      { status: 200 }
+    )
+  }
+)
+
+export const findEmailHandler = http.post(
+  api('/api/v1/accounts/find-email/'),
+  async ({ request }) => {
+    await delay(100)
+    const body = (await request.json()) as { name?: string; sms_token?: string }
+    const name = String(body.name ?? '').trim()
+    const smsToken = String(body.sms_token ?? '')
+
+    if (!name || !smsToken) {
+      return error(400, {
+        error_detail: '이름과 휴대폰 인증 정보를 확인해주세요.',
+      })
+    }
+
+    const phone = smsTokens.get(smsToken)
+    if (!phone) {
+      return error(400, {
+        error_detail: { sms_token: ['휴대폰 인증을 다시 진행해주세요.'] },
+      })
+    }
+
+    const found = findUserByPhone(phone)
+    if (!found || found.user.name !== name) {
+      return error(404, {
+        error_detail: '입력한 이름과 휴대폰 번호로 등록된 이메일이 존재하지 않습니다.',
+      })
+    }
+
+    return HttpResponse.json(
+      { email: maskEmailForDisplay(found.user.email) },
+      { status: 200 }
+    )
+  }
+)
+
+export const resetPasswordHandler = http.post(
+  api('/api/v1/accounts/find-password/'),
+  async ({ request }) => {
+    await delay(120)
+    const body = (await request.json()) as {
+      email_token?: string
+      new_password?: string
+    }
+    const emailToken = String(body.email_token ?? '')
+    const newPassword = String(body.new_password ?? '').trim()
+
+    if (!emailToken || !newPassword) {
+      return error(400, {
+        error_detail: '인증 정보와 새 비밀번호를 확인해주세요.',
+      })
+    }
+
+    const email = emailTokens.get(emailToken)
+    if (!email) {
+      return error(400, {
+        error_detail: { email_token: ['이메일 인증을 다시 진행해주세요.'] },
+      })
+    }
+
+    const found = usersByEmail.get(email)
+    if (!found) {
+      return error(404, {
+        detail: '등록된 계정을 찾을 수 없습니다.',
+      })
+    }
+
+    usersByEmail.set(email, {
+      ...found,
+      password: newPassword,
+    })
+
+    return HttpResponse.json(
+      { detail: '비밀번호가 재설정되었습니다.' },
+      { status: 200 }
+    )
+  }
+)
+
+export const restoreAccountHandler = http.post(
+  api('/api/v1/accounts/restore/'),
+  async ({ request }) => {
+    await delay(120)
+    const body = (await request.json()) as { email_token?: string }
+    const emailToken = String(body.email_token ?? '')
+
+    if (!emailToken) {
+      return error(400, {
+        error_detail: { email_token: ['이메일 인증을 다시 진행해주세요.'] },
+      })
+    }
+
+    const email = emailTokens.get(emailToken)
+    if (!email) {
+      return error(400, {
+        error_detail: { email_token: ['이메일 인증을 다시 진행해주세요.'] },
+      })
+    }
+
+    const found = usersByEmail.get(email)
+    if (!found) {
+      return error(404, {
+        detail: '등록된 계정을 찾을 수 없습니다.',
+      })
+    }
+
+    if (!found.withdrawn) {
+      return HttpResponse.json(
+        { detail: '이미 사용 가능한 계정입니다.' },
+        { status: 200 }
+      )
+    }
+
+    usersByEmail.set(email, {
+      ...found,
+      withdrawn: false,
+    })
+
+    return HttpResponse.json(
+      { detail: '계정 복구가 완료되었습니다.' },
       { status: 200 }
     )
   }
@@ -473,7 +623,7 @@ export const signupHandler = http.post(
       created_at: new Date().toISOString(),
     }
 
-    usersByEmail.set(email, { password, user })
+    usersByEmail.set(email, { password, withdrawn: false, user })
     usedPhones.add(phone)
     usedNicknames.add(nickname.toLowerCase())
 
@@ -495,5 +645,8 @@ export const authHandlers = [
   verifyEmailHandler,
   sendSmsHandler,
   verifySmsHandler,
+  findEmailHandler,
+  resetPasswordHandler,
+  restoreAccountHandler,
   signupHandler,
 ]
