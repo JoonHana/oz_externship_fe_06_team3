@@ -1,0 +1,16 @@
+[
+  { "id": 101, "course_id": 1, "number": 10, "status": "FINISHED" },
+  { "id": 102, "course_id": 1, "number": 11, "status": "IN_PROGRESS" },
+  { "id": 103, "course_id": 1, "number": 12, "status": "PREPARING" },
+  { "id": 201, "course_id": 2, "number": 10, "status": "FINISHED" },
+  { "id": 202, "course_id": 2, "number": 11, "status": "PREPARING" },
+  { "id": 203, "course_id": 2, "number": 12, "status": "PREPARING" },
+  { "id": 301, "course_id": 3, "number": 9, "status": "FINISHED" },
+  { "id": 302, "course_id": 3, "number": 10, "status": "IN_PROGRESS" },
+  { "id": 303, "course_id": 3, "number": 11, "status": "PREPARING" },
+  { "id": 401, "course_id": 4, "number": 1, "status": "FINISHED" },
+  { "id": 402, "course_id": 4, "number": 2, "status": "PREPARING" },
+  { "id": 403, "course_id": 4, "number": 3, "status": "PREPARING" },
+  { "id": 501, "course_id": 5, "number": 1, "status": "FINISHED" },
+  { "id": 502, "course_id": 5, "number": 2, "status": "PREPARING" }
+]

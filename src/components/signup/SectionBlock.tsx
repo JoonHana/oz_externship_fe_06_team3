@@ -1,0 +1,33 @@
+// 회원가입 섹션 레이아웃 - 라벨+children 래퍼
+import type { ReactNode } from 'react'
+
+export function SectionLabel({ label }: { label: string }) {
+  return (
+    <label className="text-foreground inline-flex items-start text-left text-[16px]">
+      {label}
+      <span className="text-error text-[16px]">*</span>
+    </label>
+  )
+}
+
+export function SectionBlock({
+  label,
+  rightText,
+  className,
+  children,
+}: {
+  label: string
+  rightText?: ReactNode
+  className?: string
+  children: ReactNode
+}) {
+  return (
+    <div className={`flex flex-col gap-5 ${className ?? ''}`}>
+      <div className="inline-flex items-center gap-4">
+        <SectionLabel label={label} />
+        {rightText ?? null}
+      </div>
+      {children}
+    </div>
+  )
+}

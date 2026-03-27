@@ -1,1 +1,100 @@
-@import "tailwindcss";
+@config "../tailwind.config.ts";
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Pretendard Variable';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/PretendardVariable.woff2') format('woff2-variations');
+}
+
+:root {
+  font-family:
+    'Pretendard Variable',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+}
+
+/* 중앙 정렬용 */
+.flex-center {
+  @apply flex items-center justify-center;
+}
+
+/* Title Font Styles */
+.title-xl {
+  @apply text-[32px] font-bold;
+}
+
+.title-l {
+  @apply text-[20px] font-semibold;
+}
+
+.title-l-b {
+  @apply text-[20px] font-bold;
+}
+
+/* 로그인 페이지 용 */
+.title-m-a {
+  @apply text-[18px] font-bold;
+}
+
+/* 마이페이지 / 쪽지 / 비밀번호 변경 용 */
+.title-m-b {
+  @apply text-[18px] font-semibold;
+}
+
+.subTitle-l {
+  @apply text-muted text-[14px];
+}
+
+/* Placeholder Font Styles */
+
+/* 로그인 페이지 용 */
+.placeholder-a::placeholder {
+  @apply text-[14px] font-normal;
+  color: #9d9d9d;
+}
+
+.placeholder-a::placeholder {
+  @apply text-[14px] font-normal;
+}
+
+/* 마이페이지 / 쪽지 / 비밀번호 변경 용 */
+.placeholder-b::placeholder {
+  @apply text-[16px] font-normal;
+  color: #9d9d9d;
+}
+
+/* 비밀번호 찾기 모달 플레이스홀더 */
+.find-password-input input::placeholder {
+  font-size: 14px;
+  font-weight: normal;
+  color: #bdbdbd;
+}
+
+/* 라벨 공통 스타일 */
+.label-common {
+  @apply text-foreground text-[16px] font-normal;
+}
+.infoText {
+  @apply mr-[85px] w-[100px] text-[18px];
+}
+.info-border {
+  @apply rounded-[7px] border border-[#D1D1D1] px-[44px] py-[52px];
+}
+/* 문제 헤더 공통 스타일 */
+.quiz-header {
+  @apply mb-5 flex items-center gap-2;
+}
+
+.quiz-header-title {
+  @apply text-foreground text-[20px] font-bold;
+}
+
+.quiz-header-badge {
+  @apply rounded-[2px] bg-mono-200 px-2 py-[2px] text-foreground text-[12px] font-normal;
+}

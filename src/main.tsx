@@ -1,26 +1,45 @@
 import { StrictMode } from 'react'
-
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createRoot } from 'react-dom/client'
 
-import './index.css'
-import App from './App.tsx'
+import '@/index.css'
+import App from '@/App'
+
+import { apiClient } from '@/api/client'
+import { setupAuthInterceptor } from '@/api/setupInterceptors'
+import { setupRefreshInterceptor } from '@/api/setupRefreshInterceptor'
+import { useAuthStore } from '@/store/authStore'
+
+const queryClient = new QueryClient()
 
 async function enableMocking() {
-  if (process.env.NODE_ENV !== 'development') {
-    // 개발 모드인 경우에는 워커 실행 X
-    return
-  }
-  const { worker } = await import('./mocks/browser.ts') // 이전에 설정한 브라우저 환경설정 import
+  // VITE_USE_MSW=true → 목 데이터(MSW), false → 실백엔드
+  // 프로덕션 배포(Vercel)에서도 mock 배포가 가능하도록 DEV 여부와 분리한다.
+  if (import.meta.env.VITE_USE_MSW !== 'true') return
 
-  return worker.start({
-    onUnhandledRequest: 'bypass', // 모킹되지 않은 요청은 실제 서버로 전달
+  const { worker } = await import('./mocks/browser')
+  await worker.start({
+    serviceWorker: { url: '/mockServiceWorker.js' },
+    onUnhandledRequest: 'warn',
   })
 }
 
-enableMocking().then(() => {
-  createRoot(document.getElementById('root')!).render(
+async function bootstrap() {
+  setupAuthInterceptor(apiClient, () => useAuthStore.getState().accessToken)
+  setupRefreshInterceptor(apiClient, () => useAuthStore.getState())
+
+  await enableMocking()
+
+  const rootEl = document.getElementById('root')
+  if (!rootEl) throw new Error('Root element (#root) not found')
+
+  createRoot(rootEl).render(
     <StrictMode>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </StrictMode>
   )
-})
+}
+
+void bootstrap()
