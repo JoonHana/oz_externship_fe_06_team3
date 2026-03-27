@@ -38,15 +38,24 @@ export function StartQuizModal({
   const [imageError, setImageError] = useState(false)
   const checkCodeMutation = useCheckExamCodeMutation()
 
-  const requestFullscreen = async () => {
-    if (document.fullscreenElement) return
+  const requestFullscreen = async (): Promise<boolean> => {
+    if (document.fullscreenElement) return true
     const element = document.documentElement
-    if (element.requestFullscreen) {
-      try {
-        await element.requestFullscreen()
-      } catch {
-        // ignore
-      }
+    if (!element.requestFullscreen) return false
+    try {
+      await element.requestFullscreen()
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const exitFullscreenIfActive = async () => {
+    if (!document.fullscreenElement) return
+    try {
+      await document.exitFullscreen()
+    } catch {
+      // ignore
     }
   }
 
@@ -67,6 +76,8 @@ export function StartQuizModal({
 
   const onSubmit = async (data: StartQuizFormData) => {
     setIsSubmitting(true)
+    // 사용자 클릭 직후에 먼저 전체화면을 시도해야 브라우저 정책에 막힐 확률이 낮다.
+    const enteredFullscreen = await requestFullscreen()
     try {
       await checkCodeMutation.mutateAsync({
         deploymentId,
@@ -76,9 +87,12 @@ export function StartQuizModal({
       sessionStorage.setItem(getQuizVerifiedKey(deploymentId), '1')
       onSuccess?.(data)
       onClose()
-      await requestFullscreen()
       navigate(`/quiz/${deploymentId}`)
     } catch (error) {
+      // 코드 검증 실패 시 목록 화면에서 전체화면이 유지되지 않도록 원복
+      if (enteredFullscreen) {
+        await exitFullscreenIfActive()
+      }
       const parsed = parseAxiosError(error)
       const errorMessage = resolveMessage(
         parsed,

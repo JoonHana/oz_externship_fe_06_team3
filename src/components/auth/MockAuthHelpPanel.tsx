@@ -149,13 +149,9 @@ export default function MockAuthHelpPanel() {
                     <p className="text-mono-600 text-[12px] leading-4 my-2">
                       현재 Mock 체험은 마이페이지 중 '쪽지시험' 부분만 가능합니다.
                     </p>
-                    <p className="text-error text-[12px] leading-4 my-2">
-                      ※ 주의 : 드래그 하여 복사, 붙혀넣기를 할 경우 검증이 되지 않습니다. 직접
-                      입력해주세요
-                    </p>
                   </div>
 
-                  <div className="border-t border-gray-200 mt-1 py-5">
+                  <div className="border-t border-gray-200 mt-1 py-4">
                     <p className="text-foreground text-sm font-semibold">
                       쪽지 시험 응시하기
                     </p>
@@ -165,8 +161,11 @@ export default function MockAuthHelpPanel() {
                     </dl>
                   </div>
 
-                  <div className="border-t border-gray-200 pt-1">
-
+                  <div className="border-t border-gray-200 pt-2">
+                    <p className="text-error text-[12px] leading-4 my-2">
+                      ※ 주의 : 드래그 하여 복사, 붙혀넣기를 할 경우 검증이 되지 않습니다. 직접
+                      입력해주세요
+                    </p>
                   </div>
                 </>
               ) : null}
