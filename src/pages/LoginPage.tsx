@@ -33,6 +33,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const login = useAuthStore((state) => state.login)
+  const isMockMode = import.meta.env.VITE_USE_MSW === 'true'
 
   const { methods, rootError, submitButton } = useLoginForm()
   const accountRecovery = useAccountRecoveryModals()
@@ -47,7 +48,14 @@ export default function LoginPage() {
     clearErrors('root')
 
     try {
-      await login(formData)
+      const loginPayload = isMockMode
+        ? {
+            email: formData.email.trim(),
+            password: formData.password.trim(),
+          }
+        : formData
+
+      await login(loginPayload)
       // 로그인 성공 시 원래 가려던 페이지로 이동
       navigate(redirectPath, { replace: true })
     } catch (error) {
