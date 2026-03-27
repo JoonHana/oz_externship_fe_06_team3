@@ -19,6 +19,20 @@ export const MOCK_LOGIN_USER: User = {
 export const MOCK_EMAIL_VERIFICATION_CODE = 'ABCDE12345'
 export const MOCK_SMS_VERIFICATION_CODE = '123456'
 
+export const MOCK_FIND_ID_EXAMPLE = {
+  name: MOCK_LOGIN_USER.name,
+  phoneNumber: '010-1234-5678',
+}
+
+export const MOCK_FIND_PASSWORD_EXAMPLE = {
+  email: MOCK_LOGIN_CREDENTIALS.email,
+}
+
+export const MOCK_RESTORE_ACCOUNT_CREDENTIALS: LoginPayload = {
+  email: 'restore@example.com',
+  password: 'Restore123!',
+}
+
 export const MOCK_SIGNUP_EXAMPLE = {
   name: '홍길동',
   birthdate: '20000101',

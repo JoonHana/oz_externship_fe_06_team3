@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/common/Button'
 import { CommonInputField } from '@/components/common/CommonInputField'
 import { FormErrorDisplay } from '@/components/common/FormErrorDisplay'
+import MockAuthHelpPanel from '@/components/auth/MockAuthHelpPanel'
 
 import { NicknameSection } from '@/components/signup/NicknameSection'
 import { EmailSection } from '@/components/signup/EmailSection'
@@ -253,122 +254,125 @@ export default function SignupEmailPage() {
 
   return (
     <FormProvider {...methods}>
-      <div className="flex min-h-[calc(100vh-96px)] items-center justify-center bg-gray-100 pt-[min(8vh)] pb-[min(10vh)]">
-        <div className="bg-white px-6 py-10">
-          <div className="flex w-[480px] flex-col gap-9">
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-foreground text-center text-[18px] font-bold">
-                마법같이 빠르게 성장시켜줄
-              </p>
-              <img
-                className="h-6 w-[180px] object-contain"
-                alt="OZ. 오즈코딩스쿨"
-                src="/LoginPage_img/ozcoding_logo.png"
-              />
-            </div>
-
-            <h1 className="text-foreground text-left text-[18px] font-semibold">
-              회원가입
-            </h1>
-
-            <form
-              onSubmit={handleSignupSubmit}
-              className="flex flex-col gap-11"
-            >
-              <SectionBlock label="이름">
-                <CommonInputField<SignupFormData>
-                  name="name"
-                  type="text"
-                  placeholder="이름을 입력해주세요"
-                  width="100%"
-                  placeholderVariant="a"
-                  helperVisibility="always"
+      <>
+        <div className="flex min-h-[calc(100vh-96px)] items-center justify-center bg-gray-100 pt-[min(8vh)] pb-[min(10vh)]">
+          <div className="bg-white px-6 py-10">
+            <div className="flex w-[480px] flex-col gap-9">
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-foreground text-center text-[18px] font-bold">
+                  마법같이 빠르게 성장시켜줄
+                </p>
+                <img
+                  className="h-6 w-[180px] object-contain"
+                  alt="OZ. 오즈코딩스쿨"
+                  src="/LoginPage_img/ozcoding_logo.png"
                 />
-              </SectionBlock>
-
-              <NicknameSection
-                nicknameFieldState={nicknameFieldState}
-                flowMessage={nicknameCheck.nicknameFlowMessage}
-                nicknameChecked={nicknameCheck.nicknameChecked}
-                nickname={values.nickname}
-                canCheckNickname={nicknameCheck.canCheckNickname}
-                busy={isBusy}
-                onCheckNickname={nicknameCheck.onCheckNickname}
-              />
-
-              <SectionBlock label="생년월일">
-                <CommonInputField<SignupFormData>
-                  name="birthdate"
-                  type="text"
-                  placeholder="8자리 입력해주세요 (ex.20000101)"
-                  width="100%"
-                  placeholderVariant="a"
-                  helperVisibility="always"
-                />
-              </SectionBlock>
-
-              <SectionBlock label="성별">
-                <GenderField />
-              </SectionBlock>
-
-              <EmailSection
-                emailFieldState={emailFlow.ui.fieldState}
-                emailVerificationCodeFieldState={emailFlow.ui.codeFieldState}
-                flowMessage={emailFlow.flowMessage}
-                emailVerified={emailFlow.verified}
-                emailCodeSent={emailFlow.codeSent}
-                emailTimer={emailFlow.timer}
-                emailSendLabel={emailSendLabel}
-                canSendEmail={emailFlow.ui.canSend}
-                canVerifyEmail={emailFlow.ui.canVerify}
-                onSendEmailCode={emailFlow.actions.onSendCode}
-                onVerifyEmailCode={emailFlow.actions.onVerifyCode}
-              />
-              <PhoneSection
-                phone1={values.phone1}
-                phoneDigitsState={smsFlow.ui.fieldState}
-                phoneVerificationCodeFieldState={smsFlow.ui.codeFieldState}
-                flowMessage={smsFlow.flowMessage}
-                smsVerified={smsFlow.verified}
-                smsCodeSent={smsFlow.codeSent}
-                smsTimer={smsFlow.timer}
-                smsSendLabel={smsSendLabel}
-                canSendSms={smsFlow.ui.canSend}
-                canVerifySms={smsFlow.ui.canVerify}
-                onSendSmsCode={smsFlow.actions.onSendCode}
-                onVerifySmsCode={smsFlow.actions.onVerifyCode}
-              />
-              <PasswordSection
-                passwordFieldState={passwordState.passwordFieldState}
-                passwordConfirmState={passwordState.passwordConfirmState}
-                passwordConfirmMsg={passwordState.passwordConfirmMessage}
-              />
-
-              <div className="flex flex-col gap-2">
-                <FormErrorDisplay message={rootError} />
-                <Button
-                  type="submit"
-                  size="xxl"
-                  variant={submitVariant}
-                  disabled={!canSubmit}
-                  className="whitespace-nowrap"
-                >
-                  {submitLabel}
-                </Button>
               </div>
-            </form>
 
-            <p className="mt-6 text-center">
-              <Link
-                to="/signup"
-                className="text-mono-600 text-[16px] leading-[22.4px] tracking-[-0.48px] underline hover:no-underline"
+              <h1 className="text-foreground text-left text-[18px] font-semibold">
+                회원가입
+              </h1>
+
+              <form
+                onSubmit={handleSignupSubmit}
+                className="flex flex-col gap-11"
               >
-                소셜/일반 선택으로 돌아가기
-              </Link>
-            </p>
+                <SectionBlock label="이름">
+                  <CommonInputField<SignupFormData>
+                    name="name"
+                    type="text"
+                    placeholder="이름을 입력해주세요"
+                    width="100%"
+                    placeholderVariant="a"
+                    helperVisibility="always"
+                  />
+                </SectionBlock>
+
+                <NicknameSection
+                  nicknameFieldState={nicknameFieldState}
+                  flowMessage={nicknameCheck.nicknameFlowMessage}
+                  nicknameChecked={nicknameCheck.nicknameChecked}
+                  nickname={values.nickname}
+                  canCheckNickname={nicknameCheck.canCheckNickname}
+                  busy={isBusy}
+                  onCheckNickname={nicknameCheck.onCheckNickname}
+                />
+
+                <SectionBlock label="생년월일">
+                  <CommonInputField<SignupFormData>
+                    name="birthdate"
+                    type="text"
+                    placeholder="8자리 입력해주세요 (ex.20000101)"
+                    width="100%"
+                    placeholderVariant="a"
+                    helperVisibility="always"
+                  />
+                </SectionBlock>
+
+                <SectionBlock label="성별">
+                  <GenderField />
+                </SectionBlock>
+
+                <EmailSection
+                  emailFieldState={emailFlow.ui.fieldState}
+                  emailVerificationCodeFieldState={emailFlow.ui.codeFieldState}
+                  flowMessage={emailFlow.flowMessage}
+                  emailVerified={emailFlow.verified}
+                  emailCodeSent={emailFlow.codeSent}
+                  emailTimer={emailFlow.timer}
+                  emailSendLabel={emailSendLabel}
+                  canSendEmail={emailFlow.ui.canSend}
+                  canVerifyEmail={emailFlow.ui.canVerify}
+                  onSendEmailCode={emailFlow.actions.onSendCode}
+                  onVerifyEmailCode={emailFlow.actions.onVerifyCode}
+                />
+                <PhoneSection
+                  phone1={values.phone1}
+                  phoneDigitsState={smsFlow.ui.fieldState}
+                  phoneVerificationCodeFieldState={smsFlow.ui.codeFieldState}
+                  flowMessage={smsFlow.flowMessage}
+                  smsVerified={smsFlow.verified}
+                  smsCodeSent={smsFlow.codeSent}
+                  smsTimer={smsFlow.timer}
+                  smsSendLabel={smsSendLabel}
+                  canSendSms={smsFlow.ui.canSend}
+                  canVerifySms={smsFlow.ui.canVerify}
+                  onSendSmsCode={smsFlow.actions.onSendCode}
+                  onVerifySmsCode={smsFlow.actions.onVerifyCode}
+                />
+                <PasswordSection
+                  passwordFieldState={passwordState.passwordFieldState}
+                  passwordConfirmState={passwordState.passwordConfirmState}
+                  passwordConfirmMsg={passwordState.passwordConfirmMessage}
+                />
+
+                <div className="flex flex-col gap-2">
+                  <FormErrorDisplay message={rootError} />
+                  <Button
+                    type="submit"
+                    size="xxl"
+                    variant={submitVariant}
+                    disabled={!canSubmit}
+                    className="whitespace-nowrap"
+                  >
+                    {submitLabel}
+                  </Button>
+                </div>
+              </form>
+
+              <p className="mt-6 text-center">
+                <Link
+                  to="/signup"
+                  className="text-mono-600 text-[16px] leading-[22.4px] tracking-[-0.48px] underline hover:no-underline"
+                >
+                  소셜/일반 선택으로 돌아가기
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+        <MockAuthHelpPanel variant="signup" />
+      </>
     </FormProvider>
   )
 }

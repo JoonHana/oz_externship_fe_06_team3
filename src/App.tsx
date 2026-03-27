@@ -10,7 +10,6 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Toaster } from 'react-hot-toast'
 
 import '@/App.css'
-import MockAuthHelpPanel from '@/components/auth/MockAuthHelpPanel'
 import LandingPage from '@/pages/LandingPage'
 import TestPage from '@/pages/TestPage'
 import {
@@ -98,7 +97,6 @@ function App() {
     <BrowserRouter>
       <AuthBootstrap />
       <ScrollToTop />
-      <MockAuthHelpPanel />
       <Routes>
         {/* 헤더가 포함된 페이지 */}
         <Route element={<MainLayout />}>

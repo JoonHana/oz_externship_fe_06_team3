@@ -6,6 +6,9 @@ import { CommonInputField } from '@/components/common/CommonInputField'
 import { PasswordField } from '@/components/common/PasswordField'
 import { Button } from '@/components/common/Button'
 import { FormErrorDisplay } from '@/components/common/FormErrorDisplay'
+import MockAuthHelpPanel, {
+  type MockAuthHelpPanelVariant,
+} from '@/components/auth/MockAuthHelpPanel'
 import SocialLoginSection from '@/components/auth/SocialLoginSection'
 import {
   FindIdModal,
@@ -41,6 +44,18 @@ export default function LoginPage() {
 
   const { handleSubmit, setError, clearErrors } = methods
   const redirectPath = getRedirectPathFromLocation(location.state)
+  const helpPanelVariant = getMockAuthHelpPanelVariant({
+    isFindIdOpen:
+      accountRecovery.modals.findId.isOpen ||
+      accountRecovery.modals.findIdResult.isOpen,
+    isFindPasswordOpen:
+      accountRecovery.modals.findPassword.isOpen ||
+      accountRecovery.modals.resetPassword.isOpen,
+    isRestoreOpen:
+      withdrawnMemberFlow.modals.withdrawn.isOpen ||
+      withdrawnMemberFlow.modals.restore.isOpen ||
+      withdrawnMemberFlow.modals.result.isOpen,
+  })
 
   // 로그인 제출 플로우
   const handleLoginSubmit = handleSubmit(async (formData) => {
@@ -179,6 +194,8 @@ export default function LoginPage() {
         </div>
       </div>
 
+      <MockAuthHelpPanel variant={helpPanelVariant} />
+
       {/* 아이디/비밀번호 찾기 모달 */}
       <FindIdModal
         isOpen={accountRecovery.modals.findId.isOpen}
@@ -226,4 +243,15 @@ export default function LoginPage() {
 function getRedirectPathFromLocation(locationState: unknown): string {
   const state = locationState as { from?: string } | null
   return typeof state?.from === 'string' ? state.from : '/'
+}
+
+function getMockAuthHelpPanelVariant(params: {
+  isFindIdOpen: boolean
+  isFindPasswordOpen: boolean
+  isRestoreOpen: boolean
+}): MockAuthHelpPanelVariant {
+  if (params.isRestoreOpen) return 'restore-account'
+  if (params.isFindPasswordOpen) return 'find-password'
+  if (params.isFindIdOpen) return 'find-id'
+  return 'login'
 }
