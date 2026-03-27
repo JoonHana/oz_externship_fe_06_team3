@@ -1,6 +1,10 @@
 // 소셜 로그인 버튼 (카카오, 네이버) - createSocialRedirect 호출
 import { Button } from '@/components/common/Button'
+import {
+  MOCK_SOCIAL_LOGIN_TOAST_MESSAGE,
+} from '@/constants/mockAuth'
 import type { SocialProviderId } from '@/types/social'
+import { toast } from 'react-hot-toast'
 
 const SOCIAL_PROVIDERS_LOGIN = [
   {
@@ -40,9 +44,18 @@ type Props = {
 }
 
 export default function SocialLoginSection({ onLogin, mode = 'login' }: Props) {
-  const isMockMode = import.meta.env.VITE_USE_MSW === 'true'
   const providers =
     mode === 'signup' ? SOCIAL_PROVIDERS_SIGNUP : SOCIAL_PROVIDERS_LOGIN
+  const isMockMode = import.meta.env.VITE_USE_MSW === 'true'
+
+  const handleProviderClick = (provider: SocialProviderId) => {
+    if (isMockMode) {
+      toast.error(MOCK_SOCIAL_LOGIN_TOAST_MESSAGE)
+      return
+    }
+
+    onLogin(provider)
+  }
 
   return (
     <div className="flex w-full flex-col items-start gap-3">
@@ -50,9 +63,8 @@ export default function SocialLoginSection({ onLogin, mode = 'login' }: Props) {
         <Button
           key={provider.id}
           type="button"
-          variant={isMockMode ? 'disabled' : provider.variant}
-          disabled={isMockMode}
-          onClick={() => onLogin(provider.id)}
+          variant={provider.variant}
+          onClick={() => handleProviderClick(provider.id)}
           className="h-[52px] w-full gap-2.5 rounded px-2 py-2"
         >
           <div className="inline-flex items-center gap-1">
@@ -71,11 +83,6 @@ export default function SocialLoginSection({ onLogin, mode = 'login' }: Props) {
           </div>
         </Button>
       ))}
-      {isMockMode ? (
-        <p className="text-mono-600 text-sm">
-          Mock 배포에서는 소셜 로그인 대신 일반 로그인을 사용하세요.
-        </p>
-      ) : null}
     </div>
   )
 }
